@@ -30,19 +30,19 @@
         (submit)="signIn($event)"
       >
         <div class="flex flex-col gap-y-4">
-          <!-- Email field -->
+          <!-- Username field -->
           <mat-form-field class="w-full">
-            <mat-label>Email address</mat-label>
+            <mat-label>Username</mat-label>
             <input
-              id="email"
+              id="userName"
               matInput
-              [formField]="signInForm.email"
+              [formField]="signInForm.userName"
             />
             <mat-error>
               @if (
-                signInForm.email().touched() && signInForm.email().invalid()
+                signInForm.userName().touched() && signInForm.userName().invalid()
               ) {
-                @for (error of signInForm.email().errors(); track error) {
+                @for (error of signInForm.userName().errors(); track error) {
                   {{ error.message }}
                 }
               }
@@ -100,7 +100,7 @@
 
         <!-- Actions -->
         <div class="mt-2 flex w-full items-center justify-between">
-          <mat-checkbox class="-ml-2">Remember me</mat-checkbox>
+          <mat-checkbox class="-ml-2" [formField]="signInForm.rememberMe">Remember me</mat-checkbox>
           <a
             class="font-medium underline"
             routerLink="/auth/forgot-password"
@@ -114,8 +114,15 @@
           type="submit"
           matButton="filled"
           class="mt-6 w-full"
-          [disabled]="signInForm().invalid()"
+          [disabled]="signInForm().invalid() || isSubmitting()"
         >
+          @if (isSubmitting()) {
+            <mat-progress-spinner
+              class="mr-2"
+              mode="indeterminate"
+              diameter="20"
+            ></mat-progress-spinner>
+          }
           Sign in
         </button>
 
@@ -151,6 +158,18 @@
           </button>
         </div>
       </form>
+
+      <!-- Error Alert -->
+      @if (showAlert()) {
+        <div
+          class="mt-8 rounded-lg bg-red-100 p-4 text-red-700 dark:bg-red-900/50 dark:text-red-200 border border-red-200 dark:border-red-800"
+        >
+          <div class="flex items-center gap-x-3">
+            <mat-icon class="text-red-600 dark:text-red-400" svgIcon="alert-circle"></mat-icon>
+            <strong>Login Failed:</strong> {{ alertMessage() }}
+          </div>
+        </div>
+      }
 
       <!-- Alert -->
       <div

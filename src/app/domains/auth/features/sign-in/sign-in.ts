@@ -1,6 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
 import {
-  email,
   form,
   FormField,
   required,
@@ -12,7 +11,9 @@ import { MatDivider } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '@/app/core/auth/auth.service';
 
 @Component({
   selector: 'auth-sign-in',
@@ -24,6 +25,7 @@ import { Router, RouterLink } from '@angular/router';
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
+    MatProgressSpinnerModule,
     FormField,
     MatDivider,
   ],
@@ -31,16 +33,21 @@ import { Router, RouterLink } from '@angular/router';
 export default class AuthSignIn {
   // Dependencies
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   // State
+  public showAlert = signal<boolean>(false);
+  public alertMessage = signal<string>('');
+  public isSubmitting = signal<boolean>(false);
+  
   protected signInFormModel = signal({
-    email: 'hughes.brian@company.com',
-    password: 'Secure-Password-123$%^',
+    userName: 'a.elshal',
+    password: 'Aa@123456',
+    rememberMe: false
   });
+  
   protected signInForm = form(this.signInFormModel, (form) => {
-    required(form.email, { message: 'You must enter an email address' });
-    email(form.email, { message: 'You must enter a valid email address' });
-
+    required(form.userName, { message: 'You must enter a username' });
     required(form.password, { message: 'You must enter a password' });
   });
 
@@ -48,8 +55,28 @@ export default class AuthSignIn {
     event.preventDefault();
 
     submit(this.signInForm, async () => {
-      // Navigate to a route, demo purposes only
-      this.router.navigateByUrl('/admin/dashboards');
+      // Hide alert
+      this.showAlert.set(false);
+      this.isSubmitting.set(true);
+      
+      const formValue = this.signInFormModel();
+
+      this.authService.signIn({
+        userName: formValue.userName,
+        password: formValue.password,
+        deviceId: null // Based on the API expectation
+      }).subscribe({
+        next: () => {
+          this.isSubmitting.set(false);
+          // Navigate to a route
+          this.router.navigateByUrl('/admin/academy');
+        },
+        error: (error) => {
+          this.isSubmitting.set(false);
+          this.alertMessage.set(error.message);
+          this.showAlert.set(true);
+        }
+      });
     });
   }
 }
