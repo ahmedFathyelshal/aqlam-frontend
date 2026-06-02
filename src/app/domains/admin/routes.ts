@@ -6,8 +6,8 @@ const routes: Routes = [
     path: '',
     component: AdminLayout,
     children: [
-      // Redirect empty path to '/auth/sign-in'
-      { path: '', pathMatch: 'full', redirectTo: '/auth/sign-in' },
+      // Redirect empty path to 'academy'
+      { path: '', pathMatch: 'full', redirectTo: 'academy' },
 
       // -----------------------------------------------------------------------
       // Dashboards

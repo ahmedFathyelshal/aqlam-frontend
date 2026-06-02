@@ -1,5 +1,5 @@
 import { TranslocoHttpLoader } from '@/app/core/transloco/transloco-http-loader';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
   isDevMode,
@@ -19,12 +19,13 @@ import {
 import { provideIcons } from '@/app/core/icons/provider';
 import { provideTheming } from '@/app/core/theming';
 import { provideTransloco } from '@jsverse/transloco';
+import { authInterceptor } from '@/app/core/auth/auth.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideClientHydration(withIncrementalHydration()),
     provideRouter(
       routes,
