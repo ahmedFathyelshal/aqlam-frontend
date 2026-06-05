@@ -3,8 +3,9 @@ import { MatPseudoCheckbox } from '@angular/material/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatDivider } from '@angular/material/list';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Scheme, Theming } from '@/app/core/theming';
+import { AuthService } from '@/app/core/auth/auth.service';
 
 @Component({
   selector: 'user',
@@ -15,7 +16,6 @@ import { Scheme, Theming } from '@/app/core/theming';
     MatMenuItem,
     MatPseudoCheckbox,
     MatMenuTrigger,
-    RouterLink,
   ],
   template: `
     <button
@@ -90,7 +90,7 @@ import { Scheme, Theming } from '@/app/core/theming';
       <mat-divider />
       <button
         mat-menu-item
-        routerLink="/auth/sign-in"
+        (click)="signOut()"
       >
         <mat-icon svgIcon="log-out" />
         Sign out
@@ -117,6 +117,8 @@ import { Scheme, Theming } from '@/app/core/theming';
 export class User {
   // Dependencies
   private theming = inject(Theming);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   // State
   protected scheme = computed(() => this.theming.scheme());
@@ -128,5 +130,16 @@ export class User {
 
   updateScheme(scheme: Scheme) {
     this.theming.scheme.set(scheme);
+  }
+
+  signOut() {
+    this.authService.signOut().subscribe({
+      next: () => {
+        this.router.navigateByUrl('/auth/sign-in');
+      },
+      error: () => {
+        this.router.navigateByUrl('/auth/sign-in');
+      }
+    });
   }
 }
