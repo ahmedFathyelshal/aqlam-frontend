@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError, tap } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
+import { unwrapApiResponse } from '../utils/api-error.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -19,45 +20,79 @@ export class AuthService {
    */
   signIn(credentials: any): Observable<any> {
     return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Login, credentials).pipe(
-      map(response => {
-        if (!response.succeeded) {
-          throw new Error(response.errors?.length ? response.errors.join(', ') : 'Login failed');
-        }
-        
+      unwrapApiResponse(),
+      tap(data => {
         // Since we use HttpOnly cookies, we don't save the token manually.
         // We update the auth state.
         this.isAuthenticated.set(true);
-        if (response.data) {
-          this.user.set(response.data);
+        if (data) {
+          this.user.set(data);
         }
-        
-        return response.data;
-      }),
-      catchError(error => {
-        let errorMsg = 'An unknown error occurred during login.';
-        if (error instanceof Error) {
-          errorMsg = error.message;
-        } else if (error.error && error.error.errors && Array.isArray(error.error.errors)) {
-          errorMsg = error.error.errors.join(', ');
-        } else if (error.status === 401) {
-          errorMsg = 'Invalid username or password.';
-        } else if (error.message) {
-          errorMsg = error.message;
-        }
-        return throwError(() => new Error(errorMsg));
       })
     );
   }
 
   /**
-   * Sign out
+   * Register a new user
    */
-  signOut(): Observable<any> {
+  signUp(data: any): Observable<any> {
+    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Register, data).pipe(
+      unwrapApiResponse()
+    );
+  }
+
+  /**
+   * Silently refresh the session using the HttpOnly refresh token cookie
+   */
+  refreshSession(deviceId: string | null = null): Observable<any> {
+    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Refresh, { deviceId }).pipe(
+      unwrapApiResponse(),
+      tap(data => {
+        this.isAuthenticated.set(true);
+        if (data) {
+          this.user.set(data);
+        }
+      })
+    );
+  }
+
+  /**
+   * Fetch the current user's profile on page load
+   */
+  getMe(): Observable<any> {
+    return this.http.get<ApiResponse<any>>(ApiEndpoints.Auth.Me).pipe(
+      unwrapApiResponse(),
+      tap(data => {
+        this.isAuthenticated.set(true);
+        if (data) {
+          this.user.set(data);
+        }
+      })
+    );
+  }
+
+  /**
+   * Clear local state (used when refresh fails)
+   */
+  signOutLocal(): void {
     this.isAuthenticated.set(false);
     this.user.set(null);
-    return new Observable(subscriber => {
-      subscriber.next(true);
-      subscriber.complete();
-    });
+  }
+
+  /**
+   * Sign out
+   */
+  signOut(deviceId: string | null = null): Observable<any> {
+    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Logout, { deviceId }).pipe(
+      tap(() => {
+        this.isAuthenticated.set(false);
+        this.user.set(null);
+      }),
+      catchError(error => {
+        this.isAuthenticated.set(false);
+        this.user.set(null);
+        return throwError(() => error);
+      })
+    );
   }
 }
