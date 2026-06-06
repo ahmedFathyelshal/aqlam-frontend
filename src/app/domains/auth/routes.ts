@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
+import { noAuthGuard } from '@/app/core/auth/guards/no-auth.guard';
 
 const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layout'),
+    canActivate: [noAuthGuard],
     children: [
       {
         path: '',
