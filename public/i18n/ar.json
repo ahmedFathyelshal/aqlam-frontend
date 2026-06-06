@@ -1,0 +1,17 @@
+{
+  "dashboard": "لوحة القيادة",
+  "my_courses": "دوراتي",
+  "exams": "الامتحانات",
+  "total_students": "إجمالي الطلاب",
+  "pending_grading": "في انتظار التقييم",
+  "create_my_account": "إنشاء حسابي",
+  "welcome_back": "أهلاً بك مجدداً، {{name}}!",
+  "dashboard_subtitle": "إليك ما يحدث في أكاديميتك اليوم.",
+  "create_course": "إنشاء دورة جديدة",
+  "active_courses": "الدورات النشطة",
+  "upcoming_sessions": "الجلسات القادمة",
+  "recent_courses": "أحدث الدورات",
+  "view_all": "عرض الكل",
+  "students_enrolled": "الطلاب المسجلين",
+  "schedule": "الجدول الزمني"
+}

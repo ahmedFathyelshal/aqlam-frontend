@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, throwError, tap } from 'rxjs';
+import { Observable, catchError, map, throwError, tap, switchMap } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
 import { unwrapApiResponse } from '../utils/api-error.utils';
@@ -21,14 +21,9 @@ export class AuthService {
   signIn(credentials: any): Observable<any> {
     return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Login, credentials).pipe(
       unwrapApiResponse(),
-      tap(data => {
-        // Since we use HttpOnly cookies, we don't save the token manually.
-        // We update the auth state.
-        this.isAuthenticated.set(true);
-        if (data) {
-          this.user.set(data);
-        }
-      })
+      // The login response doesn't contain roles/profile info, just the tokens.
+      // We must immediately fetch the profile to populate the user signal properly.
+      switchMap(() => this.getMe())
     );
   }
 

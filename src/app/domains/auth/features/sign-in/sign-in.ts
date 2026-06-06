@@ -68,8 +68,17 @@ export default class AuthSignIn {
       }).subscribe({
         next: () => {
           this.isSubmitting.set(false);
-          // Navigate to a route
-          this.router.navigateByUrl('/admin/academy');
+          
+          // Navigate dynamically based on user roles
+          const user = this.authService.user();
+          if (user?.roles?.includes('Teacher')) {
+            this.router.navigateByUrl('/teacher/dashboard');
+          } else if (user?.roles?.includes('Student')) {
+            this.router.navigateByUrl('/student/dashboard');
+          } else {
+            // Fallback
+            this.router.navigateByUrl('/admin/academy');
+          }
         },
         error: (error) => {
           this.isSubmitting.set(false);

@@ -80,8 +80,8 @@ export class LanguageSwitcher {
       case 'en': {
         return 'US';
       }
-      case 'es': {
-        return 'ES';
+      case 'ar': {
+        return 'EG';
       }
       default: {
         return 'US';

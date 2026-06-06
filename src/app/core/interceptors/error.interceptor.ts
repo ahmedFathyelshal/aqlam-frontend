@@ -43,13 +43,6 @@ export const errorInterceptor: HttpInterceptorFn = (
         return throwError(() => new ApiValidationError(errorMessages));
       }
 
-      // 2. Status 401 (Unauthorized - usually if Refresh failed) -> Toast & Redirect
-      if (error.status === 401) {
-        snackBar.open('Your session has expired. Please log in again.', 'Close', { duration: 5000, panelClass: 'error-toast' });
-        router.navigateByUrl('/auth/sign-in');
-        return throwError(() => error);
-      }
-
       // 3. Status 403 (Forbidden) -> Toast
       if (error.status === 403) {
         snackBar.open('You do not have permission to perform this action.', 'Close', { duration: 5000, panelClass: 'warning-toast' });
