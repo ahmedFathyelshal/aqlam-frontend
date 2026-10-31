@@ -25,7 +25,6 @@ export class CourseBuilderStateService {
   });
 
   initializeCourse(data: Partial<CourseDraft>): Observable<{ id: string }> {
-    console.log('data', data);
     return this.http.post<ApiResponse<{ id: string }>>(ApiEndpoints.TeacherCourses.Draft, data).pipe(
       map(response => response.data),
       tap(draftData => {

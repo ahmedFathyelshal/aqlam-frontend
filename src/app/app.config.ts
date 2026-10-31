@@ -2,7 +2,10 @@ import { TranslocoHttpLoader } from '@/app/core/transloco/transloco-http-loader'
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
+  inject,
   isDevMode,
+  PLATFORM_ID,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideNativeDateAdapter } from '@angular/material/core';
@@ -22,32 +25,26 @@ import { provideTransloco } from '@jsverse/transloco';
 import { authInterceptor } from '@/app/core/auth/auth.interceptor';
 import { errorInterceptor } from '@/app/core/interceptors/error.interceptor';
 import { routes } from './app.routes';
-import { APP_INITIALIZER, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@/app/core/auth/auth.service';
-import { catchError, of, take } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 
-function initializeAuth() {
+/** Restores the session from HttpOnly cookies before the first navigation (browser only). */
+function initializeAuth(): Promise<unknown> {
   const authService = inject(AuthService);
   const platformId = inject(PLATFORM_ID);
-  return () => {
-    if (isPlatformBrowser(platformId)) {
-      return authService.getMe().pipe(
-        take(1),
-        catchError(() => of(null)) // Ignore error if no valid cookie exists yet
-      );
-    }
-    return of(null);
-  };
+
+  if (!isPlatformBrowser(platformId)) {
+    return Promise.resolve();
+  }
+
+  // Ignore errors: a visitor without a valid cookie is simply anonymous.
+  return firstValueFrom(authService.getMe().pipe(catchError(() => of(null))));
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeAuth,
-      multi: true,
-    },
+    provideAppInitializer(initializeAuth),
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     provideClientHydration(withIncrementalHydration()),

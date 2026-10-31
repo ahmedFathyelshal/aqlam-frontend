@@ -1,74 +1,50 @@
 import { HttpErrorResponse, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ApiValidationError } from '../utils/api-error.utils';
-import { ApiResponse } from '../models/api-response.model';
 
+/**
+ * Hybrid error handling:
+ * - 400/422 → ApiValidationError thrown to the component (inline field errors, no toast).
+ * - 401     → passed through untouched; auth.interceptor owns silent refresh and the "session expired" message.
+ * - 404/409 → passed through; the caller decides (e.g. "course not found" page).
+ * - 403, 429, 5xx, network → global toast.
+ */
 export const errorInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn
 ) => {
   const snackBar = inject(MatSnackBar);
-  const router = inject(Router);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 0. Status 401 (Unauthorized) -> Non-blocking global toast
-      //    (auth.interceptor already attempted silent refresh; a 401 reaching here means session truly expired)
-      if (error.status === 401) {
-        const isLoginEndpoint = req.url.includes('/api/Auth/login');
-        const isRefreshEndpoint = req.url.includes('/api/Auth/refresh');
-        if (!isLoginEndpoint && !isRefreshEndpoint && !req.url.includes('/me')) {
-          setTimeout(() => {
-            snackBar.open('Your session has expired. Please sign in again.', 'Close', { duration: 5000, panelClass: 'warning-toast' });
-          });
-        }
-        return throwError(() => error);
-      }
-
-      // 1. Status 400/422 (Validation Errors) -> Throw to Component
       if (error.status === 400 || error.status === 422) {
-        let errorMessages: string[] = ['A validation error occurred.'];
-
-        if (error.error) {
-          const apiResponse = error.error as ApiResponse;
-          if (apiResponse.errors && Array.isArray(apiResponse.errors)) {
-            errorMessages = apiResponse.errors;
-          } else if (typeof error.error === 'string') {
-            errorMessages = [error.error];
-          }
-        }
-
-        // Pass strictly typed error to the component to bind to the UI
-        return throwError(() => new ApiValidationError(errorMessages));
+        return throwError(() => ApiValidationError.fromResponseBody(error.error));
       }
 
-      // 1b. Status 500 with ProblemDetails for ValidationException
-      if (error.status === 500 && error.error && typeof error.error.detail === 'string' && error.error.detail.startsWith('Validation failed:')) {
-        const detailParts = error.error.detail.split('--').slice(1).map((part: string) => part.trim());
-        const errorMessages = detailParts.length > 0 ? detailParts : [error.error.detail];
-
-        return throwError(() => new ApiValidationError(errorMessages));
-      }
-
-      // 2. Status 403 (Forbidden) -> Toast
-      if (error.status === 403) {
-        snackBar.open('You do not have permission to perform this action.', 'Close', { duration: 5000, panelClass: 'warning-toast' });
+      // Refresh failures (including 403 replay detection) are handled by auth.interceptor.
+      if (error.status === 401 || error.status === 404 || error.status === 409 || isRefreshRequest(req)) {
         return throwError(() => error);
       }
 
-      // 3. Status 500+ / Network Errors -> Global Toast
-      let genericMessage = 'An unexpected server error occurred. Please try again.';
-      if (error.status === 0) {
-        genericMessage = 'Cannot connect to the server. Please check your internet connection.';
+      let message = 'An unexpected server error occurred. Please try again.';
+      if (error.status === 403) {
+        message = 'You do not have permission to perform this action.';
+      } else if (error.status === 429) {
+        message = 'Too many attempts. Please wait a minute and try again.';
+      } else if (error.status === 0) {
+        message = 'Cannot connect to the server. Please check your internet connection.';
       }
 
-      if (!req.url.includes('/me')) {
+      // The session probe on app start fails silently when the user is not signed in.
+      if (!req.url.endsWith('/Auth/me')) {
         setTimeout(() => {
-          snackBar.open(genericMessage, 'Close', { duration: 5000, panelClass: 'error-toast' });
+          snackBar.open(message, 'Close', {
+            duration: 5000,
+            panelClass: error.status === 403 ? 'warning-toast' : 'error-toast',
+          });
         });
       }
 
@@ -76,3 +52,5 @@ export const errorInterceptor: HttpInterceptorFn = (
     })
   );
 };
+
+const isRefreshRequest = (req: HttpRequest<unknown>) => req.url.endsWith('/Auth/refresh');

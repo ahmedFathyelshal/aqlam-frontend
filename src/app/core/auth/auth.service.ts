@@ -1,9 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, throwError, tap, switchMap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
 import { unwrapApiResponse } from '../utils/api-error.utils';
+
+/** Profile returned by login, refresh and /me. Tokens never reach JavaScript (HttpOnly cookies). */
+export interface AuthUser {
+  id: string;
+  userName: string;
+  name: string;
+  email?: string | null;
+  roles: string[];
+}
+
+export interface SignInRequest {
+  userName: string;
+  password: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -13,17 +27,15 @@ export class AuthService {
 
   // State
   public isAuthenticated = signal<boolean>(false);
-  public user = signal<any>(null);
+  public user = signal<AuthUser | null>(null);
 
   /**
-   * Sign in using username and password
+   * Sign in using username and password. The response carries the profile directly.
    */
-  signIn(credentials: any): Observable<any> {
-    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Login, credentials).pipe(
+  signIn(credentials: SignInRequest): Observable<AuthUser> {
+    return this.http.post<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Login, credentials).pipe(
       unwrapApiResponse(),
-      // The login response doesn't contain roles/profile info, just the tokens.
-      // We must immediately fetch the profile to populate the user signal properly.
-      switchMap(() => this.getMe())
+      tap(user => this.setUser(user))
     );
   }
 
@@ -37,32 +49,23 @@ export class AuthService {
   }
 
   /**
-   * Silently refresh the session using the HttpOnly refresh token cookie
+   * Silently refresh the session using the HttpOnly refresh token cookie.
+   * The device id is a server-managed cookie, so nothing is sent in the body.
    */
-  refreshSession(deviceId: string | null = null): Observable<any> {
-    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Refresh, { deviceId }).pipe(
+  refreshSession(): Observable<AuthUser> {
+    return this.http.post<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Refresh, {}).pipe(
       unwrapApiResponse(),
-      tap(data => {
-        this.isAuthenticated.set(true);
-        if (data) {
-          this.user.set(data);
-        }
-      })
+      tap(user => this.setUser(user))
     );
   }
 
   /**
    * Fetch the current user's profile on page load
    */
-  getMe(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(ApiEndpoints.Auth.Me).pipe(
+  getMe(): Observable<AuthUser> {
+    return this.http.get<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Me).pipe(
       unwrapApiResponse(),
-      tap(data => {
-        this.isAuthenticated.set(true);
-        if (data) {
-          this.user.set(data);
-        }
-      })
+      tap(user => this.setUser(user))
     );
   }
 
@@ -75,19 +78,20 @@ export class AuthService {
   }
 
   /**
-   * Sign out
+   * Sign out. Local state is cleared whether or not the server call succeeds.
    */
-  signOut(deviceId: string | null = null): Observable<any> {
-    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Logout, { deviceId }).pipe(
-      tap(() => {
-        this.isAuthenticated.set(false);
-        this.user.set(null);
-      }),
-      catchError(error => {
-        this.isAuthenticated.set(false);
-        this.user.set(null);
-        return throwError(() => error);
-      })
+  signOut(): Observable<void> {
+    return this.http.post<ApiResponse<boolean>>(ApiEndpoints.Auth.Logout, {}).pipe(
+      map(() => void 0),
+      catchError(() => of(void 0)),
+      finalize(() => this.signOutLocal())
     );
+  }
+
+  private setUser(user: AuthUser | null | undefined): void {
+    if (user) {
+      this.user.set(user);
+      this.isAuthenticated.set(true);
+    }
   }
 }
