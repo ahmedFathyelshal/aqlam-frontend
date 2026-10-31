@@ -1,0 +1,102 @@
+<div class="step-container">
+      
+      <!-- Content Header -->
+      <div class="step-header">
+        <div class="header-icon-box">
+          <mat-icon class="icon-size-6" svgIcon="book-open"></mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>Course basics</h2>
+          <p>Give your course a clear name and tell students what they'll learn.</p>
+        </div>
+      </div>
+
+      <!-- Form Content -->
+      <form class="step-form" (submit)="onNext($event)">
+        
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Course title <span class="required">*</span></label>
+            <input type="text"
+                   class="custom-input"
+                   [class.invalid]="identityForm.title().touched() && identityForm.title().invalid()"
+                   [formField]="identityForm.title"
+                   placeholder="e.g. Introduction to Physics">
+            <div class="error-text" *ngIf="identityForm.title().touched() && identityForm.title().errors().length > 0">
+              {{ identityForm.title().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label>Educational Stage <span class="required">*</span></label>
+            <ng-select class="custom-ng-select"
+                       [items]="stages()"
+                       bindLabel="nameEn"
+                       bindValue="id"
+                       [searchable]="true"
+                       [clearable]="false"
+                       [class.invalid]="identityForm.stageId().touched() && identityForm.stageId().invalid()"
+                       [formField]="identityForm.stageId"
+                       placeholder="Select stage...">
+            </ng-select>
+            <div class="error-text" *ngIf="identityForm.stageId().touched() && identityForm.stageId().errors().length > 0">
+              {{ identityForm.stageId().errors()[0].message }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Grade Level <span class="required">*</span></label>
+            <ng-select class="custom-ng-select"
+                       [items]="grades()"
+                       bindLabel="nameEn"
+                       bindValue="id"
+                       [searchable]="true"
+                       [clearable]="false"
+                       [class.invalid]="identityForm.gradeId().touched() && identityForm.gradeId().invalid()"
+                       [formField]="identityForm.gradeId"
+                       placeholder="Select grade...">
+            </ng-select>
+            <div class="error-text" *ngIf="identityForm.gradeId().touched() && identityForm.gradeId().errors().length > 0">
+              {{ identityForm.gradeId().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Subject <span class="required">*</span></label>
+            <ng-select class="custom-ng-select"
+                       [items]="subjects()"
+                       bindLabel="nameEn"
+                       bindValue="id"
+                       [searchable]="true"
+                       [clearable]="false"
+                       [class.invalid]="identityForm.subjectId().touched() && identityForm.subjectId().invalid()"
+                       [formField]="identityForm.subjectId"
+                       placeholder="Select subject...">
+            </ng-select>
+            <div class="error-text" *ngIf="identityForm.subjectId().touched() && identityForm.subjectId().errors().length > 0">
+              {{ identityForm.subjectId().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider and Footer -->
+        <div class="step-footer-divider"></div>
+        
+        <div class="step-footer">
+          <button type="button" class="btn-back" (click)="goBack()">
+            <mat-icon class="icon-size-5" svgIcon="arrow-left"></mat-icon> Back
+          </button>
+          
+          <button type="submit" class="btn-continue" [disabled]="isSubmitting()">
+            <span *ngIf="!isSubmitting()">Continue</span>
+            <mat-icon class="icon-size-5" *ngIf="!isSubmitting()" svgIcon="arrow-right"></mat-icon>
+            <mat-spinner *ngIf="isSubmitting()" diameter="20" color="accent"></mat-spinner>
+          </button>
+        </div>
+
+      </form>
+    </div>

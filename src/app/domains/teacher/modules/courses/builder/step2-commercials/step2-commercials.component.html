@@ -1,0 +1,115 @@
+<div class="step-container">
+      
+      <!-- Content Header -->
+      <div class="step-header">
+        <div class="header-icon-box">
+          <mat-icon class="icon-size-6" svgIcon="dollar-sign"></mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>Pricing & access</h2>
+          <p>Set how students will pay and how long they can access the content.</p>
+        </div>
+      </div>
+
+      <!-- Form Content -->
+      <form class="step-form" (submit)="onNext($event)">
+        
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Pricing Type <span class="required">*</span></label>
+            <div class="radio-group" [class.invalid]="commercialsForm.pricingType().touched() && commercialsForm.pricingType().invalid()">
+              <label class="radio-option" [class.selected]="commercialsForm.pricingType().value() === 'Free'">
+                <input type="radio" value="Free"
+                       [formField]="commercialsForm.pricingType">
+                <div class="radio-content">
+                    <mat-icon class="icon-size-5" svgIcon="gift"></mat-icon>
+                  <span>Free</span>
+                </div>
+              </label>
+              <label class="radio-option" [class.selected]="commercialsForm.pricingType().value() === 'Paid'">
+                <input type="radio" value="Paid"
+                       [formField]="commercialsForm.pricingType">
+                <div class="radio-content">
+                    <mat-icon class="icon-size-5" svgIcon="tag"></mat-icon>
+                  <span>Paid</span>
+                </div>
+              </label>
+            </div>
+            <div class="error-text" *ngIf="commercialsForm.pricingType().touched() && commercialsForm.pricingType().errors().length > 0">
+              {{ commercialsForm.pricingType().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="commercialsForm.pricingType().value() === 'Paid'">
+          <div class="form-group two-cols">
+            <label>Price (EGP) <span class="required">*</span></label>
+            <input type="number"
+                   class="custom-input"
+                   [class.invalid]="commercialsForm.price().touched() && commercialsForm.price().invalid()"
+                   [formField]="commercialsForm.price"
+                   placeholder="e.g. 500">
+            <div class="error-text" *ngIf="commercialsForm.price().touched() && commercialsForm.price().errors().length > 0">
+              {{ commercialsForm.price().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="commercialsForm.pricingType().value() === 'Paid'">
+          <label class="checkbox-label">
+            <input type="checkbox"
+                   [formField]="commercialsForm.codeActivationOnly">
+            <span class="checkbox-text">
+              <strong>Code Activation Only</strong>
+              <small>If enabled, online payment processing is disabled. Students must buy a center card.</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Access Expiry Policy <span class="required">*</span></label>
+            <select class="custom-input custom-select"
+                    [class.invalid]="commercialsForm.accessExpiryPolicy().touched() && commercialsForm.accessExpiryPolicy().invalid()"
+                    [formField]="commercialsForm.accessExpiryPolicy">
+              <option value="" disabled>Select policy...</option>
+              <option value="Unlimited">Unlimited Access</option>
+              <option value="Limited">Limited Days</option>
+            </select>
+            <div class="error-text" *ngIf="commercialsForm.accessExpiryPolicy().touched() && commercialsForm.accessExpiryPolicy().errors().length > 0">
+              {{ commercialsForm.accessExpiryPolicy().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="commercialsForm.accessExpiryPolicy().value() === 'Limited'">
+          <div class="form-group two-cols">
+            <label>Access Duration (Days) <span class="required">*</span></label>
+            <input type="number"
+                   class="custom-input"
+                   [class.invalid]="commercialsForm.accessDurationDays().touched() && commercialsForm.accessDurationDays().invalid()"
+                   [formField]="commercialsForm.accessDurationDays"
+                   placeholder="e.g. 90">
+            <div class="error-text" *ngIf="commercialsForm.accessDurationDays().touched() && commercialsForm.accessDurationDays().errors().length > 0">
+              {{ commercialsForm.accessDurationDays().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider and Footer -->
+        <div class="step-footer-divider"></div>
+        
+        <div class="step-footer">
+          <button type="button" class="btn-back" (click)="goBack()">
+            <mat-icon class="icon-size-5" svgIcon="arrow-left"></mat-icon> Back
+          </button>
+          
+          <button type="submit" class="btn-continue" [disabled]="isSubmitting()">
+            <span *ngIf="!isSubmitting()">Continue</span>
+            <mat-icon class="icon-size-5" *ngIf="!isSubmitting()" svgIcon="arrow-right"></mat-icon>
+            <mat-spinner *ngIf="isSubmitting()" diameter="20" color="accent"></mat-spinner>
+          </button>
+        </div>
+
+      </form>
+    </div>
