@@ -29,5 +29,9 @@ export const ApiEndpoints = {
     UpdateCommercials: (org: string, id: string) => orgUrl(org, `/courses/${id}/commercials`),
     UpdateMedia: (org: string, id: string) => orgUrl(org, `/courses/${id}/media`),
     UpdateCurriculum: (org: string, id: string) => orgUrl(org, `/courses/${id}/curriculum`),
+    List: (org: string) => orgUrl(org, '/courses'),
+    PublishChecklist: (org: string, id: string) => orgUrl(org, `/courses/${id}/publish-checklist`),
+    Status: (org: string, id: string) => orgUrl(org, `/courses/${id}/status`),
+    Visibility: (org: string, id: string) => orgUrl(org, `/courses/${id}/visibility`),
   }
 };

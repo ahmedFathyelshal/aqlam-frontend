@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -16,7 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { tap } from 'rxjs/operators';
 
 import { CourseBuilderStateService } from '../builder/course-builder-state.service';
-import { ApiEndpoints } from '@/app/core/constants/api-endpoints';
+import { ApiValidationError } from '@/app/core/utils/api-error.utils';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import {
   CourseChapter,
@@ -55,7 +55,6 @@ type DrawerTarget =
 export default class CurriculumWorkspaceComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private http = inject(HttpClient);
   protected orgContext = inject(OrgContextService);
   private builderState = inject(CourseBuilderStateService);
   private snackBar = inject(MatSnackBar);
@@ -125,7 +124,20 @@ export default class CurriculumWorkspaceComponent {
       .pipe(tap(() => this.isLoading.set(false)))
       .subscribe({
         next: (draft) => {
-          const normalized: CourseDraft = {
+          const normalized = this.normalize(draft);
+          this.course.set(normalized);
+          this.builderState.state.update((s) => ({ ...s, ...normalized }));
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.snackBar.open('Failed to load course curriculum.', 'Close', { duration: 5000 });
+        },
+      });
+  }
+
+  /** Fills defaults so the editor can bind every field. */
+  private normalize(draft: CourseDraft): CourseDraft {
+    return {
             ...draft,
             chapters: (draft.chapters ?? []).map((ch: any, ci: number) => ({
               id: ch.id,
@@ -153,39 +165,36 @@ export default class CurriculumWorkspaceComponent {
                 })),
               })),
             })),
-          };
-          this.course.set(normalized);
-          this.builderState.state.update((s) => ({ ...s, ...normalized }));
-        },
-        error: () => {
-          this.isLoading.set(false);
-          this.snackBar.open('Failed to load course curriculum.', 'Close', { duration: 5000 });
-        },
-      });
+    };
   }
 
+  /**
+   * Saves the whole tree; the server keeps ids, creates new items and soft-deletes removed ones.
+   * The response (with ids for new items and the new version) replaces the local copy.
+   */
   saveCurriculum() {
     const id = this.courseId();
     if (!id) return;
     this.isSaving.set(true);
 
-    const chapters = this.chapters().map((c, ci) => ({
-      ...c,
-      order: ci,
-      lessons: c.lessons.map((l, li) => ({ ...l, order: li })),
-    }));
+    const chapters = this.chapters().map((c) => ({ id: c.id, title: c.title, lessons: c.lessons }));
 
-    const payload = { id, chapters, syllabusRequirements: this.course().syllabusRequirements };
-
-    this.http
-      .put(ApiEndpoints.TeacherCourses.UpdateCurriculum(this.orgContext.requireActiveSlug(), id), payload)
-      .pipe(tap(() => this.isSaving.set(false)))
+    this.builderState
+      .syncCurriculum(id, chapters, this.course().syllabusRequirements)
+      .pipe(tap({ next: () => this.isSaving.set(false), error: () => this.isSaving.set(false) }))
       .subscribe({
-        next: () => {
+        next: (draft) => {
+          this.course.set(this.normalize(draft));
           this.snackBar.open('Curriculum saved.', 'Close', { duration: 3000 });
         },
-        error: () => {
-          this.snackBar.open('Failed to save curriculum.', 'Close', { duration: 5000 });
+        error: (err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            this.snackBar.open('Someone else changed this course. Reloading the latest version.', 'Close', { duration: 6000 });
+            this.loadCourse(id);
+            return;
+          }
+          const message = err instanceof ApiValidationError && err.errors.length ? err.errors.join(' • ') : 'Failed to save curriculum.';
+          this.snackBar.open(message, 'Close', { duration: 6000 });
         },
       });
   }

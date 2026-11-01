@@ -6,6 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, required, submit, validate } from '@angular/forms/signals';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap } from 'rxjs';
+import { ApiValidationError } from '@/app/core/utils/api-error.utils';
+import { CourseStatus } from '../course-builder.models';
 
 @Component({
   selector: 'app-step4-curriculum',
@@ -26,7 +30,7 @@ export default class Step4CurriculumComponent {
   isSaving = signal(false);
   isPublishing = signal(false);
   
-  chapters = signal<{title: string}[]>([{ title: 'Introduction' }]);
+  chapters = signal<{ id?: string; title: string }[]>([{ title: 'Introduction' }]);
   syllabusReqs = signal('');
   chapterError = signal<string | null>(null);
 
@@ -44,7 +48,7 @@ export default class Step4CurriculumComponent {
         this.hasMedia.set(!!state.subtitle && !!state.thumbnailUrl);
 
         if (state.chapters && state.chapters.length > 0) {
-          this.chapters.set(state.chapters);
+          this.chapters.set(state.chapters.map(c => ({ id: c.id, title: c.title })));
         }
         if (state.syllabusRequirements) {
           this.syllabusReqs.set(state.syllabusRequirements);
@@ -62,11 +66,7 @@ export default class Step4CurriculumComponent {
   }
 
   updateChapterTitle(index: number, title: string) {
-    this.chapters.update(c => {
-      const newC = [...c];
-      newC[index].title = title;
-      return newC;
-    });
+    this.chapters.update(c => c.map((chapter, i) => (i === index ? { ...chapter, title } : chapter)));
   }
 
   canPublish(): boolean {
@@ -86,20 +86,26 @@ export default class Step4CurriculumComponent {
     return true;
   }
 
+  /** Chapter titles only: lessons are managed in the curriculum workspace and stay untouched. */
+  private saveChapters() {
+    const draftId = this.builderState.state().id!;
+    const chapters = this.chapters().map(c => ({ id: c.id, title: c.title.trim() }));
+    return this.builderState.syncCurriculum(draftId, chapters, this.syllabusReqs());
+  }
+
   onSaveDraft() {
     if (!this.validateChapters()) return;
 
     this.isSaving.set(true);
     const draftId = this.builderState.state().id!;
-    this.builderState.updateChapters(draftId, this.chapters(), this.syllabusReqs()).subscribe({
+    this.saveChapters().subscribe({
       next: () => {
         this.isSaving.set(false);
         this.router.navigate(this.orgContext.path('courses', draftId, 'curriculum'));
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.chapterError.set('Failed to save curriculum. Please try again.');
-        console.error(err);
+        this.chapterError.set(this.describeError(err, 'Failed to save curriculum. Please try again.'));
       }
     });
   }
@@ -110,12 +116,32 @@ export default class Step4CurriculumComponent {
     this.isPublishing.set(true);
     const draftId = this.builderState.state().id!;
 
-    this.builderState.updateChapters(draftId, this.chapters(), this.syllabusReqs()).subscribe(() => {
-      this.builderState.publishCourse(draftId).subscribe(() => {
-        this.isPublishing.set(false);
-        this.router.navigate(this.orgContext.path('courses', draftId, 'curriculum'));
+    this.saveChapters()
+      .pipe(switchMap(() => this.builderState.changeStatus(draftId, CourseStatus.Published)))
+      .subscribe({
+        next: () => {
+          this.isPublishing.set(false);
+          this.router.navigate(this.orgContext.path('courses', draftId, 'curriculum'));
+        },
+        error: (err) => {
+          this.isPublishing.set(false);
+          // 400 carries the publish checklist: show what is still missing.
+          this.chapterError.set(this.describeError(err, 'Publishing failed. Please try again.'));
+        }
       });
-    });
+  }
+
+  private describeError(err: unknown, fallback: string): string {
+    if (err instanceof ApiValidationError && err.errors.length) {
+      return err.errors.join(' • ');
+    }
+    if (err instanceof HttpErrorResponse && err.status === 409) {
+      return 'Someone else changed this course. Reload the page to see the latest version.';
+    }
+    if (err instanceof HttpErrorResponse && err.status === 403) {
+      return 'Only an administrator of this organization can publish courses.';
+    }
+    return fallback;
   }
 
   goBack() {

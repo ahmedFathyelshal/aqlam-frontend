@@ -73,21 +73,21 @@
         </div>
         
         <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden">
-          @for (course of recentCourses; track course.id) {
-            <div matRipple class="p-6 border-b border-neutral-100 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer flex items-center justify-between group">
+          @for (course of courses(); track course.id) {
+            <div matRipple class="p-6 border-b border-neutral-100 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer flex items-center justify-between group" [routerLink]="orgContext.path('courses', course.id, 'curriculum')">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400">
                   <mat-icon svgIcon="book-open"></mat-icon>
                 </div>
                 <div>
-                  <h3 class="font-semibold text-neutral-900 dark:text-white group-hover:text-primary-600 transition-colors">{{ course.name }}</h3>
-                  <p class="text-sm text-neutral-500">{{ course.students }} {{ t('students_enrolled') }}</p>
+                  <h3 class="font-semibold text-neutral-900 dark:text-white group-hover:text-primary-600 transition-colors">{{ course.title }}</h3>
+                  <p class="text-sm text-neutral-500">{{ course.chapterCount }} chapters · {{ course.lessonCount }} lessons</p>
                 </div>
               </div>
               <div class="flex items-center gap-4">
                 <span class="px-3 py-1 text-xs font-medium rounded-full" 
-                      [class.bg-emerald-100]="course.status === 'Active'"
-                      [class.text-emerald-700]="course.status === 'Active'"
+                      [class.bg-emerald-100]="course.status === 'Published'"
+                      [class.text-emerald-700]="course.status === 'Published'"
                       [class.bg-neutral-100]="course.status === 'Draft'"
                       [class.text-neutral-700]="course.status === 'Draft'">
                   {{ course.status }}
@@ -95,6 +95,8 @@
                 <mat-icon class="text-neutral-400 rtl:rotate-180" svgIcon="chevron-right"></mat-icon>
               </div>
             </div>
+          } @empty {
+            <div class="p-6 text-sm text-neutral-500">No courses yet. Create your first course to get started.</div>
           }
         </div>
       </div>
