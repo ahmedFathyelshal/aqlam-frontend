@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
+import { OrgContextService } from '../organizations/org-context.service';
 import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
 import { unwrapApiResponse } from '../utils/api-error.utils';
@@ -24,6 +25,7 @@ export interface SignInRequest {
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private orgContext = inject(OrgContextService);
 
   // State
   public isAuthenticated = signal<boolean>(false);
@@ -35,7 +37,8 @@ export class AuthService {
   signIn(credentials: SignInRequest): Observable<AuthUser> {
     return this.http.post<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Login, credentials).pipe(
       unwrapApiResponse(),
-      tap(user => this.setUser(user))
+      tap(user => this.setUser(user)),
+      switchMap(user => this.loadOrganizations(user))
     );
   }
 
@@ -65,7 +68,8 @@ export class AuthService {
   getMe(): Observable<AuthUser> {
     return this.http.get<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Me).pipe(
       unwrapApiResponse(),
-      tap(user => this.setUser(user))
+      tap(user => this.setUser(user)),
+      switchMap(user => this.loadOrganizations(user))
     );
   }
 
@@ -75,6 +79,7 @@ export class AuthService {
   signOutLocal(): void {
     this.isAuthenticated.set(false);
     this.user.set(null);
+    this.orgContext.clear();
   }
 
   /**
@@ -85,6 +90,14 @@ export class AuthService {
       map(() => void 0),
       catchError(() => of(void 0)),
       finalize(() => this.signOutLocal())
+    );
+  }
+
+  /** Loads the user's organizations; a failure here must not block sign-in. */
+  private loadOrganizations(user: AuthUser): Observable<AuthUser> {
+    return this.orgContext.load().pipe(
+      map(() => user),
+      catchError(() => of(user))
     );
   }
 
