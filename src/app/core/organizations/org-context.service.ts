@@ -8,6 +8,7 @@ export type OrganizationType = 'Personal' | 'Center' | 'School';
 
 export interface MembershipSummary {
   organizationId: string;
+  countryCode: string;
   slug: string;
   name: string;
   type: OrganizationType;
@@ -52,6 +53,14 @@ export class OrgContextService {
   clear(): void {
     this.memberships.set([]);
     this.selectedSlug.set(null);
+  }
+
+  /**
+   * Router commands for a page of the teacher area inside the active organization,
+   * e.g. path('courses', id, 'edit') → ['/teacher', 'my-academy', 'courses', id, 'edit'].
+   */
+  path(...segments: (string | number)[]): (string | number)[] {
+    return ['/teacher', this.requireActiveSlug(), ...segments];
   }
 
   /** Slug of the active organization; throws if the user has no staff organization. */

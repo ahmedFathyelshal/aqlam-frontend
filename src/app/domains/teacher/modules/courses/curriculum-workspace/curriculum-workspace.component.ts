@@ -56,7 +56,7 @@ export default class CurriculumWorkspaceComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private http = inject(HttpClient);
-  private orgContext = inject(OrgContextService);
+  protected orgContext = inject(OrgContextService);
   private builderState = inject(CourseBuilderStateService);
   private snackBar = inject(MatSnackBar);
 
@@ -108,7 +108,7 @@ export default class CurriculumWorkspaceComponent {
       () => {
         const id = this.route.snapshot.paramMap.get('id');
         if (!id) {
-          this.router.navigateByUrl('/teacher/dashboard');
+          this.router.navigate(this.orgContext.path('dashboard'));
           return;
         }
         this.courseId.set(id);

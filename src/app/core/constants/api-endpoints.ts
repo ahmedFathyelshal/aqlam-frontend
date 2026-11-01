@@ -17,7 +17,8 @@ export const ApiEndpoints = {
     Memberships: buildUrl('/me/memberships'),
   },
   Lookups: {
-    EducationStages: buildUrl('/lookups/education-stages'),
+    Curricula: (countryCode?: string) => countryCode ? buildUrl(`/lookups/curricula?countryCode=${countryCode}`) : buildUrl('/lookups/curricula'),
+    EducationStages: (curriculumId?: number) => curriculumId ? buildUrl(`/lookups/education-stages?curriculumId=${curriculumId}`) : buildUrl('/lookups/education-stages'),
     EducationGrades: (stageId?: number) => stageId ? buildUrl(`/lookups/education-grades?stageId=${stageId}`) : buildUrl('/lookups/education-grades'),
     Subjects: buildUrl('/lookups/subjects'),
   },
@@ -28,6 +29,5 @@ export const ApiEndpoints = {
     UpdateCommercials: (org: string, id: string) => orgUrl(org, `/courses/${id}/commercials`),
     UpdateMedia: (org: string, id: string) => orgUrl(org, `/courses/${id}/media`),
     UpdateCurriculum: (org: string, id: string) => orgUrl(org, `/courses/${id}/curriculum`),
-    CurriculumWorkspace: (id: string) => `/teacher/courses/${id}/curriculum`,
   }
 };

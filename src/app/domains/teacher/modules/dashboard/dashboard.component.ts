@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 import { AuthService } from '@/app/core/auth/auth.service';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 import { RouterLink } from '@angular/router';
 
@@ -15,6 +16,7 @@ import { RouterLink } from '@angular/router';
 })
 export default class TeacherDashboardComponent {
   public authService = inject(AuthService);
+  protected orgContext = inject(OrgContextService);
   // Mock Data for the static dashboard
   recentCourses = [
     { id: 1, name: 'Advanced Mathematics', students: 45, status: 'Active', progress: 85 },

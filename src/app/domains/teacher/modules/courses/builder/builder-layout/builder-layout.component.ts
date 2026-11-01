@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CommonModule } from '@angular/common';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 @Component({
   selector: 'app-builder-layout',
@@ -26,6 +27,7 @@ export default class BuilderLayoutComponent implements OnInit {
   private builderState = inject(CourseBuilderStateService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  protected orgContext = inject(OrgContextService);
 
   state = this.builderState.state;
   isLoading = computed(() => this.route.snapshot.paramMap.has('id') ? !this.state().id : false);
@@ -40,7 +42,7 @@ export default class BuilderLayoutComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'new') {
       this.builderState.getCourseDraft(id).subscribe({
-        error: () => this.router.navigate(['/teacher/dashboard'])
+        error: () => this.router.navigate(this.orgContext.path('dashboard'))
       });
     } else {
       // New course

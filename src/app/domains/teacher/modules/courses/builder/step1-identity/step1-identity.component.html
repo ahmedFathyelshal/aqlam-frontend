@@ -28,6 +28,26 @@
           </div>
         </div>
 
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label>Curriculum <span class="required">*</span></label>
+            <ng-select class="custom-ng-select"
+                       [items]="curricula()"
+                       bindLabel="nameEn"
+                       bindValue="id"
+                       groupBy="kind"
+                       [searchable]="true"
+                       [clearable]="false"
+                       [class.invalid]="identityForm.curriculumId().touched() && identityForm.curriculumId().invalid()"
+                       [formField]="identityForm.curriculumId"
+                       placeholder="Select curriculum...">
+            </ng-select>
+            <div class="error-text" *ngIf="identityForm.curriculumId().touched() && identityForm.curriculumId().errors().length > 0">
+              {{ identityForm.curriculumId().errors()[0].message }}
+            </div>
+          </div>
+        </div>
+
         <div class="form-row two-cols">
           <div class="form-group">
             <label>Educational Stage <span class="required">*</span></label>

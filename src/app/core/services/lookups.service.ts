@@ -10,14 +10,25 @@ export interface LookupDto {
   nameAr: string;
 }
 
+export interface CurriculumDto extends LookupDto {
+  code: string;
+  countryCode: string | null;
+  kind: 'National' | 'International' | 'TestPrep';
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class LookupsService {
   private http = inject(HttpClient);
 
-  getEducationStages(): Observable<LookupDto[]> {
-    return this.http.get<ApiResponse<LookupDto[]>>(ApiEndpoints.Lookups.EducationStages).pipe(map(r => r.data));
+  /** National curricula of the country first, then international ones. */
+  getCurricula(countryCode?: string): Observable<CurriculumDto[]> {
+    return this.http.get<ApiResponse<CurriculumDto[]>>(ApiEndpoints.Lookups.Curricula(countryCode)).pipe(map(r => r.data));
+  }
+
+  getEducationStages(curriculumId?: number): Observable<LookupDto[]> {
+    return this.http.get<ApiResponse<LookupDto[]>>(ApiEndpoints.Lookups.EducationStages(curriculumId)).pipe(map(r => r.data));
   }
 
   getEducationGrades(stageId?: number): Observable<LookupDto[]> {

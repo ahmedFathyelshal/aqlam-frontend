@@ -8,7 +8,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, FormField, required, submit } from '@angular/forms/signals';
 import { NgSelectModule } from '@ng-select/ng-select';
 
-import { LookupsService, LookupDto } from '../../../../../../core/services/lookups.service';
+import { LookupsService, LookupDto, CurriculumDto } from '../../../../../../core/services/lookups.service';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 @Component({
   selector: 'app-step1-identity',
@@ -28,9 +29,11 @@ export default class Step1IdentityComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
   private lookupsService = inject(LookupsService);
+  protected orgContext = inject(OrgContextService);
 
   isSubmitting = signal(false);
 
+  curricula = signal<CurriculumDto[]>([]);
   stages = signal<LookupDto[]>([]);
   grades = signal<LookupDto[]>([]);
   subjects = signal<LookupDto[]>([]);
@@ -38,6 +41,7 @@ export default class Step1IdentityComponent {
   // Form State Model
   formModel = signal({
     title: '',
+    curriculumId: null as number | null,
     stageId: null as number | null,
     gradeId: null as number | null,
     subjectId: null as number | null,
@@ -46,6 +50,7 @@ export default class Step1IdentityComponent {
   // Signal-based form definitions
   identityForm = form(this.formModel, (f) => {
     required(f.title, { message: 'Title is required' });
+    required(f.curriculumId, { message: 'Curriculum is required' });
     required(f.stageId, { message: 'Educational stage is required' });
     required(f.gradeId, { message: 'Grade level is required' });
     required(f.subjectId, { message: 'Subject is required' });
@@ -53,15 +58,42 @@ export default class Step1IdentityComponent {
 
   // Expose fields directly to template
   titleField = this.identityForm.title;
+  curriculumField = this.identityForm.curriculumId;
   stageField = this.identityForm.stageId;
   gradeField = this.identityForm.gradeId;
   subjectField = this.identityForm.subjectId;
 
   constructor() {
-    // Fetch initial lookups safely
-    this.lookupsService.getEducationStages().subscribe({
-      next: data => this.stages.set(data || []),
-      error: () => this.stages.set([])
+    // Curricula offered in the organization's country (national first, then international)
+    this.lookupsService.getCurricula(this.orgContext.activeOrg()?.countryCode).subscribe({
+      next: data => this.curricula.set(data || []),
+      error: () => this.curricula.set([])
+    });
+
+    // Cascading Stages based on Curriculum selection
+    const curriculumIdSignal = computed(() => this.formModel().curriculumId);
+
+    effect(() => {
+      const curriculumId = curriculumIdSignal();
+      untracked(() => {
+        if (!curriculumId) {
+          this.stages.set([]);
+          return;
+        }
+        this.lookupsService.getEducationStages(curriculumId).subscribe({
+          next: data => {
+            const newStages = data || [];
+            this.stages.set(newStages);
+
+            // If the selected stage belongs to another curriculum, clear stage and grade.
+            const currentStageId = this.formModel().stageId;
+            if (currentStageId !== null && !newStages.some(s => s.id === currentStageId)) {
+              this.formModel.update(m => ({ ...m, stageId: null, gradeId: null }));
+            }
+          },
+          error: () => this.stages.set([])
+        });
+      });
     });
     
     this.lookupsService.getSubjects().subscribe({
@@ -106,6 +138,7 @@ export default class Step1IdentityComponent {
           if (!this.formModel().title) {
             this.formModel.set({
               title: state.title || '',
+              curriculumId: state.curriculumId || null,
               stageId: state.stageId || null,
               gradeId: state.gradeId || null,
               subjectId: state.subjectId || null,
@@ -122,6 +155,7 @@ export default class Step1IdentityComponent {
       this.isSubmitting.set(true);
 
       const title = this.identityForm.title().value();
+      const curriculumId = Number(this.identityForm.curriculumId().value());
       const stageId = Number(this.identityForm.stageId().value());
       const gradeId = Number(this.identityForm.gradeId().value());
       const subjectId = Number(this.identityForm.subjectId().value());
@@ -132,13 +166,14 @@ export default class Step1IdentityComponent {
         // Editing existing
         this.builderState.updateIdentity(currentDraft.id, {
           title: title,
+          curriculumId: curriculumId,
           stageId: stageId,
           gradeId: gradeId,
           subjectId: subjectId,
         }).subscribe({
           next: () => {
             this.isSubmitting.set(false);
-            this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-2']);
+            this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-2'));
           },
           error: (err) => {
             console.error('API Error:', err);
@@ -150,13 +185,14 @@ export default class Step1IdentityComponent {
         // New Course
         this.builderState.initializeCourse({
           title: title,
+          curriculumId: curriculumId,
           stageId: stageId,
           gradeId: gradeId,
           subjectId: subjectId,
         }).subscribe({
           next: (res) => {
             this.isSubmitting.set(false);
-            this.router.navigate(['/teacher/courses', res.id, 'edit', 'step-2']);
+            this.router.navigate(this.orgContext.path('courses', res.id, 'edit', 'step-2'));
           },
           error: (err) => {
             console.error('API Error:', err);
@@ -169,6 +205,6 @@ export default class Step1IdentityComponent {
   }
 
   goBack() {
-    this.router.navigate(['/teacher/dashboard']);
+    this.router.navigate(this.orgContext.path('dashboard'));
   }
 }
