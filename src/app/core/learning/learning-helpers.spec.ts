@@ -24,6 +24,22 @@ describe('WatchTracker', () => {
     expect(tracker.watchedPercent).toBe(51);
   });
 
+  it('switches to the real player duration, keeping the share already watched', () => {
+    const tracker = new WatchTracker(600, 50); // teacher typed 10 minutes, half watched
+    tracker.setDuration(300);                  // the real video is 5 minutes
+    expect(tracker.watchedPercent).toBe(50);
+    tracker.onTime(150);
+    tracker.onTime(152);
+    expect(tracker.watchedPercent).toBe(51);
+  });
+
+  it('starts counting once the duration is known even if none was typed', () => {
+    const tracker = new WatchTracker(0);
+    tracker.setDuration(100);
+    for (let t = 0; t <= 10; t += 1) tracker.onTime(t);
+    expect(tracker.watchedPercent).toBe(10);
+  });
+
   it('never exceeds 100%', () => {
     const tracker = new WatchTracker(10, 95);
     for (let t = 0; t <= 10; t += 1) tracker.onTime(t);

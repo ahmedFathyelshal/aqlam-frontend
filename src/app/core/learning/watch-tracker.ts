@@ -20,10 +20,16 @@ export class WatchTracker {
     return Math.min(100, Math.round((this.watchedSeconds / this.durationSeconds) * 100));
   }
 
+  /**
+   * The player's real duration always wins over the duration typed by the teacher; the share already
+   * watched is kept when switching.
+   */
   setDuration(durationSeconds: number): void {
-    if (durationSeconds > 0 && this.durationSeconds <= 0) {
-      this.durationSeconds = durationSeconds;
-    }
+    if (!(durationSeconds > 0) || durationSeconds === this.durationSeconds) return;
+
+    const share = this.durationSeconds > 0 ? this.watchedSeconds / this.durationSeconds : 0;
+    this.durationSeconds = durationSeconds;
+    this.watchedSeconds = Math.min(1, share) * durationSeconds;
   }
 
   onTime(currentTime: number): void {
