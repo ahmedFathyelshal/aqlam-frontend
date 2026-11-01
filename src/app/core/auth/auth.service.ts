@@ -1,13 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
-import { OrgContextService } from '../organizations/org-context.service';
-import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
+import { ApiResponse } from '../models/api-response.model';
+import { OrgContextService } from '../organizations/org-context.service';
 import { unwrapApiResponse } from '../utils/api-error.utils';
 
 /** Profile returned by login, refresh and /me. Tokens never reach JavaScript (HttpOnly cookies). */
-export interface AuthUser {
+export type AuthUser = {
   id: string;
   userName: string;
   name: string;
@@ -15,7 +15,7 @@ export interface AuthUser {
   roles: string[];
 }
 
-export interface SignInRequest {
+export type SignInRequest = {
   userName: string;
   password: string;
 }
@@ -45,8 +45,8 @@ export class AuthService {
   /**
    * Register a new user
    */
-  signUp(data: any): Observable<any> {
-    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Register, data).pipe(
+  signUp(data: object): Observable<unknown> {
+    return this.http.post<ApiResponse<unknown>>(ApiEndpoints.Auth.Register, data).pipe(
       unwrapApiResponse()
     );
   }

@@ -1,20 +1,20 @@
-import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { ApiResponse } from '../models/api-response.model';
 import { ApiEndpoints } from '../constants/api-endpoints';
+import { ApiResponse } from '../models/api-response.model';
 
-export interface LookupDto {
+export type LookupDto = {
   id: number;
   nameEn: string;
   nameAr: string;
 }
 
-export interface CurriculumDto extends LookupDto {
+export type CurriculumDto = {
   code: string;
   countryCode: string | null;
   kind: 'National' | 'International' | 'TestPrep';
-}
+} & LookupDto
 
 @Injectable({
   providedIn: 'root'

@@ -6,7 +6,7 @@ import { ApiResponse } from '../models/api-response.model';
 
 export type OrganizationType = 'Personal' | 'Center' | 'School';
 
-export interface MembershipSummary {
+export type MembershipSummary = {
   organizationId: string;
   countryCode: string;
   slug: string;

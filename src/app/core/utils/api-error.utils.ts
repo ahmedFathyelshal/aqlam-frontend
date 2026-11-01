@@ -54,7 +54,7 @@ export function unwrapApiResponse<T>() {
       // Other generic API errors (e.g., 400/500 statuses) are caught and thrown
       // by the global error.interceptor.ts. This catchError is just a final fallback
       // in case the interceptor passes through an unexpected error.
-      catchError((error: any) => throwError(() => error))
+      catchError((error: unknown) => throwError(() => error))
     );
   };
 }

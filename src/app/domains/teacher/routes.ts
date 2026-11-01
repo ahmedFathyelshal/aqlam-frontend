@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { TeacherLayout } from './layout/layout';
 import { roleGuard } from '@/app/core/auth/guards/role.guard';
 import { orgGuard, redirectToDefaultOrg } from '@/app/core/organizations/org.guard';
+import { TeacherLayout } from './layout/layout';
 
 const builderSteps = (includeLaterSteps: boolean): Routes => [
   { path: 'step-1', loadComponent: () => import('./modules/courses/builder/step1-identity/step1-identity.component') },
