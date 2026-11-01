@@ -1,0 +1,181 @@
+<div class="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-900">
+  <!-- Top bar -->
+  <header class="flex items-center gap-3 border-b bg-white px-4 py-3 dark:bg-neutral-800">
+    <a matIconButton routerLink="/" aria-label="Back">
+      <mat-icon class="rtl:rotate-180" svgIcon="arrow-left" />
+    </a>
+    <div class="min-w-0 flex-1">
+      <h1 class="truncate text-lg font-semibold">{{ course()?.title ?? '…' }}</h1>
+      @if (course(); as c) {
+        <div class="flex items-center gap-3 text-sm text-neutral-500">
+          <span>{{ c.progressPercent }}% complete</span>
+          @if (c.accessExpiresAtUtc) {
+            <span>· Access until {{ c.accessExpiresAtUtc | date: 'mediumDate' }}</span>
+          }
+        </div>
+      }
+    </div>
+  </header>
+
+  @if (course()?.isPreview) {
+    <div class="bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">
+      Preview mode: you are viewing this course as staff. Progress is not saved.
+    </div>
+  }
+
+  @if (courseError(); as error) {
+    <div class="m-6 rounded-xl border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200">
+      {{ error }}
+    </div>
+  } @else {
+    <div class="flex flex-1 flex-col lg:flex-row">
+      <!-- Outline -->
+      <aside class="border-b bg-white lg:w-80 lg:border-e lg:border-b-0 dark:bg-neutral-800">
+        @if (course(); as c) {
+          <mat-progress-bar mode="determinate" [value]="c.progressPercent" />
+          <nav class="max-h-[40vh] overflow-y-auto p-3 lg:max-h-none">
+            @for (chapter of c.chapters; track chapter.id) {
+              <h2 class="px-2 pt-3 pb-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">{{ chapter.title }}</h2>
+              @for (item of chapter.lessons; track item.id) {
+                <a
+                  class="flex items-center gap-3 rounded-lg px-2 py-2 text-sm"
+                  [class.bg-primary-50]="lesson()?.id === item.id"
+                  [class.dark:bg-primary-900/30]="lesson()?.id === item.id"
+                  [class.opacity-60]="item.isLocked"
+                  [routerLink]="lessonLink(item.id)"
+                >
+                  <mat-icon
+                    class="icon-size-5 shrink-0"
+                    [class.text-emerald-600]="item.isCompleted"
+                    [svgIcon]="item.isCompleted ? 'circle-check' : item.isLocked ? 'lock' : item.type === 'Video' ? 'circle-play' : 'file-text'"
+                  />
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate">{{ item.title }}</span>
+                    @if (item.isLocked) {
+                      <span class="block text-xs text-neutral-500">{{ lockText(item) }}</span>
+                    }
+                  </span>
+                </a>
+              }
+            }
+          </nav>
+        } @else {
+          <div class="flex justify-center p-8"><mat-spinner diameter="32" /></div>
+        }
+      </aside>
+
+      <!-- Lesson -->
+      <main class="min-w-0 flex-1 p-4 lg:p-8">
+        @if (loadingLesson()) {
+          <div class="flex justify-center p-16"><mat-spinner diameter="40" /></div>
+        } @else if (lessonError(); as error) {
+          <div class="mx-auto max-w-xl rounded-2xl border bg-white p-8 text-center dark:bg-neutral-800">
+            <mat-icon class="icon-size-10 text-neutral-400" svgIcon="lock" />
+            <p class="mt-4 text-lg font-medium">{{ error }}</p>
+          </div>
+        } @else if (lesson(); as l) {
+          <article class="mx-auto max-w-4xl space-y-6">
+            <div class="flex items-start justify-between gap-4">
+              <h2 class="text-2xl font-bold">{{ l.title }}</h2>
+              @if (l.isCompleted) {
+                <span class="flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-700">
+                  <mat-icon class="icon-size-4" svgIcon="circle-check" /> Completed
+                </span>
+              }
+            </div>
+
+            @switch (l.type) {
+              @case ('Video') {
+                @if (videoSource(); as source) {
+                  @switch (source.kind) {
+                    @case ('file') {
+                      <video
+                        #video
+                        class="aspect-video w-full rounded-xl bg-black"
+                        controls
+                        controlsList="nodownload"
+                        preload="metadata"
+                        [src]="$any(source).url"
+                        (loadedmetadata)="onVideoReady(video)"
+                        (timeupdate)="onVideoTime(video)"
+                        (pause)="onVideoPausedOrEnded()"
+                        (ended)="onVideoPausedOrEnded()"
+                      ></video>
+                    }
+                    @case ('unknown') {
+                      <a matButton="outlined" target="_blank" rel="noopener" [href]="$any(source).url">Open video</a>
+                      <p class="text-sm text-neutral-500">This video cannot be embedded, so watching it here is not tracked.</p>
+                    }
+                    @default {
+                      <iframe
+                        #embed
+                        class="aspect-video w-full rounded-xl bg-black"
+                        [src]="embedUrl()"
+                        title="Lesson video"
+                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                        allowfullscreen
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        (load)="onEmbedLoad()"
+                      ></iframe>
+                    }
+                  }
+                } @else {
+                  <p class="text-neutral-500">The video for this lesson is not available yet.</p>
+                }
+              }
+              @case ('Article') {
+                <!-- Angular sanitizes bound HTML (scripts and event handlers are removed). -->
+                <div class="prose max-w-none dark:prose-invert" [innerHTML]="l.content"></div>
+                @if (!course()?.isPreview) {
+                  <button matButton="filled" [disabled]="l.isCompleted || markingDone()" (click)="markArticleDone()">
+                    {{ l.isCompleted ? 'Done' : 'Mark as done' }}
+                  </button>
+                }
+              }
+              @default {
+                <div class="rounded-xl border border-dashed p-8 text-center text-neutral-500">
+                  {{ l.type === 'Quiz' ? 'Quizzes' : 'Assignments' }} will be available here soon.
+                </div>
+              }
+            }
+
+            @if (l.summary) {
+              <p class="text-neutral-600 dark:text-neutral-300">{{ l.summary }}</p>
+            }
+
+            @if (l.resources.length) {
+              <section>
+                <h3 class="mb-2 font-semibold">Resources</h3>
+                <ul class="space-y-2">
+                  @for (resource of l.resources; track resource.id) {
+                    <li>
+                      <a class="flex items-center gap-2 text-primary-600 hover:underline" target="_blank" rel="noopener" [href]="resource.resourceUrl">
+                        <mat-icon class="icon-size-5" [svgIcon]="resource.type === 'Link' ? 'link' : 'file-down'" />
+                        {{ resource.displayName }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+
+            <nav class="flex justify-between border-t pt-4">
+              @if (l.previousLessonId) {
+                <a matButton [routerLink]="lessonLink(l.previousLessonId)">
+                  <mat-icon class="rtl:rotate-180" svgIcon="chevron-left" /> Previous
+                </a>
+              } @else {
+                <span></span>
+              }
+              @if (l.nextLessonId) {
+                <a matButton="filled" [routerLink]="lessonLink(l.nextLessonId)">
+                  Next <mat-icon class="rtl:rotate-180" iconPositionEnd svgIcon="chevron-right" />
+                </a>
+              }
+            </nav>
+          </article>
+        }
+      </main>
+    </div>
+  }
+</div>

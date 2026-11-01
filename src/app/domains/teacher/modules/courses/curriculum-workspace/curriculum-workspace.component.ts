@@ -91,9 +91,9 @@ export default class CurriculumWorkspaceComponent {
   });
 
   LessonTypeOptions = [
-    { value: LessonType.Video, label: 'Video', icon: 'play-circle' },
+    { value: LessonType.Video, label: 'Video', icon: 'circle-play' },
     { value: LessonType.Article, label: 'Article', icon: 'file-text' },
-    { value: LessonType.Quiz, label: 'Quiz', icon: 'circle-help' },
+    { value: LessonType.Quiz, label: 'Quiz', icon: 'circle-question-mark' },
     { value: LessonType.Assignment, label: 'Assignment', icon: 'clipboard-list' },
   ];
 

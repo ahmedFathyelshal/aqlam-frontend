@@ -15,6 +15,14 @@ export const ApiEndpoints = {
   },
   Me: {
     Memberships: buildUrl('/me/memberships'),
+    Courses: buildUrl('/me/courses'),
+    Join: buildUrl('/me/join'),
+  },
+  Learn: {
+    Course: (org: string, courseId: string) => orgUrl(org, `/learn/courses/${courseId}`),
+    Enroll: (org: string, courseId: string) => orgUrl(org, `/learn/courses/${courseId}/enroll`),
+    Lesson: (org: string, lessonId: string) => orgUrl(org, `/learn/lessons/${lessonId}`),
+    Progress: (org: string, lessonId: string) => orgUrl(org, `/learn/lessons/${lessonId}/progress`),
   },
   Lookups: {
     Curricula: (countryCode?: string) => countryCode ? buildUrl(`/lookups/curricula?countryCode=${countryCode}`) : buildUrl('/lookups/curricula'),

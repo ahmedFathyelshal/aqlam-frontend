@@ -28,6 +28,12 @@ export const routes: Route[] = [
     loadChildren: () => import('./domains/student/routes'),
   },
 
+  // Course player (students; staff preview)
+  {
+    path: 'learn',
+    loadChildren: () => import('./domains/learn/routes'),
+  },
+
   {
     path: '',
     pathMatch: 'full',

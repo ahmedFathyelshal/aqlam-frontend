@@ -16,15 +16,15 @@
         <div class="summary-title">Course Completeness</div>
         <div class="summary-items">
           <div class="summary-item" [class.success]="hasIdentity()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasIdentity()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasIdentity()" svgIcon="minus-circle"></mat-icon>
+            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasIdentity()" svgIcon="circle-check"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasIdentity()" svgIcon="circle-minus"></mat-icon>
             <span>Basics (Title, Stage, Grade, Subject)</span>
           </div>
           <div class="summary-item" [class.success]="hasCommercials()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasCommercials()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasCommercials()" svgIcon="minus-circle"></mat-icon>
+            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasCommercials()" svgIcon="circle-check"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasCommercials()" svgIcon="circle-minus"></mat-icon>
             <span>Pricing & Access rules</span>
           </div>
           <div class="summary-item" [class.success]="hasMedia()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasMedia()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasMedia()" svgIcon="minus-circle"></mat-icon>
+            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasMedia()" svgIcon="circle-check"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasMedia()" svgIcon="circle-minus"></mat-icon>
             <span>Media (Thumbnail, Subtitle)</span>
           </div>
         </div>
