@@ -58,3 +58,14 @@ export function unwrapApiResponse<T>() {
     );
   };
 }
+
+/**
+ * Messages to show for a failed call: field/summary messages for 400s, the server's message for 404/409
+ * (Result failures carry `errors`), otherwise the fallback (403/5xx already raised a toast).
+ */
+export function errorMessages(error: unknown, fallback: string): string[] {
+  if (error instanceof ApiValidationError) return error.errors;
+  const body = (error as { error?: { errors?: unknown } } | null)?.error;
+  if (Array.isArray(body?.errors) && body.errors.length) return body.errors as string[];
+  return [fallback];
+}

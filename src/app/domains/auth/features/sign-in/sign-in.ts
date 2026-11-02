@@ -99,8 +99,10 @@ export default class AuthSignIn {
             this.router.navigateByUrl('/teacher');
           } else if (user?.roles?.includes('Student')) {
             this.router.navigateByUrl('/student/dashboard');
-          } else {
+          } else if (user?.roles?.includes('SuperAdmin')) {
             this.router.navigateByUrl('/admin/academy');
+          } else {
+            this.router.navigateByUrl('/parent'); // parent accounts have no platform role
           }
         },
         error: (error) => {

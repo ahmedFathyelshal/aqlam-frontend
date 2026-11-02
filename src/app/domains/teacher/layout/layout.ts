@@ -10,11 +10,11 @@ import {
 import { RouterOutlet } from '@angular/router';
 import { Media } from '@/app/core/media';
 import { LanguageSwitcher } from '@/app/domains/admin/layout/ui/language-switcher';
-import { Notifications } from '@/app/domains/admin/layout/ui/notifications';
 import { SchemeSwitcher } from '@/app/domains/admin/layout/ui/scheme-switcher';
-import { AdminSidebar } from '@/app/domains/admin/layout/ui/sidebar';
 import { I18nService } from '@/app/core/transloco/i18n.service';
+import { NotificationBell } from '@/app/shared/components/notification-bell/notification-bell';
 import { OrgSwitcher } from './org-switcher';
+import { StaffSidebar } from './staff-sidebar';
 
 @Component({
   selector: 'teacher-layout',
@@ -26,9 +26,9 @@ import { OrgSwitcher } from './org-switcher';
     MatSidenavContainer,
     MatSidenav,
     MatSidenavContent,
-    AdminSidebar,
+    StaffSidebar,
     SchemeSwitcher,
-    Notifications,
+    NotificationBell,
     LanguageSwitcher,
     OrgSwitcher,
   ],

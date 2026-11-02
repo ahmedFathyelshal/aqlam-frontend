@@ -3,8 +3,11 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
 import { ApiEndpoints } from '../constants/api-endpoints';
 import { ApiResponse } from '../models/api-response.model';
+import { grants, Permission } from './permissions';
 
 export type OrganizationType = 'Personal' | 'Center' | 'School';
+
+export type CalendarDisplay = 'Gregorian' | 'Hijri' | 'Both';
 
 export type MembershipSummary = {
   organizationId: string;
@@ -13,6 +16,9 @@ export type MembershipSummary = {
   name: string;
   type: OrganizationType;
   roles: string[];
+  timeZone?: string;
+  calendar?: CalendarDisplay;
+  weekStartDay?: string;
 }
 
 const STAFF_ROLES = ['Owner', 'Admin', 'AcademicCoordinator', 'Teacher', 'Assistant', 'Finance'];
@@ -38,6 +44,15 @@ export class OrgContextService {
     const staff = this.staffMemberships();
     return staff.find(m => m.slug === this.selectedSlug()) ?? staff[0] ?? null;
   });
+
+  /** Whether the user's roles in the active organization grant a permission (UI only; the API enforces it). */
+  can(permission: Permission): boolean {
+    const org = this.activeOrg();
+    return !!org && grants(org.roles, permission);
+  }
+
+  /** Organizations where the user is a parent (parent portal). */
+  readonly parentMemberships = computed(() => this.memberships().filter(m => m.roles.includes('Parent')));
 
   load(): Observable<MembershipSummary[]> {
     return this.http.get<ApiResponse<MembershipSummary[]>>(ApiEndpoints.Me.Memberships).pipe(

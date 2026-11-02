@@ -63,6 +63,13 @@ const routes: Routes = [
             path: 'courses/:id/curriculum',
             loadComponent: () => import('./modules/courses/curriculum-workspace/curriculum-workspace.component'),
           },
+          // School & center operations
+          { path: 'classes', loadComponent: () => import('./modules/school/classes/classes.component') },
+          { path: 'classes/:classId', loadComponent: () => import('./modules/school/classes/class-detail.component') },
+          { path: 'classes/:classId/attendance', loadComponent: () => import('./modules/school/attendance/attendance.component') },
+          { path: 'announcements', loadComponent: () => import('./modules/school/announcements/announcements.component') },
+          { path: 'members', loadComponent: () => import('./modules/school/members/members.component') },
+          { path: 'settings', loadComponent: () => import('./modules/school/settings/settings.component') },
         ],
       },
     ],

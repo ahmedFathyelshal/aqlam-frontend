@@ -28,6 +28,12 @@ export const routes: Route[] = [
     loadChildren: () => import('./domains/student/routes'),
   },
 
+  // Parent portal
+  {
+    path: 'parent',
+    loadChildren: () => import('./domains/parent/routes'),
+  },
+
   // Course player (students; staff preview)
   {
     path: 'learn',
@@ -52,6 +58,9 @@ export const routes: Route[] = [
       }
       if (user?.roles?.includes('Student')) {
         return '/student/dashboard';
+      }
+      if (user) {
+        return '/parent';
       }
       
       return '/auth/sign-in';

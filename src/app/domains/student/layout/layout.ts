@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { LanguageSwitcher } from '@/app/domains/admin/layout/ui/language-switcher';
-import { Notifications } from '@/app/domains/admin/layout/ui/notifications';
+import { NotificationBell } from '@/app/shared/components/notification-bell/notification-bell';
 import { SchemeSwitcher } from '@/app/domains/admin/layout/ui/scheme-switcher';
 import { User } from '@/app/domains/admin/layout/ui/user';
 
@@ -15,7 +15,7 @@ import { User } from '@/app/domains/admin/layout/ui/user';
     RouterOutlet,
     RouterLink,
     SchemeSwitcher,
-    Notifications,
+    NotificationBell,
     LanguageSwitcher,
     User,
   ],
