@@ -1,12 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
-import { ApiResponse } from '../models/api-response.model';
+import { Observable, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import { ApiEndpoints } from '../constants/api-endpoints';
+import { ApiResponse } from '../models/api-response.model';
+import { OrgContextService } from '../organizations/org-context.service';
 import { unwrapApiResponse } from '../utils/api-error.utils';
 
 /** Profile returned by login, refresh and /me. Tokens never reach JavaScript (HttpOnly cookies). */
-export interface AuthUser {
+export type AuthUser = {
   id: string;
   userName: string;
   name: string;
@@ -14,7 +15,7 @@ export interface AuthUser {
   roles: string[];
 }
 
-export interface SignInRequest {
+export type SignInRequest = {
   userName: string;
   password: string;
 }
@@ -24,6 +25,7 @@ export interface SignInRequest {
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private orgContext = inject(OrgContextService);
 
   // State
   public isAuthenticated = signal<boolean>(false);
@@ -35,15 +37,16 @@ export class AuthService {
   signIn(credentials: SignInRequest): Observable<AuthUser> {
     return this.http.post<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Login, credentials).pipe(
       unwrapApiResponse(),
-      tap(user => this.setUser(user))
+      tap(user => this.setUser(user)),
+      switchMap(user => this.loadOrganizations(user))
     );
   }
 
   /**
    * Register a new user
    */
-  signUp(data: any): Observable<any> {
-    return this.http.post<ApiResponse<any>>(ApiEndpoints.Auth.Register, data).pipe(
+  signUp(data: object): Observable<unknown> {
+    return this.http.post<ApiResponse<unknown>>(ApiEndpoints.Auth.Register, data).pipe(
       unwrapApiResponse()
     );
   }
@@ -65,7 +68,8 @@ export class AuthService {
   getMe(): Observable<AuthUser> {
     return this.http.get<ApiResponse<AuthUser>>(ApiEndpoints.Auth.Me).pipe(
       unwrapApiResponse(),
-      tap(user => this.setUser(user))
+      tap(user => this.setUser(user)),
+      switchMap(user => this.loadOrganizations(user))
     );
   }
 
@@ -75,6 +79,7 @@ export class AuthService {
   signOutLocal(): void {
     this.isAuthenticated.set(false);
     this.user.set(null);
+    this.orgContext.clear();
   }
 
   /**
@@ -85,6 +90,14 @@ export class AuthService {
       map(() => void 0),
       catchError(() => of(void 0)),
       finalize(() => this.signOutLocal())
+    );
+  }
+
+  /** Loads the user's organizations; a failure here must not block sign-in. */
+  private loadOrganizations(user: AuthUser): Observable<AuthUser> {
+    return this.orgContext.load().pipe(
+      map(() => user),
+      catchError(() => of(user))
     );
   }
 

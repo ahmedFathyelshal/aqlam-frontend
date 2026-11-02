@@ -65,6 +65,7 @@ export interface CourseDraft {
 
   title?: string;
   slug?: string;
+  curriculumId?: number;
   stageId?: number;
   gradeId?: number;
   subjectId?: number;
@@ -93,6 +94,7 @@ export interface UpdateCourseIdentityRequest {
   id: string;
   title?: string;
   slug?: string;
+  curriculumId?: number;
   stageId?: number;
   gradeId?: number;
   subjectId?: number;

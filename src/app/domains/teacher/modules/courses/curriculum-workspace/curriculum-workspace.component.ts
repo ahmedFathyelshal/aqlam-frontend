@@ -17,6 +17,7 @@ import { tap } from 'rxjs/operators';
 
 import { CourseBuilderStateService } from '../builder/course-builder-state.service';
 import { ApiEndpoints } from '@/app/core/constants/api-endpoints';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import {
   CourseChapter,
   CourseDraft,
@@ -55,6 +56,7 @@ export default class CurriculumWorkspaceComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private http = inject(HttpClient);
+  protected orgContext = inject(OrgContextService);
   private builderState = inject(CourseBuilderStateService);
   private snackBar = inject(MatSnackBar);
 
@@ -106,7 +108,7 @@ export default class CurriculumWorkspaceComponent {
       () => {
         const id = this.route.snapshot.paramMap.get('id');
         if (!id) {
-          this.router.navigateByUrl('/teacher/dashboard');
+          this.router.navigate(this.orgContext.path('dashboard'));
           return;
         }
         this.courseId.set(id);
@@ -176,7 +178,7 @@ export default class CurriculumWorkspaceComponent {
     const payload = { id, chapters, syllabusRequirements: this.course().syllabusRequirements };
 
     this.http
-      .put(ApiEndpoints.TeacherCourses.UpdateCurriculum(id), payload)
+      .put(ApiEndpoints.TeacherCourses.UpdateCurriculum(this.orgContext.requireActiveSlug(), id), payload)
       .pipe(tap(() => this.isSaving.set(false)))
       .subscribe({
         next: () => {

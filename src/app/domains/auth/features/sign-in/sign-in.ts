@@ -96,7 +96,7 @@ export default class AuthSignIn {
 
           const user = this.authService.user();
           if (user?.roles?.includes('Teacher')) {
-            this.router.navigateByUrl('/teacher/dashboard');
+            this.router.navigateByUrl('/teacher');
           } else if (user?.roles?.includes('Student')) {
             this.router.navigateByUrl('/student/dashboard');
           } else {

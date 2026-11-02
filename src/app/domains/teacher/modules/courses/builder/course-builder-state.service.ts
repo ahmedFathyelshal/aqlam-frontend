@@ -2,6 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { Observable, tap, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ApiEndpoints } from '../../../../../core/constants/api-endpoints';
+import { OrgContextService } from '../../../../../core/organizations/org-context.service';
 
 import {
   CourseDraft,
@@ -18,6 +19,7 @@ import {
 })
 export class CourseBuilderStateService {
   private http = inject(HttpClient);
+  private orgContext = inject(OrgContextService);
 
   // The global state for the builder
   state = signal<CourseDraft>({
@@ -25,7 +27,7 @@ export class CourseBuilderStateService {
   });
 
   initializeCourse(data: Partial<CourseDraft>): Observable<{ id: string }> {
-    return this.http.post<ApiResponse<{ id: string }>>(ApiEndpoints.TeacherCourses.Draft, data).pipe(
+    return this.http.post<ApiResponse<{ id: string }>>(ApiEndpoints.TeacherCourses.Draft(this.orgContext.requireActiveSlug()), data).pipe(
       map(response => response.data),
       tap(draftData => {
         this.state.update(s => ({ ...s, ...draftData, status: CourseStatus.Draft }));
@@ -35,7 +37,7 @@ export class CourseBuilderStateService {
 
   updateIdentity(id: string, payload: Omit<UpdateCourseIdentityRequest, 'id'>): Observable<void> {
     const request: UpdateCourseIdentityRequest = { id, ...payload };
-    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateIdentity(id), request).pipe(
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateIdentity(this.orgContext.requireActiveSlug(), id), request).pipe(
       map(() => void 0),
       tap(() => this.state.update(s => ({ ...s, ...payload })))
     );
@@ -43,7 +45,7 @@ export class CourseBuilderStateService {
 
   updateCommercials(id: string, payload: Omit<UpdateCourseCommercialsRequest, 'id'>): Observable<void> {
     const request: UpdateCourseCommercialsRequest = { id, ...payload };
-    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateCommercials(id), request).pipe(
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateCommercials(this.orgContext.requireActiveSlug(), id), request).pipe(
       map(() => void 0),
       tap(() => this.state.update(s => ({ ...s, ...payload })))
     );
@@ -51,7 +53,7 @@ export class CourseBuilderStateService {
 
   updateMedia(id: string, payload: Omit<UpdateCourseMediaRequest, 'id'>): Observable<void> {
     const request: UpdateCourseMediaRequest = { id, ...payload };
-    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateMedia(id), request).pipe(
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateMedia(this.orgContext.requireActiveSlug(), id), request).pipe(
       map(() => void 0),
       tap(() => this.state.update(s => ({ ...s, ...payload })))
     );
@@ -59,7 +61,7 @@ export class CourseBuilderStateService {
 
   updateChapters(id: string, chapters: any[], syllabusRequirements?: string): Observable<void> {
     const request: UpdateCourseCurriculumRequest = { id, chapters, syllabusRequirements };
-    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateCurriculum(id), request).pipe(
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateCurriculum(this.orgContext.requireActiveSlug(), id), request).pipe(
       map(() => void 0),
       tap(() => this.state.update(s => ({ ...s, chapters, syllabusRequirements })))
     );
@@ -75,7 +77,7 @@ export class CourseBuilderStateService {
   }
 
   getCourseDraft(id: string): Observable<CourseDraft> {
-    return this.http.get<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.GetDraft(id)).pipe(
+    return this.http.get<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.GetDraft(this.orgContext.requireActiveSlug(), id)).pipe(
       map(response => response.data),
       tap(draft => {
         this.state.set(draft);

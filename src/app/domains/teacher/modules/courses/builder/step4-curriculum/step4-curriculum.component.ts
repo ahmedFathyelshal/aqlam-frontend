@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, required, submit, validate } from '@angular/forms/signals';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 @Component({
   selector: 'app-step4-curriculum',
@@ -20,6 +21,7 @@ import { form, required, submit, validate } from '@angular/forms/signals';
 export default class Step4CurriculumComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
+  protected orgContext = inject(OrgContextService);
 
   isSaving = signal(false);
   isPublishing = signal(false);
@@ -92,7 +94,7 @@ export default class Step4CurriculumComponent {
     this.builderState.updateChapters(draftId, this.chapters(), this.syllabusReqs()).subscribe({
       next: () => {
         this.isSaving.set(false);
-        this.router.navigate(['/teacher/courses', draftId, 'curriculum']);
+        this.router.navigate(this.orgContext.path('courses', draftId, 'curriculum'));
       },
       error: (err) => {
         this.isSaving.set(false);
@@ -111,7 +113,7 @@ export default class Step4CurriculumComponent {
     this.builderState.updateChapters(draftId, this.chapters(), this.syllabusReqs()).subscribe(() => {
       this.builderState.publishCourse(draftId).subscribe(() => {
         this.isPublishing.set(false);
-        this.router.navigate(['/teacher/courses', draftId, 'curriculum']);
+        this.router.navigate(this.orgContext.path('courses', draftId, 'curriculum'));
       });
     });
   }
@@ -119,9 +121,9 @@ export default class Step4CurriculumComponent {
   goBack() {
     const currentDraft = this.builderState.state();
     if (currentDraft.id) {
-      this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-3']);
+      this.router.navigate(this.orgContext.path('courses', currentDraft.id, 'edit', 'step-3'));
     } else {
-      this.router.navigate(['/teacher/dashboard']);
+      this.router.navigate(this.orgContext.path('dashboard'));
     }
   }
 }

@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 @Component({
   selector: 'app-step3-media',
@@ -21,6 +22,7 @@ import { form, FormField, required, submit, validate } from '@angular/forms/sign
 export default class Step3MediaComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
+  protected orgContext = inject(OrgContextService);
 
   isSubmitting = signal(false);
   previewUrl = signal<string | null>(null);
@@ -101,7 +103,7 @@ export default class Step3MediaComponent {
         thumbnailUrl: this.previewUrl()!,
       }).subscribe(() => {
         this.isSubmitting.set(false);
-        this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-4']);
+        this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-4'));
       });
     });
   }
@@ -109,9 +111,9 @@ export default class Step3MediaComponent {
   goBack() {
     const currentDraft = this.builderState.state();
     if (currentDraft.id) {
-      this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-2']);
+      this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-2'));
     } else {
-      this.router.navigate(['/teacher/dashboard']);
+      this.router.navigate(this.orgContext.path('dashboard'));
     }
   }
 }

@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 
 @Component({
   selector: 'app-step2-commercials',
@@ -21,6 +22,7 @@ import { form, FormField, required, submit, validate } from '@angular/forms/sign
 export default class Step2CommercialsComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
+  protected orgContext = inject(OrgContextService);
 
   isSubmitting = signal(false);
 
@@ -90,7 +92,7 @@ export default class Step2CommercialsComponent {
         accessDurationDays: data.accessExpiryPolicy === 'Limited' ? Number(data.accessDurationDays) : undefined,
       }).subscribe(() => {
         this.isSubmitting.set(false);
-        this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-3']);
+        this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-3'));
       });
     });
   }
@@ -98,9 +100,9 @@ export default class Step2CommercialsComponent {
   goBack() {
     const currentDraft = this.builderState.state();
     if (currentDraft.id) {
-      this.router.navigate(['/teacher/courses', currentDraft.id, 'edit', 'step-1']);
+      this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-1'));
     } else {
-      this.router.navigate(['/teacher/dashboard']);
+      this.router.navigate(this.orgContext.path('dashboard'));
     }
   }
 }

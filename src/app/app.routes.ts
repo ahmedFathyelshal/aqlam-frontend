@@ -42,7 +42,7 @@ export const routes: Route[] = [
       const user = authService.user();
       
       if (user?.roles?.includes('Teacher')) {
-        return '/teacher/dashboard';
+        return '/teacher';
       }
       if (user?.roles?.includes('Student')) {
         return '/student/dashboard';

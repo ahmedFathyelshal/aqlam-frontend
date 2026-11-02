@@ -14,6 +14,7 @@ import { Notifications } from '@/app/domains/admin/layout/ui/notifications';
 import { SchemeSwitcher } from '@/app/domains/admin/layout/ui/scheme-switcher';
 import { AdminSidebar } from '@/app/domains/admin/layout/ui/sidebar';
 import { I18nService } from '@/app/core/transloco/i18n.service';
+import { OrgSwitcher } from './org-switcher';
 
 @Component({
   selector: 'teacher-layout',
@@ -29,6 +30,7 @@ import { I18nService } from '@/app/core/transloco/i18n.service';
     SchemeSwitcher,
     Notifications,
     LanguageSwitcher,
+    OrgSwitcher,
   ],
   templateUrl: './layout.html',
 })
