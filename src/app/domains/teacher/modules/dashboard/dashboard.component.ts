@@ -5,10 +5,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 import { AuthService } from '@/app/core/auth/auth.service';
 
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'teacher-dashboard',
   standalone: true,
-  imports: [TranslocoDirective, MatButtonModule, MatIconModule, MatRippleModule],
+  imports: [TranslocoDirective, MatButtonModule, MatIconModule, MatRippleModule, RouterLink],
   templateUrl: './dashboard.component.html'
 })
 export default class TeacherDashboardComponent {

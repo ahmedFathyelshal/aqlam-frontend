@@ -24,140 +24,202 @@
         </a>
       </div>
 
-      <!-- Sign in form -->
-      <form
-        class="mt-8"
-        (submit)="signIn($event)"
-      >
-        <div class="flex flex-col gap-y-4">
-          <!-- Username field -->
-          <mat-form-field class="w-full">
-            <mat-label>Username</mat-label>
-            <input
-              id="userName"
-              matInput
-              [formField]="signInForm.userName"
-            />
-            <mat-error>
-              @if (
-                signInForm.userName().touched() && signInForm.userName().invalid()
-              ) {
-                @for (error of signInForm.userName().errors(); track error) {
-                  {{ error.message }}
-                }
-              }
-            </mat-error>
-          </mat-form-field>
+      <!-- Sign in form (Username-First two-step) -->
 
-          <!-- Password field -->
-          <mat-form-field
-            appearance="fill"
-            class="w-full"
-          >
-            <mat-label>Password</mat-label>
-            <input
-              id="password"
-              matInput
-              type="password"
-              [formField]="signInForm.password"
-              #passwordField
-            />
-            <button
-              matIconButton
-              type="button"
-              (click)="
-                passwordField.type === 'password'
-                  ? (passwordField.type = 'text')
-                  : (passwordField.type = 'password')
-              "
-              matSuffix
-            >
-              @if (passwordField.type === 'password') {
-                <mat-icon
-                  class="size-5"
-                  svgIcon="eye"
-                ></mat-icon>
-              }
-              @if (passwordField.type === 'text') {
-                <mat-icon
-                  class="size-5"
-                  svgIcon="eye-off"
-                ></mat-icon>
-              }
-            </button>
-            <mat-error>
-              @if (
-                signInForm.password().touched() &&
-                signInForm.password().invalid()
-              ) {
-                @for (error of signInForm.password().errors(); track error) {
-                  {{ error.message }}
-                }
-              }
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-2 flex w-full items-center justify-between">
-          <mat-checkbox class="-ml-2" [formField]="signInForm.rememberMe">Remember me</mat-checkbox>
-          <a
-            class="font-medium underline"
-            routerLink="/auth/forgot-password"
-          >
-            Forgot password?
-          </a>
-        </div>
-
-        <!-- Submit button -->
-        <button
-          type="submit"
-          matButton="filled"
-          class="mt-6 w-full"
-          [disabled]="signInForm().invalid() || isSubmitting()"
+      <!-- STEP 1: Username only -->
+      @if (step() === 'username') {
+        <form
+          class="mt-8"
+          (submit)="continueToPassword($event)"
         >
-          @if (isSubmitting()) {
-            <mat-progress-spinner
-              class="mr-2"
-              mode="indeterminate"
-              diameter="20"
-            ></mat-progress-spinner>
-          }
-          Sign in
-        </button>
+          <div class="flex flex-col gap-y-4">
+            <div>
+              <div class="leading-tight text-xl font-semibold">Sign in with your username</div>
+              <div class="mt-1 text-neutral-500">Enter the username tied to your account.</div>
+            </div>
 
-        <!-- Separator -->
-        <div class="mt-8 flex items-center gap-x-4">
-          <mat-divider class="flex-auto" />
-          <div class="text-neutral-500">Or continue with</div>
-          <mat-divider class="flex-auto" />
-        </div>
+            <mat-form-field class="w-full">
+              <mat-label>Username</mat-label>
+              <input
+                id="userName"
+                matInput
+                [formField]="usernameForm.userName"
+                autocomplete="username"
+              />
+              <mat-error>
+                @if (
+                  usernameForm.userName().touched() && usernameForm.userName().invalid()
+                ) {
+                  @for (error of usernameForm.userName().errors(); track error) {
+                    {{ error.message }}
+                  }
+                }
+              </mat-error>
+            </mat-form-field>
+          </div>
 
-        <!-- Single sign-on buttons -->
-        <div class="mt-8 flex items-center space-x-4">
+          <button
+            type="submit"
+            matButton="filled"
+            class="mt-6 w-full"
+            [disabled]="usernameForm().invalid()"
+          >
+            Continue
+            <mat-icon
+              class="ml-2 size-5"
+              svgIcon="arrow-right"
+            ></mat-icon>
+          </button>
+        </form>
+      }
+
+      <!-- STEP 2: Password + identity context -->
+      @if (step() === 'password') {
+        <form
+          class="mt-8"
+          (submit)="signIn($event)"
+        >
+          <div class="flex flex-col gap-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="leading-tight text-xl font-semibold">Welcome back</div>
+                <div class="mt-1 text-neutral-500 flex items-center gap-x-2">
+                  <span>Signing in as</span>
+                  <strong class="text-neutral-900 dark:text-neutral-100">{{ signInFormModel().userName }}</strong>
+                  <button
+                    type="button"
+                    matButton="text"
+                    class="!h-6 !px-2 !min-w-0 text-sm"
+                    (click)="backToUsername()"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <mat-form-field
+              appearance="fill"
+              class="w-full"
+            >
+              <mat-label>Password</mat-label>
+              <input
+                id="password"
+                matInput
+                type="password"
+                [formField]="passwordForm.password"
+                autocomplete="current-password"
+                #passwordField
+              />
+              <button
+                matIconButton
+                type="button"
+                (click)="
+                  passwordField.type === 'password'
+                    ? (passwordField.type = 'text')
+                    : (passwordField.type = 'password')
+                "
+                matSuffix
+              >
+                @if (passwordField.type === 'password') {
+                  <mat-icon
+                    class="size-5"
+                    svgIcon="eye"
+                  ></mat-icon>
+                }
+                @if (passwordField.type === 'text') {
+                  <mat-icon
+                    class="size-5"
+                    svgIcon="eye-off"
+                  ></mat-icon>
+                }
+              </button>
+              <mat-error>
+                @if (
+                  passwordForm.password().touched() &&
+                  passwordForm.password().invalid()
+                ) {
+                  @for (error of passwordForm.password().errors(); track error) {
+                    {{ error.message }}
+                  }
+                }
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="mt-2 flex w-full items-center justify-between">
+            <mat-checkbox class="-ml-2" [checked]="signInFormModel().rememberMe" (change)="signInFormModel.update($any($event).checked ? m => ({ ...m, rememberMe: true }) : m => ({ ...m, rememberMe: false }))">Remember me</mat-checkbox>
+            <a
+              class="font-medium underline"
+              routerLink="/auth/forgot-password"
+            >
+              Forgot password?
+            </a>
+          </div>
+
+          <button
+            type="submit"
+            matButton="filled"
+            class="mt-6 w-full"
+            [disabled]="passwordForm().invalid() || isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              <mat-progress-spinner
+                class="mr-2"
+                mode="indeterminate"
+                diameter="20"
+              ></mat-progress-spinner>
+            }
+            Sign in
+          </button>
+
           <button
             type="button"
-            matButton="outlined"
-            class="flex-auto"
+            matButton="text"
+            class="mt-2 w-full"
+            (click)="backToUsername()"
+            [disabled]="isSubmitting()"
           >
-            Google
+            <mat-icon
+              class="mr-1 size-5"
+              svgIcon="arrow-left"
+            ></mat-icon>
+            Back
           </button>
-          <button
-            type="button"
-            matButton="outlined"
-            class="flex-auto"
-          >
-            Apple
-          </button>
-          <button
-            type="button"
-            matButton="outlined"
-            class="flex-auto"
-          >
-            GitHub
-          </button>
-        </div>
-      </form>
+
+          <!-- Separator -->
+          <div class="mt-8 flex items-center gap-x-4">
+            <mat-divider class="flex-auto" />
+            <div class="text-neutral-500">Or continue with</div>
+            <mat-divider class="flex-auto" />
+          </div>
+
+          <!-- Single sign-on buttons -->
+          <div class="mt-8 flex items-center space-x-4">
+            <button
+              type="button"
+              matButton="outlined"
+              class="flex-auto"
+            >
+              Google
+            </button>
+            <button
+              type="button"
+              matButton="outlined"
+              class="flex-auto"
+            >
+              Apple
+            </button>
+            <button
+              type="button"
+              matButton="outlined"
+              class="flex-auto"
+            >
+              GitHub
+            </button>
+          </div>
+        </form>
+      }
 
       <!-- Error Alert -->
       @if (showAlert()) {

@@ -1,0 +1,61 @@
+    <ng-container *transloco="let t">
+      <div class="builder-page-container">
+        
+        <div class="builder-card">
+          <!-- Stepper Header -->
+          <header class="stepper-header">
+            <nav class="stepper-nav">
+              <!-- Step 1 -->
+              <a routerLink="step-1" routerLinkActive="active-step" class="step-link">
+                <div class="step-indicator">1</div>
+                <div class="step-text">
+                  <span class="step-title">Basics</span>
+                  <span class="step-subtitle">Title & subject</span>
+                </div>
+              </a>
+              <div class="step-divider"></div>
+              
+              <!-- Step 2 -->
+              <a routerLink="step-2" routerLinkActive="active-step" class="step-link">
+                <div class="step-indicator">2</div>
+                <div class="step-text">
+                  <span class="step-title">Pricing</span>
+                  <span class="step-subtitle">Format & price</span>
+                </div>
+              </a>
+              <div class="step-divider"></div>
+              
+              <!-- Step 3 -->
+              <a routerLink="step-3" routerLinkActive="active-step" class="step-link">
+                <div class="step-indicator">3</div>
+                <div class="step-text">
+                  <span class="step-title">Media</span>
+                  <span class="step-subtitle">Thumbnail & video</span>
+                </div>
+              </a>
+              <div class="step-divider"></div>
+              
+              <!-- Step 4 -->
+              <a routerLink="step-4" routerLinkActive="active-step" class="step-link">
+                <div class="step-indicator">4</div>
+                <div class="step-text">
+                  <span class="step-title">Curriculum</span>
+                  <span class="step-subtitle">Lessons & publish</span>
+                </div>
+              </a>
+            </nav>
+          </header>
+
+          <!-- Main Content Area -->
+          <main class="builder-content">
+            <div *ngIf="isLoading(); else outlet" class="loading-state">
+               <mat-spinner diameter="40"></mat-spinner>
+            </div>
+            <ng-template #outlet>
+              <router-outlet></router-outlet>
+            </ng-template>
+          </main>
+        </div>
+
+      </div>
+    </ng-container>
