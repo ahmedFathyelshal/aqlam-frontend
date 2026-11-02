@@ -89,8 +89,7 @@ export default class AuthSignIn {
 
       this.authService.signIn({
         userName: formValue.userName,
-        password: formValue.password,
-        deviceId: null
+        password: formValue.password
       }).subscribe({
         next: () => {
           this.isSubmitting.set(false);
