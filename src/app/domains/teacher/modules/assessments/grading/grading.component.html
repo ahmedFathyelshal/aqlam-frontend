@@ -1,0 +1,56 @@
+<div class="mx-auto max-w-4xl space-y-6 p-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <a class="text-sm text-neutral-500 hover:underline" [routerLink]="orgContext.path('courses', courseId, 'curriculum')">← Curriculum</a>
+      <h1 class="text-2xl font-bold">Grading</h1>
+    </div>
+    <div class="flex gap-1">
+      <button matButton [class.bg-primary-50]="pendingOnly()" (click)="toggleFilter(true)">Waiting for a grade</button>
+      <button matButton [class.bg-primary-50]="!pendingOnly()" (click)="toggleFilter(false)">All</button>
+    </div>
+  </header>
+
+  @for (s of submissions(); track s.id) {
+    @let form = forms()[s.id];
+    <article class="space-y-3 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p class="font-semibold">{{ s.studentName || s.studentUserName }}</p>
+          <p class="text-sm text-neutral-500">{{ s.lessonTitle }} · submitted {{ s.submittedAtUtc | date: 'medium' }}{{ s.isLate ? ' · late' : '' }}</p>
+        </div>
+        <span class="rounded-full bg-neutral-100 px-3 py-1 text-xs dark:bg-neutral-700">{{ s.status }}</span>
+      </div>
+
+      @if (s.text) {
+        <p class="rounded-lg bg-neutral-50 p-3 text-sm whitespace-pre-line dark:bg-neutral-900">{{ s.text }}</p>
+      }
+      @for (link of s.links; track link) {
+        <a class="block text-sm text-primary-600 hover:underline" target="_blank" rel="noopener" [href]="link" dir="ltr">{{ link }}</a>
+      }
+
+      @if (form) {
+        <div class="grid gap-3 sm:grid-cols-[8rem_1fr]">
+          <label class="block">
+            <span class="text-sm font-medium">Score / {{ s.maxPoints }}</span>
+            <input type="number" min="0" [max]="s.maxPoints" class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
+                   [value]="form.score" (input)="setForm(s.id, { score: $any($event.target).value })" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Feedback</span>
+            <textarea class="mt-1 min-h-16 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="4000"
+                      [value]="form.feedback" (input)="setForm(s.id, { feedback: $any($event.target).value })"></textarea>
+          </label>
+        </div>
+      }
+      @if (errors()[s.id]; as message) {
+        <p class="text-sm text-red-600">{{ message }}</p>
+      }
+      <div class="flex justify-end gap-2">
+        <button matButton (click)="grade(s, true)">Return for revision</button>
+        <button matButton="filled" (click)="grade(s, false)">Save grade</button>
+      </div>
+    </article>
+  } @empty {
+    <p class="text-neutral-500">{{ pendingOnly() ? 'Nothing to grade right now.' : 'No submissions yet.' }}</p>
+  }
+</div>

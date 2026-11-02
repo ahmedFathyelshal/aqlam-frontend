@@ -8,7 +8,8 @@
         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">{{ t('welcome_back', { name: authService.user()?.name || 'Teacher' }) }}</h1>
         <p class="text-primary-100 text-lg">{{ t('dashboard_subtitle') }}</p>
       </div>
-      <button mat-flat-button color="accent" [routerLink]="orgContext.path('courses', 'new')" class="!rounded-xl !py-6 !px-8 !text-lg !font-semibold relative z-10 shadow-md hover:shadow-xl transition-shadow">
+      <a mat-stroked-button class="me-2" [routerLink]="orgContext.path('questions')">Question bank</a>
+        <button mat-flat-button color="accent" [routerLink]="orgContext.path('courses', 'new')" class="!rounded-xl !py-6 !px-8 !text-lg !font-semibold relative z-10 shadow-md hover:shadow-xl transition-shadow">
         <mat-icon class="mr-2" svgIcon="plus"></mat-icon>
         {{ t('create_course') }}
       </button>

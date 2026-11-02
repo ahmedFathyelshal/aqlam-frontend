@@ -44,6 +44,22 @@ const routes: Routes = [
             children: builderSteps(true),
           },
           {
+            path: 'questions',
+            loadComponent: () => import('./modules/assessments/question-bank/question-bank.component'),
+          },
+          {
+            path: 'courses/:id/lessons/:lessonId/quiz',
+            loadComponent: () => import('./modules/assessments/quiz-setup/quiz-setup.component'),
+          },
+          {
+            path: 'courses/:id/lessons/:lessonId/assignment',
+            loadComponent: () => import('./modules/assessments/assignment-setup/assignment-setup.component'),
+          },
+          {
+            path: 'courses/:id/submissions',
+            loadComponent: () => import('./modules/assessments/grading/grading.component'),
+          },
+          {
             path: 'courses/:id/curriculum',
             loadComponent: () => import('./modules/courses/curriculum-workspace/curriculum-workspace.component'),
           },

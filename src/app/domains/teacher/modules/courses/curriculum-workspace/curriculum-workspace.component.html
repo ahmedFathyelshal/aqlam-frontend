@@ -23,6 +23,8 @@
         </div>
       </div>
       <div class="cw-actions">
+        <a mat-button type="button" [routerLink]="orgContext.path('courses', courseId(), 'submissions')">Grading</a>
+        <a mat-button type="button" target="_blank" [routerLink]="['/learn', orgContext.requireActiveSlug(), courseId()]">Preview as student</a>
         <button
           type="button"
           mat-button="filled"
@@ -283,6 +285,21 @@
                       />
                     </mat-form-field>
                   </div>
+
+                  @if (lesson.type === 'Quiz' || lesson.type === 'Assignment') {
+                    <div class="field-block">
+                      @if (lesson.id) {
+                        <a
+                          mat-button="outlined"
+                          [routerLink]="orgContext.path('courses', courseId(), 'lessons', lesson.id, lesson.type === 'Quiz' ? 'quiz' : 'assignment')"
+                        >
+                          {{ lesson.type === 'Quiz' ? 'Set up quiz questions' : 'Set up assignment' }}
+                        </a>
+                      } @else {
+                        <p class="text-sm text-neutral-500">Save the curriculum first, then set up this {{ lesson.type === 'Quiz' ? 'quiz' : 'assignment' }}.</p>
+                      }
+                    </div>
+                  }
 
                   <div class="field-row">
                     <mat-checkbox
