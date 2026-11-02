@@ -29,6 +29,9 @@ import {
 import { parseVideoSource, VideoSource } from '@/app/core/learning/video-source';
 import { WatchTracker } from '@/app/core/learning/watch-tracker';
 
+import { AssignmentPanelComponent } from '../assignment-panel/assignment-panel.component';
+import { QuizPanelComponent } from '../quiz-panel/quiz-panel.component';
+
 const HEARTBEAT_MS = 15_000;
 
 /**
@@ -37,7 +40,16 @@ const HEARTBEAT_MS = 15_000;
  */
 @Component({
   selector: 'app-course-player',
-  imports: [DatePipe, MatButtonModule, MatIconModule, MatProgressBarModule, MatProgressSpinnerModule, RouterLink],
+  imports: [
+    AssignmentPanelComponent,
+    DatePipe,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    QuizPanelComponent,
+    RouterLink,
+  ],
   templateUrl: './course-player.component.html',
 })
 export default class CoursePlayerComponent implements OnInit, OnDestroy {
@@ -153,6 +165,12 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
       },
       error: () => this.markingDone.set(false),
     });
+  }
+
+  /** A passed quiz or a handed-in assignment completed the lesson: refresh the outline (it may unlock the next lesson). */
+  protected onAssessmentCompleted(): void {
+    this.lesson.update(l => (l ? { ...l, isCompleted: true } : l));
+    this.learning.course(this.org, this.courseId).subscribe(course => this.course.set(course));
   }
 
   // ---- loading -----------------------------------------------------------------------------------------

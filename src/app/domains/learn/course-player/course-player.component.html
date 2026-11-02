@@ -132,10 +132,14 @@
                   </button>
                 }
               }
-              @default {
-                <div class="rounded-xl border border-dashed p-8 text-center text-neutral-500">
-                  {{ l.type === 'Quiz' ? 'Quizzes' : 'Assignments' }} will be available here soon.
-                </div>
+              @case ('Quiz') {
+                <app-quiz-panel [org]="org" [lessonId]="l.id" [preview]="course()?.isPreview ?? false" (completed)="onAssessmentCompleted()" />
+              }
+              @case ('Assignment') {
+                @if (l.content) {
+                  <div class="prose max-w-none dark:prose-invert" [innerHTML]="l.content"></div>
+                }
+                <app-assignment-panel [org]="org" [lessonId]="l.id" [preview]="course()?.isPreview ?? false" (completed)="onAssessmentCompleted()" />
               }
             }
 

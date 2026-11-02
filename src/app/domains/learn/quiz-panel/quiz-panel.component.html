@@ -1,0 +1,136 @@
+<section class="space-y-6 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
+  @if (preview()) {
+    <p class="text-sm text-neutral-500">Students take this quiz here. Quizzes cannot be taken in preview mode.</p>
+  }
+
+  @if (error(); as message) {
+    <p class="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-200">{{ message }}</p>
+  }
+
+  @if (attempt(); as a) {
+    <!-- Taking the quiz -->
+    <header class="sticky top-0 z-10 -mx-6 -mt-6 flex items-center justify-between rounded-t-2xl border-b bg-white px-6 py-3 dark:bg-neutral-800">
+      <span class="text-sm text-neutral-500">{{ answeredCount() }} / {{ a.questions.length }} answered · saved automatically</span>
+      @if (remaining() !== null) {
+        <span class="font-mono text-lg font-semibold" [class.text-red-600]="remaining()! < 60000" dir="ltr">{{ remainingText() }}</span>
+      }
+    </header>
+
+    <ol class="space-y-6">
+      @for (q of a.questions; track q.questionId; let i = $index) {
+        <li class="space-y-3">
+          <p class="font-medium">
+            <span class="text-neutral-500">{{ i + 1 }}.</span> {{ q.text }}
+            <span class="text-sm text-neutral-400">({{ q.points }} pt{{ q.points === 1 ? '' : 's' }})</span>
+          </p>
+          @if (q.type === 'ShortAnswer') {
+            <input
+              class="w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
+              maxlength="500"
+              [value]="textOf(q)"
+              (input)="write(q, $any($event.target).value)"
+            />
+          } @else {
+            @if (q.type === 'MultipleChoice') {
+              <p class="text-xs text-neutral-500">Select all that apply.</p>
+            }
+            <div class="space-y-2">
+              @for (o of q.options; track o.id) {
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-start"
+                  [class.border-primary-500]="isSelected(q, o.id)"
+                  [class.bg-primary-50]="isSelected(q, o.id)"
+                  [attr.aria-pressed]="isSelected(q, o.id)"
+                  (click)="choose(q, o.id)"
+                >
+                  <mat-icon
+                    class="icon-size-5"
+                    [svgIcon]="q.type === 'MultipleChoice' ? (isSelected(q, o.id) ? 'square-check' : 'square') : (isSelected(q, o.id) ? 'circle-dot' : 'circle')"
+                  />
+                  <span>{{ o.text }}</span>
+                </button>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ol>
+
+    <div class="flex justify-end">
+      <button matButton="filled" [disabled]="busy()" (click)="submit()">Submit answers</button>
+    </div>
+  } @else if (result(); as r) {
+    <!-- Result -->
+    <div class="text-center">
+      <p class="text-4xl font-bold" [class.text-emerald-600]="r.passed" [class.text-red-600]="!r.passed">{{ r.percent | number: '1.0-1' }}%</p>
+      <p class="mt-1 text-neutral-600 dark:text-neutral-300">
+        {{ r.score | number: '1.0-2' }} / {{ r.maxScore | number: '1.0-2' }} points · {{ r.passed ? 'Passed' : 'Not passed yet' }}
+      </p>
+      @if (r.autoSubmitted) {
+        <p class="mt-1 text-sm text-amber-700">Time ran out; your saved answers were submitted.</p>
+      }
+    </div>
+
+    @if (r.items; as items) {
+      <ol class="space-y-4">
+        @for (item of items; track item.questionId; let i = $index) {
+          <li class="rounded-lg border p-4" [class.border-emerald-300]="item.isCorrect" [class.border-red-300]="!item.isCorrect">
+            <p class="font-medium">{{ i + 1 }}. {{ questionText(item.questionId) }}</p>
+            <p class="mt-1 text-sm" [class.text-emerald-700]="item.isCorrect" [class.text-red-700]="!item.isCorrect">
+              {{ item.isCorrect ? 'Correct' : 'Incorrect' }} · {{ item.awardedPoints }} / {{ item.points }}
+            </p>
+            @if (!item.isCorrect) {
+              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                Correct answer:
+                @if (item.acceptedAnswers.length) {
+                  {{ item.acceptedAnswers.join(' / ') }}
+                } @else {
+                  @for (id of item.correctOptionIds; track id; let last = $last) {
+                    {{ optionText(item.questionId, id) }}{{ last ? '' : ', ' }}
+                  }
+                }
+              </p>
+            }
+            @if (item.explanation) {
+              <p class="mt-2 text-sm text-neutral-500">{{ item.explanation }}</p>
+            }
+          </li>
+        }
+      </ol>
+    }
+  }
+
+  @if (!attempt() && summary(); as s) {
+    <!-- Status -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <ul class="space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+        <li>{{ s.questionCount }} questions · pass mark {{ s.passPercent }}%</li>
+        <li>{{ s.timeLimitMinutes ? s.timeLimitMinutes + ' minutes' : 'No time limit' }}</li>
+        <li>
+          Attempts: {{ s.attemptsUsed }}{{ s.maxAttempts ? ' / ' + s.maxAttempts : '' }}
+          @if (s.bestPercent !== null) {
+            · best {{ s.bestPercent | number: '1.0-1' }}%
+          }
+        </li>
+        @if (s.passed) {
+          <li class="font-medium text-emerald-700">You passed this quiz.</li>
+        }
+      </ul>
+
+      @if (preview()) {
+        <p class="text-sm text-neutral-500">Students take the quiz here (not available in preview).</p>
+      } @else if (s.questionCount === 0) {
+        <p class="text-sm text-neutral-500">This quiz is not ready yet.</p>
+      } @else if (attemptsLeft() === 0 && !s.inProgressAttemptId) {
+        <p class="text-sm text-neutral-500">No attempts left.</p>
+      } @else {
+        <button matButton="filled" [disabled]="busy()" (click)="start()">
+          {{ s.inProgressAttemptId ? 'Resume quiz' : s.attemptsUsed > 0 ? 'Try again' : 'Start quiz' }}
+        </button>
+      }
+    </div>
+  } @else if (!preview() && !attempt() && !summary() && !error()) {
+    <div class="flex justify-center p-6"><mat-spinner diameter="28" /></div>
+  }
+</section>

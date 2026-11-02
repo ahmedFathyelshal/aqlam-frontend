@@ -1,0 +1,61 @@
+<section class="space-y-4 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
+  @if (preview()) {
+    <p class="text-sm text-neutral-500">Students hand in their work here (not available in preview).</p>
+  } @else if (assignment(); as a) {
+    <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+      <span>{{ a.maxPoints }} points</span>
+      @if (a.dueAtUtc) {
+        <span>Due {{ a.dueAtUtc | date: 'medium' }}{{ a.acceptLateSubmissions ? '' : ' (no late work)' }}</span>
+      }
+    </div>
+
+    @if (a.submission; as s) {
+      <div
+        class="rounded-lg p-4"
+        [class.bg-emerald-50]="s.status === 'Graded'"
+        [class.bg-amber-50]="s.status === 'ReturnedForRevision'"
+        [class.bg-neutral-50]="s.status === 'Submitted'"
+      >
+        <p class="font-medium">
+          @switch (s.status) {
+            @case ('Graded') { Graded: {{ s.score }} / {{ s.maxPoints }} }
+            @case ('ReturnedForRevision') { Returned for revision }
+            @default { Submitted {{ s.submittedAtUtc | date: 'medium' }}{{ s.isLate ? ' (late)' : '' }} — waiting for a grade }
+          }
+        </p>
+        @if (s.feedback) {
+          <p class="mt-2 text-sm whitespace-pre-line">{{ s.feedback }}</p>
+        }
+      </div>
+    }
+
+    @if (a.canSubmit) {
+      <form class="space-y-3" (submit)="$event.preventDefault(); submit()">
+        <label class="block text-sm font-medium" for="answer">Your answer</label>
+        <textarea
+          id="answer"
+          class="min-h-40 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
+          maxlength="20000"
+          [value]="text()"
+          (input)="text.set($any($event.target).value)"
+        ></textarea>
+        <label class="block text-sm font-medium" for="links">Links (one per line, https)</label>
+        <textarea
+          id="links"
+          class="min-h-20 w-full rounded-lg border px-3 py-2 font-mono text-sm dark:bg-neutral-900"
+          dir="ltr"
+          [value]="links()"
+          (input)="links.set($any($event.target).value)"
+        ></textarea>
+        @if (error(); as message) {
+          <p class="text-sm text-red-600">{{ message }}</p>
+        }
+        <button matButton="filled" type="submit" [disabled]="busy()">{{ a.submission ? 'Update submission' : 'Hand in' }}</button>
+      </form>
+    } @else if (!a.submission) {
+      <p class="text-sm text-red-700">The due date has passed and late work is not accepted.</p>
+    }
+  } @else if (error(); as message) {
+    <p class="text-sm text-red-600">{{ message }}</p>
+  }
+</section>
