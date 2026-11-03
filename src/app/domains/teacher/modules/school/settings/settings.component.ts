@@ -1,9 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { formatOrgDate, todayIn } from '@/app/core/organizations/org-date';
 import { OrganizationSettings, SchoolService } from '@/app/core/school/school.service';
+import { I18nService } from '@/app/core/transloco/i18n.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 import { WEEK_DAYS } from '../classes/class-form';
 
@@ -12,71 +13,73 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
 /** Organization profile and locale: name, branding, time zone, Hijri/Gregorian dates, first day of the week. */
 @Component({
   selector: 'app-org-settings',
-  imports: [MatButtonModule],
+  imports: [TranslocoDirective],
   template: `
-    <div class="mx-auto max-w-2xl space-y-6 p-6">
-      <header>
-        <h1 class="text-2xl font-bold">Settings</h1>
+    <ng-container *transloco="let t">
+      <div class="page-narrow">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">{{ t('settings.title') }}</h1>
+            @if (settings(); as s) {
+              <p class="page-subtitle"><span dir="ltr">{{ s.slug }}</span> · {{ t('orgType.' + s.type) }} · {{ s.countryCode }} · {{ s.currency }}</p>
+            }
+          </div>
+        </header>
+
         @if (settings(); as s) {
-          <p class="text-sm text-neutral-500"><span dir="ltr">{{ s.slug }}</span> · {{ s.type }} · {{ s.countryCode }} · {{ s.currency }}</p>
-        }
-      </header>
-
-      @if (settings(); as s) {
-        <section class="space-y-4 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
-          <label class="block">
-            <span class="text-sm font-medium">Name</span>
-            <input class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="150" [value]="s.name" (input)="patch({ name: $any($event.target).value })" />
-          </label>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <label class="block">
-              <span class="text-sm font-medium">Time zone</span>
-              <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="s.timeZone" (change)="patch({ timeZone: $any($event.target).value })">
-                @for (tz of timeZones(); track tz) { <option [value]="tz">{{ tz }}</option> }
-              </select>
+          <section class="card card-body flex flex-col gap-5">
+            <label class="field">
+              <span class="field-label">{{ t('settings.name') }}</span>
+              <input class="input" maxlength="150" [value]="s.name" (input)="patch({ name: $any($event.target).value })" />
             </label>
-            <label class="block">
-              <span class="text-sm font-medium">Week starts on</span>
-              <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="s.weekStartDay" (change)="patch({ weekStartDay: $any($event.target).value })">
-                @for (d of days; track d) { <option [value]="d">{{ d }}</option> }
-              </select>
-            </label>
-          </div>
-          <fieldset>
-            <legend class="text-sm font-medium">Dates</legend>
-            <div class="mt-1 flex flex-wrap gap-4">
-              @for (c of calendars; track c) {
-                <label class="flex items-center gap-2">
-                  <input type="radio" name="calendar" [checked]="s.calendar === c" (change)="patch({ calendar: c })" /> {{ c === 'Both' ? 'Gregorian + Hijri' : c }}
-                </label>
-              }
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="field">
+                <span class="field-label">{{ t('settings.timeZone') }}</span>
+                <select class="select" dir="ltr" [value]="s.timeZone" (change)="patch({ timeZone: $any($event.target).value })">
+                  @for (tz of timeZones(); track tz) { <option [value]="tz">{{ tz }}</option> }
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">{{ t('settings.weekStart') }}</span>
+                <select class="select" [value]="s.weekStartDay" (change)="patch({ weekStartDay: $any($event.target).value })">
+                  @for (d of days; track d) { <option [value]="d">{{ t('day.' + d) }}</option> }
+                </select>
+              </label>
             </div>
-            <p class="mt-1 text-sm text-neutral-500">Today shows as: {{ preview() }}</p>
-          </fieldset>
-          <div class="grid gap-4 sm:grid-cols-[1fr_10rem]">
-            <label class="block">
-              <span class="text-sm font-medium">Logo URL (https)</span>
-              <input class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" dir="ltr" [value]="s.logoUrl ?? ''" (input)="patch({ logoUrl: $any($event.target).value || null })" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-medium">Brand color</span>
-              <input type="color" class="mt-1 h-10 w-full rounded-lg border dark:bg-neutral-900" [value]="s.primaryColor ?? '#1E6FD9'" (input)="patch({ primaryColor: $any($event.target).value })" />
-            </label>
-          </div>
+            <fieldset>
+              <legend class="field-label mb-2">{{ t('settings.dates') }}</legend>
+              <div class="segmented" role="radiogroup">
+                @for (c of calendars; track c) {
+                  <button type="button" role="radio" class="segment" [attr.aria-checked]="s.calendar === c" [class.is-active]="s.calendar === c" (click)="patch({ calendar: c })">{{ t('settings.' + c) }}</button>
+                }
+              </div>
+              <p class="field-hint mt-2">{{ t('settings.preview', { date: preview() }) }}</p>
+            </fieldset>
+            <div class="grid gap-4 sm:grid-cols-[1fr_9rem]">
+              <label class="field">
+                <span class="field-label">{{ t('settings.logo') }}</span>
+                <input class="input" dir="ltr" inputmode="url" [value]="s.logoUrl ?? ''" (input)="patch({ logoUrl: $any($event.target).value || null })" />
+              </label>
+              <label class="field">
+                <span class="field-label">{{ t('settings.color') }}</span>
+                <input type="color" class="input p-1" [value]="s.primaryColor ?? '#146C43'" (input)="patch({ primaryColor: $any($event.target).value })" />
+              </label>
+            </div>
 
-          @if (errors().length) { <p class="text-sm text-red-600">{{ errors().join(' • ') }}</p> }
-          @if (saved()) { <p class="text-sm text-green-700 dark:text-green-400">Saved.</p> }
-          <div class="flex justify-end">
-            <button matButton="filled" [disabled]="saving()" (click)="save()">Save</button>
-          </div>
-        </section>
-      }
-    </div>
+            @if (errors().length) { <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div> }
+            @if (saved()) { <div class="alert alert-success" role="status">{{ t('settings.saved') }}</div> }
+            <button type="button" class="btn btn-primary self-stretch sm:self-end" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>
+          </section>
+        }
+      </div>
+    </ng-container>
   `,
 })
 export default class SettingsComponent {
   private orgContext = inject(OrgContextService);
   private school = inject(SchoolService);
+  private i18n = inject(I18nService);
+  private transloco = inject(TranslocoService);
 
   protected readonly days = WEEK_DAYS;
   protected readonly calendars = ['Gregorian', 'Hijri', 'Both'] as const;
@@ -91,7 +94,7 @@ export default class SettingsComponent {
   });
   protected preview = computed(() => {
     const s = this.settings();
-    return s ? formatOrgDate(todayIn(s.timeZone), s.calendar) : '';
+    return s ? formatOrgDate(todayIn(s.timeZone), s.calendar, { locale: this.i18n.lang() }) : '';
   });
 
   constructor() {
@@ -118,7 +121,7 @@ export default class SettingsComponent {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errors.set(errorMessages(err, 'The settings could not be saved.'));
+        this.errors.set(errorMessages(err, this.transloco.translate('error.generic')));
       },
     });
   }

@@ -40,7 +40,7 @@ export class OrgContextService {
   );
 
   /** Explicit selection, otherwise the first staff organization (an independent teacher has exactly one). */
-  readonly activeOrg = computed(() => {
+  readonly activeOrg = computed<MembershipSummary | null>(() => {
     const staff = this.staffMemberships();
     return staff.find(m => m.slug === this.selectedSlug()) ?? staff[0] ?? null;
   });

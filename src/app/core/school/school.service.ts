@@ -235,6 +235,10 @@ export class SchoolService {
     return this.http.get(ApiEndpoints.School.MemberImportTemplate(org), { responseType: 'blob' });
   }
 
+  approveMember(org: string, userId: string): Observable<Member> {
+    return this.post(ApiEndpoints.School.MemberApprove(org, userId), {});
+  }
+
   setGender(org: string, userId: string, gender: Gender | null): Observable<Member> {
     return this.put(ApiEndpoints.School.MemberGender(org, userId), { gender });
   }

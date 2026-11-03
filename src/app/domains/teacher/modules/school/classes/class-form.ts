@@ -1,10 +1,11 @@
 import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { Branch, ClassInput, ClassSummary, Member, SchoolService, WeeklySlot } from '@/app/core/school/school.service';
 import { CurriculumDto, LookupDto, LookupsService } from '@/app/core/services/lookups.service';
+import { I18nService } from '@/app/core/transloco/i18n.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 
 export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -12,111 +13,108 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
 /** Create or edit a class (school section) or group (center), including a weekly schedule for groups. */
 @Component({
   selector: 'class-form',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatIconModule, TranslocoDirective],
   template: `
-    @let f = form();
-    <div class="grid gap-4 sm:grid-cols-2">
-      <label class="block">
-        <span class="text-sm font-medium">Name</span>
-        <input class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="100" placeholder="e.g. 7-B"
-               [value]="f.name" (input)="patch({ name: $any($event.target).value })" />
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">Type</span>
-        <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.kind" (change)="patch({ kind: $any($event.target).value })">
-          <option value="Section">Class / section (school)</option>
-          <option value="Group">Group with schedule (center)</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">For</span>
-        <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.gender" (change)="patch({ gender: $any($event.target).value })">
-          <option value="Mixed">Boys and girls</option>
-          <option value="Boys">Boys</option>
-          <option value="Girls">Girls</option>
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">Branch / campus</span>
-        <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.branchId ?? ''" (change)="patch({ branchId: $any($event.target).value || null })">
-          <option value="">—</option>
-          @for (b of branches(); track b.id) {
-            <option [value]="b.id">{{ b.name }}{{ b.gender !== 'Mixed' ? ' (' + b.gender + ')' : '' }}</option>
-          }
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">Curriculum</span>
-        <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.curriculumId ?? ''" (change)="selectCurriculum($any($event.target).value)">
-          <option value="">—</option>
-          @for (c of curricula(); track c.id) { <option [value]="c.id">{{ c.nameEn }}</option> }
-        </select>
-      </label>
-      <div class="grid grid-cols-2 gap-2">
-        <label class="block">
-          <span class="text-sm font-medium">Stage</span>
-          <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="stageId() ?? ''" (change)="selectStage($any($event.target).value)" [disabled]="!stages().length">
-            <option value="">—</option>
-            @for (s of stages(); track s.id) { <option [value]="s.id">{{ s.nameEn }}</option> }
+    <ng-container *transloco="let t">
+      @let f = form();
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.name') }}</span>
+          <input class="input" maxlength="100" [placeholder]="t('classes.form.namePlaceholder')" [value]="f.name" (input)="patch({ name: $any($event.target).value })" />
+        </label>
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.kind') }}</span>
+          <select class="select" [value]="f.kind" (change)="patch({ kind: $any($event.target).value })">
+            <option value="Section">{{ t('classes.form.kindSection') }}</option>
+            <option value="Group">{{ t('classes.form.kindGroup') }}</option>
           </select>
         </label>
-        <label class="block">
-          <span class="text-sm font-medium">Grade</span>
-          <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.gradeId ?? ''" (change)="patch({ gradeId: +$any($event.target).value || null })" [disabled]="!grades().length">
-            <option value="">—</option>
-            @for (g of grades(); track g.id) { <option [value]="g.id">{{ g.nameEn }}</option> }
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.gender') }}</span>
+          <select class="select" [value]="f.gender" (change)="patch({ gender: $any($event.target).value })">
+            <option value="Mixed">{{ t('gender.Mixed') }}</option>
+            <option value="Boys">{{ t('gender.Boys') }}</option>
+            <option value="Girls">{{ t('gender.Girls') }}</option>
           </select>
         </label>
-      </div>
-      <label class="block">
-        <span class="text-sm font-medium">Homeroom teacher</span>
-        <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="f.homeroomTeacherUserId ?? ''" (change)="patch({ homeroomTeacherUserId: $any($event.target).value || null })">
-          <option value="">—</option>
-          @for (t of teachers(); track t.userId) { <option [value]="t.userId">{{ t.fullName || t.userName }}</option> }
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-sm font-medium">Capacity (optional)</span>
-        <input type="number" min="1" class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
-               [value]="f.capacity ?? ''" (input)="patch({ capacity: +$any($event.target).value || null })" />
-      </label>
-    </div>
-
-    @if (f.kind === 'Group') {
-      <div class="mt-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Weekly schedule</span>
-          <button matButton type="button" (click)="addSlot()"><mat-icon svgIcon="plus" /> Add meeting</button>
-        </div>
-        @for (slot of f.schedule; track $index; let i = $index) {
-          <div class="flex flex-wrap items-center gap-2">
-            <select class="rounded-lg border px-2 py-1 dark:bg-neutral-900" [value]="slot.day" (change)="patchSlot(i, { day: $any($event.target).value })">
-              @for (d of days; track d) { <option [value]="d">{{ d }}</option> }
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.branch') }}</span>
+          <select class="select" [value]="f.branchId ?? ''" (change)="patch({ branchId: $any($event.target).value || null })">
+            <option value="">{{ t('classes.form.none') }}</option>
+            @for (b of branches(); track b.id) {
+              <option [value]="b.id">{{ b.name }}{{ b.gender !== 'Mixed' ? ' · ' + t('gender.' + b.gender) : '' }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.curriculum') }}</span>
+          <select class="select" [value]="f.curriculumId ?? ''" (change)="selectCurriculum($any($event.target).value)">
+            <option value="">{{ t('classes.form.none') }}</option>
+            @for (c of curricula(); track c.id) { <option [value]="c.id">{{ name(c) }}</option> }
+          </select>
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="field">
+            <span class="field-label">{{ t('classes.form.stage') }}</span>
+            <select class="select" [value]="stageId() ?? ''" (change)="selectStage($any($event.target).value)" [disabled]="!stages().length">
+              <option value="">{{ t('classes.form.none') }}</option>
+              @for (s of stages(); track s.id) { <option [value]="s.id">{{ name(s) }}</option> }
             </select>
-            <input type="time" class="rounded-lg border px-2 py-1 dark:bg-neutral-900" [value]="slot.startTime" (input)="patchSlot(i, { startTime: $any($event.target).value })" />
-            <span>–</span>
-            <input type="time" class="rounded-lg border px-2 py-1 dark:bg-neutral-900" [value]="slot.endTime" (input)="patchSlot(i, { endTime: $any($event.target).value })" />
-            <button matIconButton type="button" aria-label="Remove meeting" (click)="removeSlot(i)"><mat-icon svgIcon="x" /></button>
-          </div>
-        }
+          </label>
+          <label class="field">
+            <span class="field-label">{{ t('classes.form.grade') }}</span>
+            <select class="select" [value]="f.gradeId ?? ''" (change)="patch({ gradeId: +$any($event.target).value || null })" [disabled]="!grades().length">
+              <option value="">{{ t('classes.form.none') }}</option>
+              @for (g of grades(); track g.id) { <option [value]="g.id">{{ name(g) }}</option> }
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.homeroom') }}</span>
+          <select class="select" [value]="f.homeroomTeacherUserId ?? ''" (change)="patch({ homeroomTeacherUserId: $any($event.target).value || null })">
+            <option value="">{{ t('classes.form.none') }}</option>
+            @for (m of teachers(); track m.userId) { <option [value]="m.userId">{{ m.fullName || m.userName }}</option> }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">{{ t('classes.form.capacity') }}</span>
+          <input class="input" type="number" min="1" inputmode="numeric" [value]="f.capacity ?? ''" (input)="patch({ capacity: +$any($event.target).value || null })" />
+        </label>
       </div>
-    }
 
-    @if (errors().length) {
-      <ul class="mt-4 list-inside list-disc rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30">
-        @for (e of errors(); track $index) { <li>{{ e }}</li> }
-      </ul>
-    }
-    <div class="mt-4 flex justify-end gap-2">
-      <button matButton type="button" (click)="cancelled.emit()">Cancel</button>
-      <button matButton="filled" type="button" [disabled]="saving() || !f.name.trim()" (click)="save()">Save</button>
-    </div>
+      @if (f.kind === 'Group') {
+        <fieldset class="mt-5 flex flex-col gap-2">
+          <legend class="field-label mb-2">{{ t('classes.form.schedule') }}</legend>
+          @for (slot of f.schedule; track $index; let i = $index) {
+            <div class="flex flex-wrap items-center gap-2">
+              <select class="select w-auto min-w-36" [attr.aria-label]="t('classes.form.schedule')" [value]="slot.day" (change)="patchSlot(i, { day: $any($event.target).value })">
+                @for (d of days; track d) { <option [value]="d">{{ t('day.' + d) }}</option> }
+              </select>
+              <input type="time" class="input w-auto" [value]="slot.startTime" (input)="patchSlot(i, { startTime: $any($event.target).value })" />
+              <span aria-hidden="true">–</span>
+              <input type="time" class="input w-auto" [value]="slot.endTime" (input)="patchSlot(i, { endTime: $any($event.target).value })" />
+              <button type="button" class="btn-icon" [attr.aria-label]="t('classes.form.removeMeeting')" (click)="removeSlot(i)"><mat-icon svgIcon="x" class="icon-size-5" /></button>
+            </div>
+          }
+          <button type="button" class="btn btn-ghost btn-sm self-start" (click)="addSlot()"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('classes.form.addMeeting') }}</button>
+        </fieldset>
+      }
+
+      @if (errors().length) {
+        <div class="alert alert-danger mt-4" role="alert"><ul class="list-inside list-disc">@for (e of errors(); track $index) { <li>{{ e }}</li> }</ul></div>
+      }
+      <div class="mt-5 flex flex-wrap justify-end gap-2">
+        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">{{ t('action.cancel') }}</button>
+        <button type="button" class="btn btn-primary" [disabled]="saving() || !f.name.trim()" (click)="save()">{{ t('action.save') }}</button>
+      </div>
+    </ng-container>
   `,
 })
 export class ClassForm implements OnInit {
   private school = inject(SchoolService);
   private lookups = inject(LookupsService);
   private orgContext = inject(OrgContextService);
+  private i18n = inject(I18nService);
 
   /** The class to edit, or null to create one. */
   readonly value = input<ClassSummary | null>(null);
@@ -144,7 +142,7 @@ export class ClassForm implements OnInit {
     const existing = this.value();
     if (existing) {
       const { id, branchName, homeroomTeacherName, studentCount, ...input } = existing;
-      this.form.set(input);
+      this.form.set({ ...input, schedule: input.schedule.map(s => ({ ...s, startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5) })) });
     } else if (org.type === 'Center') {
       this.patch({ kind: 'Group' });
     }
@@ -153,6 +151,10 @@ export class ClassForm implements OnInit {
     this.school.members(org.slug).subscribe(m => this.members.set(m));
     this.lookups.getCurricula(org.countryCode).subscribe(c => this.curricula.set(c));
     if (existing?.curriculumId) this.lookups.getEducationStages(existing.curriculumId).subscribe(s => this.stages.set(s));
+  }
+
+  protected name(item: LookupDto): string {
+    return this.i18n.lang() === 'ar' ? item.nameAr || item.nameEn : item.nameEn || item.nameAr;
   }
 
   protected patch(changes: Partial<ClassInput>): void {
@@ -201,7 +203,7 @@ export class ClassForm implements OnInit {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errors.set(errorMessages(err, 'The class could not be saved.'));
+        this.errors.set(errorMessages(err, 'Error'));
       },
     });
   }

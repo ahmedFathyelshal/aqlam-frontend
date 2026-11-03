@@ -39,6 +39,7 @@ export const ApiEndpoints = {
     MemberImport: (org: string) => orgUrl(org, '/members/import'),
     MemberImportTemplate: (org: string) => orgUrl(org, '/members/import/template'),
     MemberGender: (org: string, userId: string) => orgUrl(org, `/members/${userId}/gender`),
+    MemberApprove: (org: string, userId: string) => orgUrl(org, `/members/${userId}/approve`),
     Parents: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parents`),
     Parent: (org: string, studentId: string, parentId: string) => orgUrl(org, `/members/${studentId}/parents/${parentId}`),
     ParentInvite: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parent-invites`),

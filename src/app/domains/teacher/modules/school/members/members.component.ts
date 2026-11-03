@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { OrgDatePipe } from '@/app/core/organizations/org-date';
@@ -9,146 +9,163 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
 
 const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator', 'Admin', 'Finance'];
 
-/** Member directory: add people, bulk import from Excel, gender (for boys'/girls' classes) and students' parents. */
+/** Member directory: add people, bulk import from Excel, approvals, gender (for boys'/girls' classes) and parents. */
 @Component({
   selector: 'app-members',
-  imports: [MatButtonModule, MatIconModule, OrgDatePipe],
+  imports: [MatIconModule, TranslocoDirective, OrgDatePipe],
   template: `
-    <div class="mx-auto max-w-6xl space-y-6 p-6 print:p-0">
-      <header class="flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 class="text-2xl font-bold">Members</h1>
-          <p class="text-sm text-neutral-500">{{ members().length }} people</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <input class="rounded-lg border px-3 py-2 dark:bg-neutral-900" placeholder="Search name or username" [value]="search()" (input)="search.set($any($event.target).value)" />
-          <select class="rounded-lg border px-3 py-2 dark:bg-neutral-900" aria-label="Role" [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)">
-            <option value="">All roles</option>
-            @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
+    <ng-container *transloco="let t">
+      <div class="page">
+        <header class="page-header print:hidden">
+          <div>
+            <h1 class="page-title">{{ t('members.title') }}</h1>
+            <p class="page-subtitle">{{ t('members.count', { count: members().length }) }}</p>
+          </div>
+        </header>
+
+        @if (canManage()) {
+          <section class="mb-5 grid gap-4 print:hidden lg:grid-cols-2">
+            <div class="card card-body flex flex-col gap-3">
+              <h2 class="section-title">{{ t('members.addExisting') }}</h2>
+              <div class="flex flex-wrap gap-2">
+                <input class="input min-w-40 flex-1" dir="ltr" [placeholder]="t('members.userName')" [attr.aria-label]="t('members.userName')" [value]="newUserName()" (input)="newUserName.set($any($event.target).value)" />
+                <select class="select w-auto" [attr.aria-label]="t('members.role')" [value]="newRole()" (change)="newRole.set($any($event.target).value)">
+                  @for (r of roles; track r) { <option [value]="r">{{ t('role.' + r) }}</option> }
+                </select>
+                <button type="button" class="btn btn-secondary" [disabled]="!newUserName().trim()" (click)="add()">{{ t('action.add') }}</button>
+              </div>
+              @if (addError()) { <p class="field-error">{{ addError() }}</p> }
+            </div>
+            <div class="card card-body flex flex-col gap-3">
+              <h2 class="section-title">{{ t('members.import') }}</h2>
+              <p class="field-hint">{{ t('members.importHint') }}</p>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn btn-ghost" (click)="downloadTemplate()">{{ t('members.template') }}</button>
+                <label class="btn btn-secondary">
+                  {{ t('members.upload') }}
+                  <input type="file" class="sr-only" accept=".xlsx" (change)="upload($any($event.target))" />
+                </label>
+              </div>
+              @if (importError()) { <p class="field-error">{{ importError() }}</p> }
+            </div>
+          </section>
+        }
+
+        @if (report(); as r) {
+          <section class="card mb-5">
+            <div class="card-header print:hidden">
+              <h2 class="section-title">{{ t('members.report', { created: r.created, failed: r.failed }) }}</h2>
+              <div class="flex gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="print()"><mat-icon svgIcon="printer" class="icon-size-4" />{{ t('members.printCredentials') }}</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="report.set(null)">{{ t('action.close') }}</button>
+              </div>
+            </div>
+            <div class="alert alert-warning m-4 print:hidden">{{ t('members.reportWarn') }}</div>
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead><tr><th>#</th><th>{{ t('members.name') }}</th><th>{{ t('members.role') }}</th><th>{{ t('members.userName') }}</th><th>{{ t('members.tempPassword') }}</th></tr></thead>
+                <tbody>
+                  @for (row of r.rows; track row.rowNumber) {
+                    <tr [class.text-danger-700]="row.status === 'Failed'">
+                      <td>{{ row.rowNumber }}</td>
+                      <td>{{ row.fullName }}</td>
+                      <td>{{ t('role.' + row.role) }}</td>
+                      @if (row.status === 'Created') {
+                        <td class="font-mono" dir="ltr">{{ row.userName }}</td><td class="font-mono" dir="ltr">{{ row.temporaryPassword }}</td>
+                      } @else {
+                        <td colspan="2">{{ row.errors.join(' ') }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <div class="mb-3 flex flex-wrap gap-2 print:hidden">
+          <input class="input min-w-48 flex-1 sm:max-w-sm" type="search" [placeholder]="t('members.search')" [attr.aria-label]="t('members.search')" [value]="search()" (input)="search.set($any($event.target).value)" />
+          <select class="select w-auto" [attr.aria-label]="t('members.role')" [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)">
+            <option value="">{{ t('members.allRoles') }}</option>
+            @for (r of roles; track r) { <option [value]="r">{{ t('role.' + r) }}</option> }
           </select>
         </div>
-      </header>
 
-      @if (canManage()) {
-        <section class="grid gap-4 print:hidden lg:grid-cols-2">
-          <div class="space-y-2 rounded-2xl border bg-white p-5 dark:bg-neutral-800">
-            <h2 class="font-semibold">Add an existing account</h2>
-            <div class="flex flex-wrap gap-2">
-              <input class="min-w-40 flex-1 rounded-lg border px-3 py-2 dark:bg-neutral-900" dir="ltr" placeholder="Username" [value]="newUserName()" (input)="newUserName.set($any($event.target).value)" />
-              <select class="rounded-lg border px-3 py-2 dark:bg-neutral-900" aria-label="Role" [value]="newRole()" (change)="newRole.set($any($event.target).value)">
-                @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
-              </select>
-              <button matButton="outlined" [disabled]="!newUserName().trim()" (click)="add()">Add</button>
-            </div>
-            @if (addError()) { <p class="text-sm text-red-600">{{ addError() }}</p> }
-          </div>
-          <div class="space-y-2 rounded-2xl border bg-white p-5 dark:bg-neutral-800">
-            <h2 class="font-semibold">Import from Excel</h2>
-            <p class="text-sm text-neutral-500">Creates accounts with usernames and temporary passwords to print.</p>
-            <div class="flex flex-wrap items-center gap-2">
-              <button matButton (click)="downloadTemplate()">Download template</button>
-              <label class="cursor-pointer rounded-lg border px-3 py-2 text-sm">
-                Upload .xlsx
-                <input type="file" class="hidden" accept=".xlsx" (change)="upload($any($event.target))" />
-              </label>
-            </div>
-            @if (importError()) { <p class="text-sm text-red-600">{{ importError() }}</p> }
-          </div>
-        </section>
-      }
-
-      @if (report(); as r) {
-        <section class="space-y-3 rounded-2xl border bg-white p-5 dark:bg-neutral-800">
-          <div class="flex items-center justify-between print:hidden">
-            <h2 class="font-semibold">Import: {{ r.created }} created, {{ r.failed }} failed</h2>
-            <div class="flex gap-2">
-              <button matButton (click)="print()"><mat-icon svgIcon="printer" /> Print credentials</button>
-              <button matButton (click)="report.set(null)">Close</button>
-            </div>
-          </div>
-          <p class="text-sm text-amber-700 print:hidden">Temporary passwords are shown only now. Print or hand them out before closing.</p>
-          <table class="w-full text-sm">
-            <thead><tr class="text-left text-neutral-500"><th class="p-1">#</th><th class="p-1">Name</th><th class="p-1">Role</th><th class="p-1">Username</th><th class="p-1">Temporary password</th></tr></thead>
-            <tbody>
-              @for (row of r.rows; track row.rowNumber) {
-                <tr class="border-t" [class.text-red-600]="row.status === 'Failed'">
-                  <td class="p-1">{{ row.rowNumber }}</td>
-                  <td class="p-1">{{ row.fullName }}</td>
-                  <td class="p-1">{{ row.role }}</td>
-                  @if (row.status === 'Created') {
-                    <td class="p-1 font-mono" dir="ltr">{{ row.userName }}</td><td class="p-1 font-mono" dir="ltr">{{ row.temporaryPassword }}</td>
-                  } @else {
-                    <td class="p-1" colspan="2">{{ row.errors.join(' ') }}</td>
+        <section class="card print:hidden">
+          @for (m of filtered(); track m.userId) {
+            <div class="border-b border-line-soft px-4 py-3 last:border-b-0 sm:px-5">
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary-100 font-extrabold text-secondary-600">{{ (m.fullName || m.userName).charAt(0) }}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate font-bold">{{ m.fullName || m.userName }}</p>
+                  <p class="text-sm text-muted">
+                    <span dir="ltr">{{ m.userName }}</span> · {{ roleNames(m, t) }} · {{ t('members.joined', { date: (m.joinedAtUtc | orgDate) }) }}
+                  </p>
+                </div>
+                @if (m.status !== 'Active') {
+                  <span class="badge" [class]="m.status === 'Pending' ? 'badge-warning' : 'badge-neutral'">{{ t('members.status.' + m.status) }}</span>
+                }
+                <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  @if (canManage() && m.status === 'Pending') {
+                    <button type="button" class="btn btn-primary btn-sm" (click)="approve(m)">{{ t('members.approve') }}</button>
                   }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </section>
-      }
-
-      <section class="divide-y rounded-2xl border bg-white print:hidden dark:bg-neutral-800">
-        @for (m of filtered(); track m.userId) {
-          <div class="p-4">
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="min-w-0 flex-1">
-                <p class="font-medium">{{ m.fullName || m.userName }}</p>
-                <p class="text-xs text-neutral-500"><span dir="ltr">{{ m.userName }}</span> · {{ m.roles.join(', ') }} · {{ m.status }} · joined {{ m.joinedAtUtc | orgDate }}</p>
+                  @if (canManage()) {
+                    <select class="select min-h-10 w-auto text-sm" [attr.aria-label]="t('members.gender')" [value]="m.gender ?? ''" (change)="setGender(m, $any($event.target).value || null)">
+                      <option value="">{{ t('members.gender') }} —</option>
+                      <option value="Male">{{ t('gender.Male') }}</option>
+                      <option value="Female">{{ t('gender.Female') }}</option>
+                    </select>
+                  } @else if (m.gender) {
+                    <span class="badge badge-neutral">{{ t('gender.' + m.gender) }}</span>
+                  }
+                  @if (m.roles.includes('Student')) {
+                    <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="openStudent() === m.userId" (click)="toggleParents(m)"><mat-icon svgIcon="users-round" class="icon-size-4" />{{ t('members.parents') }}</button>
+                  }
+                </div>
               </div>
-              @if (canManage()) {
-                <select class="rounded-lg border px-2 py-1 text-sm dark:bg-neutral-900" aria-label="Gender" [value]="m.gender ?? ''" (change)="setGender(m, $any($event.target).value || null)">
-                  <option value="">Gender —</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              } @else if (m.gender) {
-                <span class="text-sm text-neutral-500">{{ m.gender }}</span>
-              }
-              @if (m.roles.includes('Student')) {
-                <button matButton (click)="toggleParents(m)">Parents</button>
+
+              @if (openStudent() === m.userId) {
+                <div class="mt-3 flex flex-col gap-2 rounded-[6px] bg-page p-3 sm:ms-13">
+                  @for (p of parents(); track p.userId) {
+                    <div class="flex items-center justify-between gap-2">
+                      <span><span class="font-bold">{{ p.fullName || p.userName }}</span> <span class="text-sm text-muted" dir="ltr">{{ p.userName }}{{ p.phoneNumber ? ' · ' + p.phoneNumber : '' }}</span></span>
+                      @if (canManage()) {
+                        <button type="button" class="btn btn-ghost btn-sm" (click)="unlink(m, p)">{{ t('members.unlink') }}</button>
+                      }
+                    </div>
+                  } @empty {
+                    <p class="text-muted">{{ t('members.noParents') }}</p>
+                  }
+                  @if (canManage() && parents().length < 2) {
+                    <div class="flex flex-wrap gap-2">
+                      <input class="input min-h-10 min-w-40 flex-1" dir="ltr" [placeholder]="t('members.parentUserName')" [attr.aria-label]="t('members.parentUserName')" [value]="parentUserName()" (input)="parentUserName.set($any($event.target).value)" />
+                      <button type="button" class="btn btn-secondary btn-sm" [disabled]="!parentUserName().trim()" (click)="link(m)">{{ t('members.link') }}</button>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="invite(m)"><mat-icon svgIcon="qr-code" class="icon-size-4" />{{ t('members.familyCode') }}</button>
+                    </div>
+                  }
+                  @if (inviteCode(); as code) {
+                    <div class="rounded-[6px] border border-dashed border-secondary-300 bg-white p-3">
+                      <p class="text-sm">{{ t('members.codeFor', { name: code.childName }) }}</p>
+                      <p class="mt-1 font-mono text-2xl font-bold tracking-[0.3em]" dir="ltr">{{ code.code }}</p>
+                      <p class="text-xs text-muted">{{ t('members.codeValid', { date: (code.expiresAtUtc | orgDate) }) }}</p>
+                    </div>
+                  }
+                  @if (parentError()) { <p class="field-error">{{ parentError() }}</p> }
+                </div>
               }
             </div>
-
-            @if (openStudent() === m.userId) {
-              <div class="mt-3 space-y-2 rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-900">
-                @for (p of parents(); track p.userId) {
-                  <div class="flex items-center justify-between gap-2">
-                    <span>{{ p.fullName || p.userName }} <span class="text-neutral-500" dir="ltr">{{ p.userName }}{{ p.phoneNumber ? ' · ' + p.phoneNumber : '' }}</span></span>
-                    @if (canManage()) {
-                      <button matIconButton aria-label="Unlink parent" (click)="unlink(m, p)"><mat-icon svgIcon="x" /></button>
-                    }
-                  </div>
-                } @empty {
-                  <p class="text-neutral-500">No parent linked yet.</p>
-                }
-                @if (canManage() && parents().length < 2) {
-                  <div class="flex flex-wrap gap-2">
-                    <input class="min-w-40 flex-1 rounded-lg border px-3 py-1.5 dark:bg-neutral-800" dir="ltr" placeholder="Parent's username" [value]="parentUserName()" (input)="parentUserName.set($any($event.target).value)" />
-                    <button matButton="outlined" [disabled]="!parentUserName().trim()" (click)="link(m)">Link</button>
-                    <button matButton (click)="invite(m)"><mat-icon svgIcon="qr-code" /> Code for the family</button>
-                  </div>
-                }
-                @if (inviteCode(); as code) {
-                  <div class="rounded-lg border border-dashed p-3">
-                    <p>Give this code to {{ code.childName }}'s parent. They sign up as a parent and enter it under "My children".</p>
-                    <p class="mt-1 font-mono text-2xl tracking-widest" dir="ltr">{{ code.code }}</p>
-                    <p class="text-xs text-neutral-500">Valid until {{ code.expiresAtUtc | orgDate }}. One use.</p>
-                  </div>
-                }
-                @if (parentError()) { <p class="text-red-600">{{ parentError() }}</p> }
-              </div>
-            }
-          </div>
-        } @empty {
-          <p class="p-6 text-center text-sm text-neutral-500">No members match.</p>
-        }
-      </section>
-    </div>
+          } @empty {
+            <p class="px-5 py-10 text-center text-muted">{{ t('members.noMatch') }}</p>
+          }
+        </section>
+      </div>
+    </ng-container>
   `,
 })
 export default class MembersComponent {
   protected orgContext = inject(OrgContextService);
   private school = inject(SchoolService);
+  private transloco = inject(TranslocoService);
 
   protected readonly roles = ROLES;
   protected canManage = computed(() => this.orgContext.can('members.manage'));
@@ -158,8 +175,7 @@ export default class MembersComponent {
   protected filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     const role = this.roleFilter();
-    return this.members().filter(m =>
-      (!role || m.roles.includes(role)) && (!q || m.fullName.toLowerCase().includes(q) || m.userName.toLowerCase().includes(q)));
+    return this.members().filter(m => (!role || m.roles.includes(role)) && (!q || m.fullName.toLowerCase().includes(q) || m.userName.toLowerCase().includes(q)));
   });
 
   protected newUserName = signal('');
@@ -178,6 +194,10 @@ export default class MembersComponent {
     this.load();
   }
 
+  protected roleNames(member: Member, t: (key: string) => string): string {
+    return member.roles.map(r => t('role.' + r)).join('، ');
+  }
+
   protected add(): void {
     this.addError.set(null);
     this.school.addMember(this.org, this.newUserName().trim(), [this.newRole()]).subscribe({
@@ -185,8 +205,12 @@ export default class MembersComponent {
         this.newUserName.set('');
         this.load();
       },
-      error: (err: unknown) => this.addError.set(errorMessages(err, 'The member could not be added.').join(' ')),
+      error: (err: unknown) => this.addError.set(this.message(err)),
     });
+  }
+
+  protected approve(member: Member): void {
+    this.school.approveMember(this.org, member.userId).subscribe(() => this.load());
   }
 
   protected downloadTemplate(): void {
@@ -210,7 +234,7 @@ export default class MembersComponent {
         this.report.set(report);
         this.load();
       },
-      error: (err: unknown) => this.importError.set(errorMessages(err, 'The file could not be imported.').join(' ')),
+      error: (err: unknown) => this.importError.set(this.message(err)),
     });
   }
 
@@ -242,7 +266,7 @@ export default class MembersComponent {
         this.loadParents(student);
         this.load();
       },
-      error: (err: unknown) => this.parentError.set(errorMessages(err, 'The parent could not be linked.').join(' ')),
+      error: (err: unknown) => this.parentError.set(this.message(err)),
     });
   }
 
@@ -254,8 +278,12 @@ export default class MembersComponent {
     this.parentError.set(null);
     this.school.parentInvite(this.org, student.userId).subscribe({
       next: code => this.inviteCode.set(code),
-      error: (err: unknown) => this.parentError.set(errorMessages(err, 'A code could not be created.').join(' ')),
+      error: (err: unknown) => this.parentError.set(this.message(err)),
     });
+  }
+
+  private message(err: unknown): string {
+    return errorMessages(err, this.transloco.translate('error.generic')).join(' ');
   }
 
   private loadParents(student: Member): void {

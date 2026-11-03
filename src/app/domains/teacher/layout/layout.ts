@@ -75,7 +75,7 @@ const ITEMS: NavItem[] = [
 
       <div class="min-h-dvh bg-page lg:flex">
         <!-- Side menu (laptop) -->
-        <aside class="sticky top-0 hidden h-dvh w-64 shrink-0 border-e border-line bg-white lg:block">
+        <aside class="sticky top-0 hidden h-dvh w-64 shrink-0 border-e border-line bg-white lg:block print:hidden">
           <ng-container [ngTemplateOutlet]="menu" />
         </aside>
 
@@ -91,7 +91,7 @@ const ITEMS: NavItem[] = [
         }
 
         <div class="flex min-w-0 flex-1 flex-col">
-          <header class="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-white px-3 sm:px-5 lg:px-8">
+          <header class="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-white px-3 sm:px-5 lg:px-8 print:hidden">
             <button type="button" class="btn-icon lg:hidden" [attr.aria-label]="t('nav.menu')" (click)="drawer.set(true)"><mat-icon svgIcon="menu" class="icon-size-5" /></button>
             <span class="truncate font-extrabold lg:hidden">{{ orgContext.activeOrg()?.name }}</span>
             <div class="flex-1"></div>
@@ -106,7 +106,7 @@ const ITEMS: NavItem[] = [
         </div>
 
         <!-- Bottom bar (phone) -->
-        <nav class="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white pb-[env(safe-area-inset-bottom)] sm:hidden" [style.grid-template-columns]="'repeat(' + (mobileItems().length + 1) + ', minmax(0, 1fr))'" [attr.aria-label]="t('nav.menu')">
+        <nav class="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white pb-[env(safe-area-inset-bottom)] sm:hidden print:hidden" [style.grid-template-columns]="'repeat(' + (mobileItems().length + 1) + ', minmax(0, 1fr))'" [attr.aria-label]="t('nav.menu')">
           @for (item of mobileItems(); track item.path) {
             <a class="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted no-underline" routerLinkActive="!font-extrabold !text-primary-600" [routerLink]="orgContext.path(item.path)">
               <mat-icon [svgIcon]="item.icon" class="icon-size-5" />{{ t(item.key) }}
