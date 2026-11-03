@@ -1,120 +1,111 @@
-<div class="mx-auto max-w-5xl space-y-6 p-6">
-  <header class="flex flex-wrap items-center justify-between gap-4">
-    <div>
-      <a class="text-sm text-neutral-500 hover:underline" [routerLink]="orgContext.path('dashboard')">← Dashboard</a>
-      <h1 class="text-2xl font-bold">Question bank</h1>
-      <p class="text-sm text-neutral-500">Questions are shared by all teachers of this organization and reused across quizzes.</p>
-    </div>
-    <button matButton="filled" (click)="newQuestion()">New question</button>
-  </header>
+<ng-container *transloco="let t">
+  <div class="page">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">{{ t('qb.title') }}</h1>
+        <p class="page-subtitle">{{ t('qb.subtitle') }}</p>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="newQuestion()"><mat-icon svgIcon="plus" class="icon-size-5" />{{ t('qb.new') }}</button>
+    </header>
 
-  @if (draft(); as d) {
-    <!-- Editor -->
-    <section class="space-y-4 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
-      <div class="flex flex-wrap gap-2">
-        @for (t of types; track t.value) {
-          <button matButton [class.bg-primary-50]="d.type === t.value" (click)="changeType(t.value)">{{ t.label }}</button>
+    @if (draft(); as d) {
+      <section class="card card-body mb-5 flex flex-col gap-4">
+        <div class="segmented" role="radiogroup">
+          @for (type of types; track type) {
+            <button type="button" role="radio" class="segment" [class.is-active]="d.type === type" [attr.aria-checked]="d.type === type" (click)="changeType(type)">{{ t('qb.type.' + type) }}</button>
+          }
+        </div>
+
+        <label class="field">
+          <span class="field-label">{{ t('qb.question') }}</span>
+          <textarea class="textarea" maxlength="4000" [value]="d.text" (input)="patch({ text: $any($event.target).value })"></textarea>
+        </label>
+
+        @if (d.type === 'ShortAnswer') {
+          <fieldset class="flex flex-col gap-2">
+            <legend class="field-label">{{ t('qb.accepted') }}</legend>
+            <p class="field-hint">{{ t('qb.acceptedHint') }}</p>
+            @for (answer of d.acceptedAnswers; track $index) {
+              <input class="input" maxlength="500" [attr.aria-label]="t('qb.accepted')" [value]="answer" (input)="setAccepted($index, $any($event.target).value)" />
+            }
+            <button type="button" class="btn btn-ghost btn-sm self-start" (click)="addAccepted()"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('qb.addAccepted') }}</button>
+          </fieldset>
+        } @else {
+          <fieldset class="flex flex-col gap-2">
+            <legend class="field-label">{{ t('qb.options') }}</legend>
+            <p class="field-hint">{{ t('qb.optionsHint') }}</p>
+            @for (option of d.options; track $index) {
+              <div class="flex items-center gap-2">
+                <button type="button" class="btn-icon" [class.!border-primary-600]="option.isCorrect" [class.!bg-primary-50]="option.isCorrect"
+                        [attr.aria-pressed]="option.isCorrect" [attr.aria-label]="option.isCorrect ? t('qb.correct') : t('qb.markCorrect')" (click)="toggleCorrect($index)">
+                  <mat-icon class="icon-size-5" [class.text-primary-600]="option.isCorrect" [class.text-muted]="!option.isCorrect" [svgIcon]="option.isCorrect ? 'circle-check' : 'circle'" />
+                </button>
+                <input class="input flex-1" maxlength="1000" [attr.aria-label]="t('qb.option', { n: $index + 1 })" [readOnly]="d.type === 'TrueFalse'" [value]="option.text" (input)="setOptionText($index, $any($event.target).value)" />
+                @if (d.type !== 'TrueFalse' && d.options.length > 2) {
+                  <button type="button" class="btn-icon" [attr.aria-label]="t('qb.removeOption')" (click)="removeOption($index)"><mat-icon svgIcon="x" class="icon-size-5" /></button>
+                }
+              </div>
+            }
+            @if (d.type !== 'TrueFalse' && d.options.length < 10) {
+              <button type="button" class="btn btn-ghost btn-sm self-start" (click)="addOption()"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('qb.addOption') }}</button>
+            }
+          </fieldset>
         }
-      </div>
 
-      <label class="block">
-        <span class="text-sm font-medium">Question</span>
-        <textarea class="mt-1 min-h-24 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="4000" [value]="d.text" (input)="patch({ text: $any($event.target).value })"></textarea>
-      </label>
-
-      @if (d.type === 'ShortAnswer') {
-        <div class="space-y-2">
-          <span class="text-sm font-medium">Accepted answers</span>
-          <p class="text-xs text-neutral-500">Case, spacing, Arabic hamza/taa marbuta variants and diacritics are ignored when grading.</p>
-          @for (answer of d.acceptedAnswers; track $index) {
-            <input class="w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="500" [value]="answer" (input)="setAccepted($index, $any($event.target).value)" />
-          }
-          <button matButton (click)="addAccepted()">Add accepted answer</button>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="field">
+            <span class="field-label">{{ t('qb.points') }}</span>
+            <input type="number" class="input" min="0.5" max="100" step="0.5" inputmode="decimal" [value]="d.points" (input)="patch({ points: +$any($event.target).value })" />
+          </label>
+          <label class="field">
+            <span class="field-label">{{ t('qb.difficulty') }}</span>
+            <select class="select" [value]="d.difficulty" (change)="patch({ difficulty: +$any($event.target).value })">
+              <option value="1">{{ t('qb.level.1') }}</option>
+              <option value="2">{{ t('qb.level.2') }}</option>
+              <option value="3">{{ t('qb.level.3') }}</option>
+            </select>
+          </label>
         </div>
-      } @else {
-        <div class="space-y-2">
-          <span class="text-sm font-medium">Options <span class="font-normal text-neutral-500">(mark the correct {{ d.type === 'MultipleChoice' ? 'ones' : 'one' }})</span></span>
-          @for (option of d.options; track $index) {
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="shrink-0"
-                [attr.aria-label]="option.isCorrect ? 'Correct' : 'Mark as correct'"
-                (click)="toggleCorrect($index)"
-              >
-                <mat-icon [class.text-emerald-600]="option.isCorrect" [svgIcon]="option.isCorrect ? 'circle-check' : 'circle'" />
-              </button>
-              <input
-                class="flex-1 rounded-lg border px-3 py-2 dark:bg-neutral-900"
-                maxlength="1000"
-                [readOnly]="d.type === 'TrueFalse'"
-                [value]="option.text"
-                (input)="setOptionText($index, $any($event.target).value)"
-              />
-              @if (d.type !== 'TrueFalse' && d.options.length > 2) {
-                <button matIconButton aria-label="Remove option" (click)="removeOption($index)"><mat-icon svgIcon="x" /></button>
-              }
-            </div>
-          }
-          @if (d.type !== 'TrueFalse' && d.options.length < 10) {
-            <button matButton (click)="addOption()">Add option</button>
-          }
+
+        <label class="field">
+          <span class="field-label">{{ t('qb.explanation') }}</span>
+          <textarea class="textarea min-h-20" maxlength="4000" [value]="d.explanation ?? ''" (input)="patch({ explanation: $any($event.target).value || null })"></textarea>
+        </label>
+
+        @if (errors().length) {
+          <div class="alert alert-danger" role="alert"><ul class="list-inside list-disc">@for (e of errors(); track $index) { <li>{{ e }}</li> }</ul></div>
+        }
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="button" class="btn btn-ghost" (click)="draft.set(null)">{{ t('action.cancel') }}</button>
+          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ t('qb.save') }}</button>
         </div>
-      }
+      </section>
+    }
 
-      <div class="grid gap-4 sm:grid-cols-3">
-        <label class="block">
-          <span class="text-sm font-medium">Points</span>
-          <input type="number" min="0.5" max="100" step="0.5" class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="d.points" (input)="patch({ points: +$any($event.target).value })" />
-        </label>
-        <label class="block">
-          <span class="text-sm font-medium">Difficulty</span>
-          <select class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" [value]="d.difficulty" (change)="patch({ difficulty: +$any($event.target).value })">
-            <option value="1">Easy</option>
-            <option value="2">Medium</option>
-            <option value="3">Hard</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="block">
-        <span class="text-sm font-medium">Explanation <span class="font-normal text-neutral-500">(shown after submitting, if the quiz allows)</span></span>
-        <textarea class="mt-1 min-h-16 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900" maxlength="4000" [value]="d.explanation ?? ''" (input)="patch({ explanation: $any($event.target).value || null })"></textarea>
-      </label>
-
-      @if (errors().length) {
-        <ul class="list-inside list-disc text-sm text-red-600">
-          @for (e of errors(); track $index) { <li>{{ e }}</li> }
-        </ul>
-      }
-
-      <div class="flex justify-end gap-2">
-        <button matButton (click)="draft.set(null)">Cancel</button>
-        <button matButton="filled" [disabled]="saving()" (click)="save()">Save question</button>
-      </div>
-    </section>
-  }
-
-  <!-- List -->
-  <section class="space-y-3">
-    <form class="flex gap-2" (submit)="$event.preventDefault(); load()">
-      <input class="flex-1 rounded-lg border px-3 py-2 dark:bg-neutral-900" placeholder="Search questions" [value]="search()" (input)="search.set($any($event.target).value)" />
-      <button matButton="outlined" type="submit">Search</button>
+    <form class="mb-3 flex gap-2" (submit)="$event.preventDefault(); load()">
+      <input class="input flex-1" type="search" [placeholder]="t('qb.search')" [attr.aria-label]="t('qb.search')" [value]="search()" (input)="search.set($any($event.target).value)" />
+      <button type="submit" class="btn btn-secondary">{{ t('action.search') }}</button>
     </form>
 
-    @for (q of questions(); track q.id) {
-      <article class="flex items-start justify-between gap-4 rounded-xl border bg-white p-4 dark:bg-neutral-800">
-        <div class="min-w-0">
-          <p class="font-medium">{{ q.text }}</p>
-          <p class="text-sm text-neutral-500">{{ typeLabel(q.type) }} · {{ q.points }} pt · {{ ['', 'Easy', 'Medium', 'Hard'][q.difficulty] }}</p>
-        </div>
-        <div class="flex shrink-0 gap-1">
-          <button matButton (click)="edit(q)">Edit</button>
-          <button matButton (click)="remove(q)">Delete</button>
-        </div>
-      </article>
-    } @empty {
-      <p class="text-neutral-500">No questions yet. Create your first question to build quizzes.</p>
-    }
-  </section>
-</div>
+    <section class="card">
+      @for (q of questions(); track q.id) {
+        <article class="list-row flex-wrap">
+          <div class="min-w-0 flex-1">
+            <p class="font-bold">{{ q.text }}</p>
+            <div class="mt-1 flex flex-wrap gap-1.5">
+              <span class="badge badge-info">{{ t('qb.type.' + q.type) }}</span>
+              <span class="badge badge-neutral">{{ t('qb.pts', { points: q.points }) }}</span>
+              <span class="badge badge-neutral">{{ t('qb.level.' + q.difficulty) }}</span>
+            </div>
+          </div>
+          <div class="flex gap-1">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="edit(q)">{{ t('action.edit') }}</button>
+            <button type="button" class="btn btn-ghost btn-sm text-danger-700" (click)="remove(q)">{{ t('action.delete') }}</button>
+          </div>
+        </article>
+      } @empty {
+        <div class="px-5 py-10 text-center text-muted">{{ t('qb.empty') }}</div>
+      }
+    </section>
+  </div>
+</ng-container>

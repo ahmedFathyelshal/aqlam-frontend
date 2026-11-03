@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { AssessmentService, Question, QuestionInput, QuestionType } from '@/app/core/learning/assessment.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
@@ -10,10 +9,10 @@ import { ApiValidationError } from '@/app/core/utils/api-error.utils';
 type Draft = QuestionInput & { id: string | null };
 
 /** Fresh editor state for a question type (true/false gets its two fixed options). */
-export function blankQuestion(type: QuestionType): Draft {
+export function blankQuestion(type: QuestionType, trueFalse: [string, string] = ['True', 'False']): Draft {
   const options =
     type === 'TrueFalse'
-      ? [{ text: 'True', isCorrect: true }, { text: 'False', isCorrect: false }]
+      ? [{ text: trueFalse[0], isCorrect: true }, { text: trueFalse[1], isCorrect: false }]
       : type === 'ShortAnswer'
         ? []
         : [{ text: '', isCorrect: true }, { text: '', isCorrect: false }];
@@ -26,12 +25,13 @@ export function blankQuestion(type: QuestionType): Draft {
 /** The organization's question bank: shared by all its teachers, reused across quizzes. */
 @Component({
   selector: 'app-question-bank',
-  imports: [MatButtonModule, MatIconModule, RouterLink],
+  imports: [MatIconModule, TranslocoDirective],
   templateUrl: './question-bank.component.html',
 })
 export default class QuestionBankComponent {
   protected orgContext = inject(OrgContextService);
   private assessments = inject(AssessmentService);
+  private transloco = inject(TranslocoService);
 
   protected questions = signal<Question[]>([]);
   protected search = signal('');
@@ -39,12 +39,7 @@ export default class QuestionBankComponent {
   protected errors = signal<string[]>([]);
   protected saving = signal(false);
 
-  protected readonly types: { label: string; value: QuestionType }[] = [
-    { value: 'SingleChoice', label: 'Single choice' },
-    { value: 'MultipleChoice', label: 'Multiple choice' },
-    { value: 'TrueFalse', label: 'True / false' },
-    { value: 'ShortAnswer', label: 'Short answer' },
-  ];
+  protected readonly types: QuestionType[] = ['SingleChoice', 'MultipleChoice', 'TrueFalse', 'ShortAnswer'];
 
   constructor() {
     this.load();
@@ -56,7 +51,7 @@ export default class QuestionBankComponent {
 
   protected newQuestion(type: QuestionType = 'SingleChoice'): void {
     this.errors.set([]);
-    this.draft.set(blankQuestion(type));
+    this.draft.set(blankQuestion(type, this.trueFalse()));
   }
 
   protected edit(question: Question): void {
@@ -71,7 +66,7 @@ export default class QuestionBankComponent {
   protected changeType(type: QuestionType): void {
     const current = this.draft();
     if (!current) return;
-    this.draft.set({ ...blankQuestion(type), id: current.id, text: current.text, explanation: current.explanation, points: current.points });
+    this.draft.set({ ...blankQuestion(type, this.trueFalse()), id: current.id, text: current.text, explanation: current.explanation, points: current.points });
   }
 
   protected patch(changes: Partial<Draft>): void {
@@ -123,18 +118,18 @@ export default class QuestionBankComponent {
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errors.set(err instanceof ApiValidationError ? err.errors : ['The question could not be saved.']);
+        this.errors.set(err instanceof ApiValidationError ? err.errors : [this.transloco.translate('qb.saveFailed')]);
       },
     });
   }
 
   protected remove(question: Question): void {
-    if (!confirm('Delete this question? Quizzes will stop using it; past attempts keep their copy.')) return;
+    if (!confirm(this.transloco.translate('qb.confirmDelete'))) return;
     this.assessments.deleteQuestion(this.org, question.id).subscribe(() => this.load());
   }
 
-  protected typeLabel(type: QuestionType): string {
-    return this.types.find(t => t.value === type)?.label ?? type;
+  private trueFalse(): [string, string] {
+    return [this.transloco.translate('qb.true'), this.transloco.translate('qb.false')];
   }
 
   private get org(): string {

@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { AssessmentService, Question, QuizSettings } from '@/app/core/learning/assessment.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
@@ -13,7 +13,7 @@ type Selected = { points: number; question: Question };
 /** Settings and questions of one Quiz lesson; questions come from the organization's bank. */
 @Component({
   selector: 'app-quiz-setup',
-  imports: [MatButtonModule, MatIconModule, RouterLink],
+  imports: [MatIconModule, RouterLink, TranslocoDirective],
   templateUrl: './quiz-setup.component.html',
 })
 export default class QuizSetupComponent {
@@ -21,6 +21,7 @@ export default class QuizSetupComponent {
   private assessments = inject(AssessmentService);
   private snackBar = inject(MatSnackBar);
   private route = inject(ActivatedRoute);
+  private transloco = inject(TranslocoService);
 
   protected courseId = this.route.snapshot.paramMap.get('id')!;
   private lessonId = this.route.snapshot.paramMap.get('lessonId')!;
@@ -90,11 +91,11 @@ export default class QuizSetupComponent {
     this.assessments.saveQuiz(this.org, this.courseId, this.lessonId, body).subscribe({
       next: () => {
         this.saving.set(false);
-        this.snackBar.open('Quiz saved.', 'Close', { duration: 3000 });
+        this.snackBar.open(this.transloco.translate('qs.saved'), '✓', { duration: 3000 });
       },
       error: (err: unknown) => {
         this.saving.set(false);
-        this.errors.set(err instanceof ApiValidationError ? err.errors : ['The quiz could not be saved.']);
+        this.errors.set(err instanceof ApiValidationError ? err.errors : [this.transloco.translate('error.generic')]);
       },
     });
   }

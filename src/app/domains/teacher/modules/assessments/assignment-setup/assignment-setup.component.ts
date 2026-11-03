@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { AssessmentService } from '@/app/core/learning/assessment.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
-import { ApiValidationError } from '@/app/core/utils/api-error.utils';
+import { errorMessages } from '@/app/core/utils/api-error.utils';
 
 /** Converts between an ISO UTC string and the value of a datetime-local input (local time). */
 export function toLocalInput(iso: string | null): string {
@@ -22,45 +22,46 @@ export function fromLocalInput(value: string): string | null {
 /** Points, due date and late-work policy of an Assignment lesson (instructions are the lesson content). */
 @Component({
   selector: 'app-assignment-setup',
-  imports: [MatButtonModule, RouterLink],
+  imports: [MatIconModule, RouterLink, TranslocoDirective],
   template: `
-    <div class="mx-auto max-w-2xl space-y-6 p-6">
-      <header>
-        <a class="text-sm text-neutral-500 hover:underline" [routerLink]="orgContext.path('courses', courseId, 'curriculum')">← Curriculum</a>
-        <h1 class="text-2xl font-bold">Assignment setup</h1>
-        <p class="text-sm text-neutral-500">Write the instructions in the lesson content. Students hand in text and links; you grade them in Grading.</p>
-      </header>
+    <ng-container *transloco="let t">
+      <div class="page-narrow">
+        <a class="back-link" [routerLink]="orgContext.path('courses', courseId, 'curriculum')"><mat-icon svgIcon="chevron-right" class="icon-size-4 ltr:rotate-180" />{{ t('qs.back') }}</a>
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">{{ t('as.title') }}</h1>
+            <p class="page-subtitle">{{ t('as.intro') }}</p>
+          </div>
+        </header>
 
-      <section class="space-y-4 rounded-2xl border bg-white p-6 dark:bg-neutral-800">
-        <label class="block">
-          <span class="text-sm font-medium">Maximum points</span>
-          <input type="number" min="1" class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
-                 [value]="maxPoints()" (input)="maxPoints.set(+$any($event.target).value)" />
-        </label>
-        <label class="block">
-          <span class="text-sm font-medium">Due date (optional)</span>
-          <input type="datetime-local" class="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-neutral-900"
-                 [value]="dueLocal()" (input)="dueLocal.set($any($event.target).value)" />
-        </label>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" [checked]="acceptLate()" (change)="acceptLate.set($any($event.target).checked)" />
-          Accept late submissions (marked as late)
-        </label>
-        @if (errors().length) {
-          <p class="text-sm text-red-600">{{ errors().join(' • ') }}</p>
-        }
-        <div class="flex justify-end">
-          <button matButton="filled" [disabled]="saving()" (click)="save()">Save</button>
-        </div>
-      </section>
-    </div>
+        <section class="card card-body flex flex-col gap-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="field">
+              <span class="field-label">{{ t('as.maxPoints') }}</span>
+              <input type="number" class="input" min="1" inputmode="numeric" [value]="maxPoints()" (input)="maxPoints.set(+$any($event.target).value)" />
+            </label>
+            <label class="field">
+              <span class="field-label">{{ t('as.due') }}</span>
+              <input type="datetime-local" class="input" [value]="dueLocal()" (input)="dueLocal.set($any($event.target).value)" />
+            </label>
+          </div>
+          <label class="check"><input type="checkbox" [checked]="acceptLate()" (change)="acceptLate.set($any($event.target).checked)" />{{ t('as.acceptLate') }}</label>
+          @if (errors().length) { <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div> }
+          @if (saved()) { <div class="alert alert-success" role="status">{{ t('as.saved') }}</div> }
+          <div class="flex flex-wrap justify-end gap-2">
+            <a class="btn btn-ghost" [routerLink]="orgContext.path('courses', courseId, 'submissions')">{{ t('gr.title') }}</a>
+            <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>
+          </div>
+        </section>
+      </div>
+    </ng-container>
   `,
 })
 export default class AssignmentSetupComponent {
   protected orgContext = inject(OrgContextService);
   private assessments = inject(AssessmentService);
-  private snackBar = inject(MatSnackBar);
   private route = inject(ActivatedRoute);
+  private transloco = inject(TranslocoService);
 
   protected courseId = this.route.snapshot.paramMap.get('id')!;
   private lessonId = this.route.snapshot.paramMap.get('lessonId')!;
@@ -69,6 +70,7 @@ export default class AssignmentSetupComponent {
   protected dueLocal = signal('');
   protected acceptLate = signal(true);
   protected saving = signal(false);
+  protected saved = signal(false);
   protected errors = signal<string[]>([]);
 
   constructor() {
@@ -81,6 +83,7 @@ export default class AssignmentSetupComponent {
 
   protected save(): void {
     this.saving.set(true);
+    this.saved.set(false);
     this.errors.set([]);
     this.assessments
       .saveAssignmentSettings(this.org, this.courseId, this.lessonId, {
@@ -91,11 +94,11 @@ export default class AssignmentSetupComponent {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.snackBar.open('Assignment saved.', 'Close', { duration: 3000 });
+          this.saved.set(true);
         },
         error: (err: unknown) => {
           this.saving.set(false);
-          this.errors.set(err instanceof ApiValidationError ? err.errors : ['The assignment could not be saved.']);
+          this.errors.set(errorMessages(err, this.transloco.translate('error.generic')));
         },
       });
   }
