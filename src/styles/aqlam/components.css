@@ -225,3 +225,32 @@
     @apply border border-line px-3 py-2;
   }
 }
+
+/* ng-select dressed like .select ------------------------------------------- */
+.aq-select.ng-select .ng-select-container {
+  min-height: 3rem;
+  border: 1px solid var(--color-field);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+.aq-select.ng-select.ng-select-focused:not(.ng-select-opened) > .ng-select-container {
+  border-color: var(--color-secondary-600);
+  box-shadow: 0 0 0 3px var(--color-secondary-200);
+}
+.aq-select .ng-dropdown-panel {
+  font-family: var(--font-sans);
+  border-color: var(--color-line);
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  padding: 0.65rem 0.85rem;
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-marked {
+  background: var(--color-primary-50);
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-selected {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 700;
+}

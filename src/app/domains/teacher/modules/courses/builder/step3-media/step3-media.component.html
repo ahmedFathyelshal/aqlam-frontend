@@ -1,92 +1,45 @@
-<div class="step-container">
-      
-      <!-- Content Header -->
-      <div class="step-header">
-        <div class="header-icon-box">
-          <mat-icon class="icon-size-6" svgIcon="image"></mat-icon>
-        </div>
-        <div class="header-text">
-          <h2>Course media</h2>
-          <p>Upload a thumbnail and promotional video to attract students.</p>
-        </div>
-      </div>
+<ng-container *transloco="let tr">
+  <header class="mb-5">
+    <p class="text-sm font-bold text-primary-600">{{ tr('cb.step', { n: 3 }) }}</p>
+    <h1 class="page-title">{{ tr('cb.s3.title') }}</h1>
+    <p class="page-subtitle">{{ tr('cb.s3.intro') }}</p>
+  </header>
 
-      <!-- Form Content -->
-      <form class="step-form" (submit)="onNext($event)">
-        
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Short Description (Subtitle) <span class="required">*</span></label>
-            <textarea class="custom-input custom-textarea"
-                      [class.invalid]="mediaForm.subtitle().touched() && mediaForm.subtitle().invalid()"
-                      [formField]="mediaForm.subtitle"
-                      placeholder="Write a catchy hook for your course... (Max 250 characters)"
-                      rows="3"></textarea>
-            <div class="char-counter" [class.error]="mediaForm.subtitle().value().length > 250">
-              {{ mediaForm.subtitle().value().length }} / 250
-            </div>
-            <div class="error-text" *ngIf="mediaForm.subtitle().touched() && mediaForm.subtitle().errors().length > 0">
-              {{ mediaForm.subtitle().errors()[0].message }}
-            </div>
-          </div>
-        </div>
+  <form class="flex flex-col gap-4" (submit)="onNext($event)" novalidate>
+    <label class="field">
+      <span class="field-label">{{ tr('cb.s3.subtitle') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+      <textarea class="textarea" rows="3" [formField]="mediaForm.subtitle" [placeholder]="tr('cb.s3.subtitlePlaceholder')"></textarea>
+      <span class="flex justify-between gap-2">
+        <span class="field-error">{{ mediaForm.subtitle().touched() && mediaForm.subtitle().errors().length ? mediaForm.subtitle().errors()[0].message : '' }}</span>
+        <span class="text-sm" [class]="mediaForm.subtitle().value().length > 250 ? 'text-danger-700' : 'text-muted'" dir="ltr">{{ mediaForm.subtitle().value().length }} / 250</span>
+      </span>
+    </label>
 
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Course Thumbnail <span class="required">*</span></label>
-            
-            <div class="dropzone" [class.has-image]="previewUrl()">
-              <input type="file" accept="image/jpeg, image/png" class="file-input" (change)="onFileSelected($event)">
-              
-              <div class="dropzone-content" *ngIf="!previewUrl()">
-                <mat-icon class="icon-size-8" svgIcon="cloud-upload"></mat-icon>
-                <div class="upload-text">
-                  <strong>Click to upload</strong> or drag and drop
-                </div>
-                <div class="upload-hint">SVG, PNG, JPG or GIF (max. 2MB)</div>
-              </div>
-
-              <div class="image-preview" *ngIf="previewUrl()">
-                <img [src]="previewUrl()" alt="Thumbnail preview">
-                <div class="preview-overlay">
-                  <mat-icon class="icon-size-5" svgIcon="pencil"></mat-icon> Change Image
-                </div>
-              </div>
-            </div>
-            <div class="error-text" *ngIf="thumbnailError()">
-              {{ thumbnailError() }}
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Promotional Video URL</label>
-            <input type="url"
-                   class="custom-input"
-                   [class.invalid]="mediaForm.promoVideoUrl().touched() && mediaForm.promoVideoUrl().invalid()"
-                   [formField]="mediaForm.promoVideoUrl"
-                   placeholder="e.g. https://www.youtube.com/watch?v=...">
-            <div class="error-text" *ngIf="mediaForm.promoVideoUrl().touched() && mediaForm.promoVideoUrl().errors().length > 0">
-              {{ mediaForm.promoVideoUrl().errors()[0].message }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Divider and Footer -->
-        <div class="step-footer-divider"></div>
-        
-        <div class="step-footer">
-          <button type="button" class="btn-back" (click)="goBack()">
-            <mat-icon class="icon-size-5" svgIcon="arrow-left"></mat-icon> Back
-          </button>
-          
-          <button type="submit" class="btn-continue" [disabled]="isSubmitting()">
-            <span *ngIf="!isSubmitting()">Continue</span>
-            <mat-icon class="icon-size-5" *ngIf="!isSubmitting()" svgIcon="arrow-right"></mat-icon>
-            <mat-spinner *ngIf="isSubmitting()" diameter="20" color="accent"></mat-spinner>
-          </button>
-        </div>
-
-      </form>
+    <div class="field">
+      <span class="field-label">{{ tr('cb.s3.thumbnail') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+      <label class="relative flex aspect-video max-w-md cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-[6px] border-2 border-dashed border-field bg-page text-center text-muted hover:border-primary-600">
+        <input type="file" accept="image/jpeg, image/png" class="sr-only" (change)="onFileSelected($event)" />
+        @if (previewUrl()) {
+          <img [src]="previewUrl()" alt="" class="absolute inset-0 size-full object-cover" />
+          <span class="absolute bottom-2 start-2 inline-flex items-center gap-1 rounded-[6px] bg-white/95 px-2.5 py-1 text-sm font-bold text-ink"><mat-icon svgIcon="pencil" class="icon-size-4" />{{ tr('cb.s3.change') }}</span>
+        } @else {
+          <mat-icon svgIcon="cloud-upload" class="icon-size-8" />
+          <span class="font-bold text-ink">{{ tr('cb.s3.upload') }}</span>
+          <span class="text-sm">{{ tr('cb.s3.uploadHint') }}</span>
+        }
+      </label>
+      @if (thumbnailError()) { <span class="field-error">{{ thumbnailError() }}</span> }
     </div>
+
+    <label class="field">
+      <span class="field-label">{{ tr('cb.s3.promo') }}</span>
+      <input type="url" class="input" dir="ltr" inputmode="url" [formField]="mediaForm.promoVideoUrl" placeholder="https://www.youtube.com/watch?v=…" />
+      @if (mediaForm.promoVideoUrl().touched() && mediaForm.promoVideoUrl().errors().length) { <span class="field-error">{{ mediaForm.promoVideoUrl().errors()[0].message }}</span> }
+    </label>
+
+    <div class="mt-2 flex flex-wrap justify-between gap-2 border-t border-line-soft pt-4">
+      <button type="button" class="btn btn-ghost" (click)="goBack()">{{ tr('cb.back') }}</button>
+      <button type="submit" class="btn btn-primary min-w-36" [disabled]="isSubmitting()">{{ tr('cb.continue') }}<mat-icon svgIcon="chevron-left" class="icon-size-5 ltr:rotate-180" /></button>
+    </div>
+  </form>
+</ng-container>

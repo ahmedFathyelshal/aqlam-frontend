@@ -6,16 +6,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-step2-commercials',
   templateUrl: './step2-commercials.component.html',
-  styleUrls: ['./step2-commercials.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslocoDirective,
     FormField,
   ]
 })
@@ -23,8 +24,11 @@ export default class Step2CommercialsComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
   protected orgContext = inject(OrgContextService);
+  private transloco = inject(TranslocoService);
 
   isSubmitting = signal(false);
+  /** Prices are in the organization's currency (by country until settings expose it). */
+  protected currency = this.orgContext.activeOrg()?.countryCode === 'EG' ? 'EGP' : 'SAR';
 
   formModel = signal({
     pricingType: 'Paid' as any,
@@ -35,21 +39,21 @@ export default class Step2CommercialsComponent {
   });
 
   commercialsForm = form(this.formModel, (f) => {
-    required(f.pricingType, { message: 'Pricing type is required' });
-    required(f.accessExpiryPolicy, { message: 'Access policy is required' });
+    required(f.pricingType, { message: this.transloco.translate('cb.s2.pricingRequired') });
+    required(f.accessExpiryPolicy, { message: this.transloco.translate('cb.s2.accessRequired') });
 
     validate(f.price, (ctx) => {
       if (this.formModel().pricingType === 'Paid') {
-        if (!ctx.value()) return { kind: 'required', message: 'Price is required for Paid courses' };
-        if (Number(ctx.value()) < 10) return { kind: 'min', message: 'Price must be at least 10' };
+        if (!ctx.value()) return { kind: 'required', message: this.transloco.translate('cb.s2.priceRequired') };
+        if (Number(ctx.value()) < 10) return { kind: 'min', message: this.transloco.translate('cb.s2.priceMin') };
       }
       return null;
     });
 
     validate(f.accessDurationDays, (ctx) => {
       if (this.formModel().accessExpiryPolicy === 'Limited') {
-        if (!ctx.value()) return { kind: 'required', message: 'Duration is required for Limited access' };
-        if (Number(ctx.value()) < 1) return { kind: 'min', message: 'Duration must be at least 1 day' };
+        if (!ctx.value()) return { kind: 'required', message: this.transloco.translate('cb.s2.daysRequired') };
+        if (Number(ctx.value()) < 1) return { kind: 'min', message: this.transloco.translate('cb.s2.daysMin') };
       }
       return null;
     });

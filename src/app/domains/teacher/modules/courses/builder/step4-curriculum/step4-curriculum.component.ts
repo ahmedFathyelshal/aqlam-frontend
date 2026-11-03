@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, required, submit, validate } from '@angular/forms/signals';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { HttpErrorResponse } from '@angular/common/http';
 import { switchMap } from 'rxjs';
 import { ApiValidationError } from '@/app/core/utils/api-error.utils';
@@ -14,23 +15,24 @@ import { CourseStatus } from '../course-builder.models';
 @Component({
   selector: 'app-step4-curriculum',
   templateUrl: './step4-curriculum.component.html',
-  styleUrls: ['./step4-curriculum.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslocoDirective,
   ]
 })
 export default class Step4CurriculumComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
   protected orgContext = inject(OrgContextService);
+  private transloco = inject(TranslocoService);
 
   isSaving = signal(false);
   isPublishing = signal(false);
   
-  chapters = signal<{ id?: string; title: string }[]>([{ title: 'Introduction' }]);
+  chapters = signal<{ id?: string; title: string }[]>([{ title: this.transloco.translate('cb.s4.chapter', { n: 1 }) }]);
   syllabusReqs = signal('');
   chapterError = signal<string | null>(null);
 
@@ -75,11 +77,11 @@ export default class Step4CurriculumComponent {
 
   validateChapters(): boolean {
     if (this.chapters().length === 0) {
-      this.chapterError.set('You must add at least one chapter.');
+      this.chapterError.set(this.transloco.translate('cb.s4.atLeastOne'));
       return false;
     }
     if (this.chapters().some(c => !c.title.trim())) {
-      this.chapterError.set('All chapters must have a title.');
+      this.chapterError.set(this.transloco.translate('cb.s4.titlesRequired'));
       return false;
     }
     this.chapterError.set(null);
@@ -105,7 +107,7 @@ export default class Step4CurriculumComponent {
       },
       error: (err) => {
         this.isSaving.set(false);
-        this.chapterError.set(this.describeError(err, 'Failed to save curriculum. Please try again.'));
+        this.chapterError.set(this.describeError(err, this.transloco.translate('cb.s4.saveFailed')));
       }
     });
   }
@@ -126,7 +128,7 @@ export default class Step4CurriculumComponent {
         error: (err) => {
           this.isPublishing.set(false);
           // 400 carries the publish checklist: show what is still missing.
-          this.chapterError.set(this.describeError(err, 'Publishing failed. Please try again.'));
+          this.chapterError.set(this.describeError(err, this.transloco.translate('cb.s4.publishFailed')));
         }
       });
   }
@@ -136,10 +138,10 @@ export default class Step4CurriculumComponent {
       return err.errors.join(' • ');
     }
     if (err instanceof HttpErrorResponse && err.status === 409) {
-      return 'Someone else changed this course. Reload the page to see the latest version.';
+      return this.transloco.translate('cb.s4.conflict');
     }
     if (err instanceof HttpErrorResponse && err.status === 403) {
-      return 'Only an administrator of this organization can publish courses.';
+      return this.transloco.translate('cb.s4.adminOnly');
     }
     return fallback;
   }
