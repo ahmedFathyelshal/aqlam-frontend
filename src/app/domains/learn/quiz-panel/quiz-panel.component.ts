@@ -1,9 +1,9 @@
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, OnDestroy, OnInit, output, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { Answer, AssessmentService, Attempt, AttemptQuestion, AttemptResult, QuizSummary } from '@/app/core/learning/assessment.service';
 
@@ -25,7 +25,7 @@ export function formatRemaining(milliseconds: number): string {
  */
 @Component({
   selector: 'app-quiz-panel',
-  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [DecimalPipe, MatIconModule, MatProgressSpinnerModule, TranslocoDirective],
   templateUrl: './quiz-panel.component.html',
 })
 export class QuizPanelComponent implements OnInit, OnDestroy {
@@ -35,6 +35,7 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
   completed = output<void>();
 
   private assessments = inject(AssessmentService);
+  private transloco = inject(TranslocoService);
 
   protected summary = signal<QuizSummary | null>(null);
   protected attempt = signal<Attempt | null>(null);
@@ -90,7 +91,7 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
           questionId: q.questionId, selectedOptionIds: q.selectedOptionIds, textAnswer: q.textAnswer,
         }])));
       },
-      error: (err: unknown) => this.fail(err, 'The quiz could not be started.'),
+      error: (err: unknown) => this.fail(err, this.transloco.translate('quiz.startFailed')),
     });
   }
 
@@ -140,7 +141,7 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
           this.loadSummary();
           return;
         }
-        this.fail(err, 'Your answers could not be submitted. Please try again.');
+        this.fail(err, this.transloco.translate('quiz.submitFailed'));
       },
     });
   }
@@ -151,6 +152,13 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
 
   protected optionText(questionId: string, optionId: string): string {
     return this.lastQuestions.find(q => q.questionId === questionId)?.options.find(o => o.id === optionId)?.text ?? '';
+  }
+
+  /** Accepted short answers, or the texts of the correct options. */
+  protected correctAnswer(item: { questionId: string; acceptedAnswers: string[]; correctOptionIds: string[] }): string {
+    return item.acceptedAnswers.length
+      ? item.acceptedAnswers.join(' / ')
+      : item.correctOptionIds.map(id => this.optionText(item.questionId, id)).join('، ');
   }
 
   private lastQuestions: AttemptQuestion[] = [];
@@ -170,7 +178,7 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
       error: (err: unknown) => {
         if (err instanceof HttpErrorResponse && err.status === 409) {
           this.attempt.set(null); // time ran out on the server: it submitted the saved answers
-          this.error.set('Time is up. Your saved answers were submitted.');
+          this.error.set(this.transloco.translate('quiz.timeUp'));
           this.loadSummary();
         }
       },
@@ -180,7 +188,7 @@ export class QuizPanelComponent implements OnInit, OnDestroy {
   private loadSummary(): void {
     this.assessments.quizSummary(this.org(), this.lessonId()).subscribe({
       next: summary => this.summary.set(summary),
-      error: (err: unknown) => this.fail(err, 'This quiz is not available.'),
+      error: (err: unknown) => this.fail(err, this.transloco.translate('quiz.unavailable')),
     });
   }
 

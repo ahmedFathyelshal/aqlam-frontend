@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
@@ -12,13 +11,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import {
   LearnerCourse,
@@ -28,6 +26,9 @@ import {
 } from '@/app/core/learning/learning.service';
 import { parseVideoSource, VideoSource } from '@/app/core/learning/video-source';
 import { WatchTracker } from '@/app/core/learning/watch-tracker';
+import { formatOrgDate } from '@/app/core/organizations/org-date';
+import { I18nService } from '@/app/core/transloco/i18n.service';
+import { AqLogo } from '@/app/shared/ui/logo';
 
 import { AssignmentPanelComponent } from '../assignment-panel/assignment-panel.component';
 import { QuizPanelComponent } from '../quiz-panel/quiz-panel.component';
@@ -42,11 +43,10 @@ const HEARTBEAT_MS = 15_000;
   selector: 'app-course-player',
   imports: [
     AssignmentPanelComponent,
-    DatePipe,
-    MatButtonModule,
+    AqLogo,
     MatIconModule,
-    MatProgressBarModule,
     MatProgressSpinnerModule,
+    TranslocoDirective,
     QuizPanelComponent,
     RouterLink,
   ],
@@ -59,6 +59,11 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private snackBar = inject(MatSnackBar);
   private destroyRef = inject(DestroyRef);
+  private transloco = inject(TranslocoService);
+  private i18n = inject(I18nService);
+
+  /** The outline is collapsible on phones (always visible on laptops). */
+  protected outlineOpen = signal(false);
 
   protected org = '';
   protected courseId = '';
@@ -122,14 +127,19 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
   protected lockText(lesson: LearnerLesson): string {
     switch (lesson.lockReason) {
       case 'CourseNotStarted':
-        return 'Course starts soon';
-      case 'DripSchedule':
-        return lesson.unlocksAtUtc ? `Unlocks ${new Date(lesson.unlocksAtUtc).toLocaleDateString()}` : 'Unlocks later';
       case 'PreviousLessonRequired':
-        return 'Complete the previous lesson first';
+        return this.transloco.translate('player.lock.' + lesson.lockReason);
+      case 'DripSchedule':
+        return lesson.unlocksAtUtc
+          ? this.transloco.translate('player.lock.DripSchedule', { date: formatOrgDate(lesson.unlocksAtUtc, 'Gregorian', { locale: this.i18n.lang() }) })
+          : this.transloco.translate('player.lock.DripLater');
       default:
-        return 'Locked';
+        return this.transloco.translate('player.lock.Locked');
     }
+  }
+
+  protected date(value: string): string {
+    return formatOrgDate(value, 'Gregorian', { locale: this.i18n.lang() });
   }
 
   // ---- video events (HTML5) ----------------------------------------------------------------------------
@@ -187,12 +197,13 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
           this.openLesson(target);
         }
       },
-      error: (err: unknown) => this.courseError.set(this.reasonOf(err, 'This course is not available.')),
+      error: (err: unknown) => this.courseError.set(this.reasonOf(err, this.transloco.translate('player.courseUnavailable'))),
     });
   }
 
   private openLesson(lessonId: string): void {
     this.sendProgress(); // flush the previous lesson
+    this.outlineOpen.set(false);
     this.loadingLesson.set(true);
     this.lessonError.set(null);
     this.lesson.set(null);
@@ -210,7 +221,7 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
       },
       error: (err: unknown) => {
         this.loadingLesson.set(false);
-        this.lessonError.set(this.reasonOf(err, 'This lesson is not available.'));
+        this.lessonError.set(this.reasonOf(err, this.transloco.translate('player.lessonUnavailable')));
       },
     });
   }
@@ -232,7 +243,7 @@ export default class CoursePlayerComponent implements OnInit, OnDestroy {
   private afterProgress(isCompleted: boolean, justCompleted: boolean): void {
     this.lesson.update(l => (l ? { ...l, isCompleted } : l));
     if (justCompleted) {
-      this.snackBar.open('Lesson completed. Well done!', 'Close', { duration: 3000 });
+      this.snackBar.open(this.transloco.translate('player.lessonDone'), '✓', { duration: 3000 });
       // Completion can unlock the next lesson: refresh the outline.
       this.learning.course(this.org, this.courseId).subscribe(course => this.course.set(course));
     }

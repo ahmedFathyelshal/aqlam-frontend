@@ -188,3 +188,40 @@
     @apply sr-only;
   }
 }
+
+/* Rich lesson content (articles, homework instructions) --------------------- */
+@layer components {
+  .prose-aqlam {
+    @apply text-[1.05rem] leading-[1.9] text-ink;
+  }
+  .prose-aqlam > * + * {
+    @apply mt-4;
+  }
+  .prose-aqlam h1,
+  .prose-aqlam h2 {
+    @apply mt-6 text-xl font-extrabold;
+  }
+  .prose-aqlam h3 {
+    @apply mt-5 text-lg font-bold;
+  }
+  .prose-aqlam ul {
+    @apply list-disc ps-6;
+  }
+  .prose-aqlam ol {
+    @apply list-decimal ps-6;
+  }
+  .prose-aqlam img,
+  .prose-aqlam video {
+    @apply h-auto max-w-full rounded-[6px];
+  }
+  .prose-aqlam blockquote {
+    @apply border-s-4 border-secondary-300 ps-4 text-muted;
+  }
+  .prose-aqlam table {
+    @apply block w-full overflow-x-auto border-collapse;
+  }
+  .prose-aqlam th,
+  .prose-aqlam td {
+    @apply border border-line px-3 py-2;
+  }
+}
