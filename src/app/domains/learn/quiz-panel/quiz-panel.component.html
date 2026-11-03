@@ -1,0 +1,110 @@
+<ng-container *transloco="let t">
+  <section class="card">
+    @if (preview()) {
+      <div class="alert alert-info m-4">{{ t('quiz.previewNote') }}</div>
+    }
+    @if (error(); as message) {
+      <div class="alert alert-danger m-4" role="alert">{{ message }}</div>
+    }
+
+    @if (attempt(); as a) {
+      <!-- Taking the quiz -->
+      <header class="sticky top-16 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-line bg-white px-4 py-3 sm:px-5">
+        <span class="text-sm text-muted">{{ t('quiz.answered', { done: answeredCount(), total: a.questions.length }) }}</span>
+        @if (remaining() !== null) {
+          <span class="flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 font-mono text-lg font-bold"
+                [class]="remaining()! < 60000 ? 'bg-danger-50 text-danger-700' : 'bg-secondary-100 text-secondary-700'" dir="ltr"
+                [attr.aria-label]="t('quiz.timeLeft')">
+            <mat-icon svgIcon="clock" class="icon-size-4" />{{ remainingText() }}
+          </span>
+        }
+      </header>
+
+      <ol class="flex flex-col gap-6 p-4 sm:p-5">
+        @for (q of a.questions; track q.questionId; let i = $index) {
+          <li class="flex flex-col gap-3">
+            <p class="text-[1.05rem] font-bold leading-relaxed">
+              <span class="text-muted">{{ i + 1 }}.</span> {{ q.text }}
+              <span class="text-sm font-medium text-muted">· {{ t('quiz.points', { points: q.points }) }}</span>
+            </p>
+            @if (q.type === 'ShortAnswer') {
+              <input class="input" maxlength="500" [attr.aria-label]="t('quiz.answer')" [value]="textOf(q)" (input)="write(q, $any($event.target).value)" />
+            } @else {
+              @if (q.type === 'MultipleChoice') { <p class="field-hint">{{ t('quiz.selectAll') }}</p> }
+              <div class="flex flex-col gap-2" [attr.role]="q.type === 'MultipleChoice' ? 'group' : 'radiogroup'">
+                @for (o of q.options; track o.id) {
+                  <button type="button" class="flex min-h-12 w-full items-center gap-3 rounded-[6px] border px-4 py-2.5 text-start text-[1rem]"
+                          [class]="isSelected(q, o.id) ? 'border-primary-600 bg-primary-50 font-bold' : 'border-line bg-white hover:bg-neutral-50'"
+                          [attr.role]="q.type === 'MultipleChoice' ? 'checkbox' : 'radio'" [attr.aria-checked]="isSelected(q, o.id)" (click)="choose(q, o.id)">
+                    <mat-icon class="icon-size-5 shrink-0" [class.text-primary-600]="isSelected(q, o.id)"
+                              [svgIcon]="q.type === 'MultipleChoice' ? (isSelected(q, o.id) ? 'square-check' : 'square') : (isSelected(q, o.id) ? 'circle-dot' : 'circle')" />
+                    <span>{{ o.text }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ol>
+
+      <div class="border-t border-line-soft p-4 sm:px-5">
+        <button type="button" class="btn btn-primary w-full sm:w-auto" [disabled]="busy()" (click)="submit()">{{ t('quiz.submit') }}</button>
+      </div>
+    } @else if (result(); as r) {
+      <!-- Result -->
+      <div class="flex flex-col items-center gap-1 border-b border-line-soft px-4 py-6 text-center">
+        <p class="text-4xl font-extrabold" [class.text-primary-600]="r.passed" [class.text-danger-700]="!r.passed" dir="ltr">{{ r.percent | number: '1.0-1' }}%</p>
+        <p class="font-bold">{{ r.passed ? t('quiz.resultPassed') : t('quiz.resultFailed') }}</p>
+        <p class="text-sm text-muted" dir="ltr">{{ r.score | number: '1.0-2' }} / {{ r.maxScore | number: '1.0-2' }}</p>
+        @if (r.autoSubmitted) { <p class="text-sm text-warning-700">{{ t('quiz.autoSubmitted') }}</p> }
+      </div>
+
+      @if (r.items; as items) {
+        <ol class="flex flex-col gap-3 p-4 sm:p-5">
+          @for (item of items; track item.questionId; let i = $index) {
+            <li class="rounded-[6px] border p-4" [class]="item.isCorrect ? 'border-primary-300 bg-primary-50' : 'border-danger-300 bg-danger-50'">
+              <p class="font-bold">{{ i + 1 }}. {{ questionText(item.questionId) }}</p>
+              <p class="mt-1 text-sm font-bold" [class.text-primary-700]="item.isCorrect" [class.text-danger-700]="!item.isCorrect">
+                {{ item.isCorrect ? t('quiz.correct') : t('quiz.wrong') }} · <span dir="ltr">{{ item.awardedPoints }} / {{ item.points }}</span>
+              </p>
+              @if (!item.isCorrect) {
+                <p class="mt-1 text-sm">
+                  {{ t('quiz.correctAnswer', { answer: correctAnswer(item) }) }}
+                </p>
+              }
+              @if (item.explanation) { <p class="mt-2 text-sm text-muted">{{ item.explanation }}</p> }
+            </li>
+          }
+        </ol>
+      }
+    }
+
+    @if (!attempt() && summary(); as s) {
+      <!-- Status -->
+      <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div class="flex flex-wrap gap-2">
+          <span class="badge badge-neutral">{{ t('quiz.questions', { count: s.questionCount }) }}</span>
+          <span class="badge badge-neutral">{{ s.timeLimitMinutes ? t('quiz.minutes', { count: s.timeLimitMinutes }) : t('quiz.noLimit') }}</span>
+          <span class="badge badge-neutral">{{ t('quiz.passMark', { percent: s.passPercent }) }}</span>
+          <span class="badge badge-neutral">{{ s.maxAttempts ? t('quiz.attempts', { used: s.attemptsUsed, max: s.maxAttempts }) : t('quiz.attemptsUnlimited') }}</span>
+          @if (s.bestPercent !== null) { <span class="badge badge-info">{{ t('quiz.best', { percent: (s.bestPercent | number: '1.0-1') }) }}</span> }
+          @if (s.passed) { <span class="badge badge-success">{{ t('quiz.youPassed') }}</span> }
+        </div>
+
+        @if (preview()) {
+          <span></span>
+        } @else if (s.questionCount === 0) {
+          <p class="text-muted">{{ t('quiz.notReady') }}</p>
+        } @else if (attemptsLeft() === 0 && !s.inProgressAttemptId) {
+          <p class="text-muted">{{ t('quiz.noAttemptsLeft') }}</p>
+        } @else {
+          <button type="button" class="btn btn-primary w-full sm:w-auto" [disabled]="busy()" (click)="start()">
+            {{ s.inProgressAttemptId ? t('quiz.resume') : s.attemptsUsed > 0 ? t('quiz.retry') : t('quiz.start') }}
+          </button>
+        }
+      </div>
+    } @else if (!preview() && !attempt() && !summary() && !error()) {
+      <div class="flex justify-center p-6"><mat-spinner diameter="28" /></div>
+    }
+  </section>
+</ng-container>

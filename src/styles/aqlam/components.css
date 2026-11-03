@@ -1,0 +1,256 @@
+/* -------------------------------------------------------------------------- */
+/* Aqlam UI kit — plain classes so every screen looks the same.               */
+/* Touch targets are at least 44px; everything works in RTL and LTR.          */
+/* -------------------------------------------------------------------------- */
+@layer components {
+  /* Page layout ------------------------------------------------------------ */
+  .page {
+    @apply mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8;
+  }
+  .page-narrow {
+    @apply mx-auto w-full max-w-3xl px-4 py-5 sm:px-6 lg:py-8;
+  }
+  .page-header {
+    @apply mb-5 flex flex-wrap items-end justify-between gap-3;
+  }
+  .page-title {
+    @apply text-2xl font-extrabold text-ink sm:text-[1.75rem];
+  }
+  .page-subtitle {
+    @apply mt-1 text-[0.95rem] text-muted;
+  }
+  .back-link {
+    @apply mb-1 inline-flex items-center gap-1 text-sm font-bold text-secondary-600 no-underline hover:underline;
+  }
+  .section-title {
+    @apply text-lg font-extrabold text-ink;
+  }
+
+  /* Buttons ---------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-transparent px-4 text-[0.95rem] font-bold whitespace-nowrap no-underline transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+  .btn-secondary {
+    @apply border-secondary-600 bg-white text-secondary-600 hover:bg-secondary-50;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-ink hover:bg-neutral-100;
+  }
+  .btn-danger {
+    @apply border-danger-300 bg-white text-danger-700 hover:bg-danger-50;
+  }
+  .btn-sm {
+    @apply min-h-9 px-3 text-sm;
+  }
+  .btn-block {
+    @apply w-full;
+  }
+  .btn-icon {
+    @apply inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-line bg-white text-ink hover:bg-neutral-50;
+  }
+
+  /* Cards and lists -------------------------------------------------------- */
+  .card {
+    @apply rounded-[6px] border border-line bg-white;
+  }
+  .card-body {
+    @apply p-4 sm:p-5;
+  }
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-4 py-3 sm:px-5;
+  }
+  .list-row {
+    @apply flex items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0 sm:px-5;
+  }
+  .stat {
+    @apply rounded-[6px] border border-line bg-white p-4;
+  }
+  .stat-label {
+    @apply text-sm text-muted;
+  }
+  .stat-value {
+    @apply text-[1.75rem] leading-tight font-extrabold;
+  }
+
+  /* Forms ------------------------------------------------------------------ */
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+  .field-label {
+    @apply text-[0.95rem] font-bold text-ink;
+  }
+  .field-hint {
+    @apply text-sm text-muted;
+  }
+  .field-error {
+    @apply text-sm font-medium text-danger-700;
+  }
+  .input,
+  .select,
+  .textarea {
+    @apply w-full rounded-[6px] border border-field bg-white px-3.5 text-base text-ink placeholder:text-neutral-500 focus:border-secondary-600 focus:outline-none focus-visible:outline-3 focus-visible:outline-secondary-200 disabled:bg-neutral-100;
+  }
+  .input,
+  .select {
+    @apply min-h-12;
+  }
+  .textarea {
+    @apply min-h-24 py-3 leading-relaxed;
+  }
+  .check {
+    @apply inline-flex min-h-11 cursor-pointer items-center gap-2 text-[0.95rem];
+  }
+  .check input {
+    @apply size-5 accent-primary-600;
+  }
+
+  /* Badges (status chips): tinted background + border + dark text ---------- */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-[4px] border px-2 py-0.5 text-[0.8rem] font-bold whitespace-nowrap;
+  }
+  .badge-success {
+    @apply border-primary-300 bg-primary-100 text-primary-700;
+  }
+  .badge-danger {
+    @apply border-danger-300 bg-danger-50 text-danger-700;
+  }
+  .badge-warning {
+    @apply border-warning-300 bg-warning-50 text-warning-700;
+  }
+  .badge-info {
+    @apply border-secondary-300 bg-secondary-100 text-secondary-600;
+  }
+  .badge-neutral {
+    @apply border-line bg-neutral-50 text-muted;
+  }
+
+  /* Alerts ----------------------------------------------------------------- */
+  .alert {
+    @apply flex items-start gap-2.5 rounded-[6px] border px-4 py-3 text-[0.95rem];
+  }
+  .alert-danger {
+    @apply border-danger-300 bg-danger-50 text-danger-700;
+  }
+  .alert-success {
+    @apply border-primary-300 bg-primary-100 text-primary-700;
+  }
+  .alert-warning {
+    @apply border-warning-300 bg-warning-50 text-warning-700;
+  }
+  .alert-info {
+    @apply border-secondary-300 bg-secondary-100 text-secondary-700;
+  }
+
+  /* Segmented control / tabs ----------------------------------------------- */
+  .segmented {
+    @apply flex flex-wrap gap-2;
+  }
+  .segment {
+    @apply inline-flex min-h-10 cursor-pointer items-center rounded-[6px] border border-line bg-white px-4 text-sm font-bold text-ink;
+  }
+  .segment[aria-selected='true'],
+  .segment[aria-pressed='true'],
+  .segment.is-active {
+    @apply border-primary-600 bg-primary-600 text-white;
+  }
+
+  /* Tables: scroll sideways on phones -------------------------------------- */
+  .table-wrap {
+    @apply overflow-x-auto rounded-[6px] border border-line bg-white;
+  }
+  .table {
+    @apply w-full border-collapse text-[0.95rem];
+  }
+  .table th {
+    @apply bg-page px-4 py-3 text-start text-sm font-bold whitespace-nowrap text-muted;
+  }
+  .table td {
+    @apply border-t border-line-soft px-4 py-3 align-middle;
+  }
+
+  /* Progress --------------------------------------------------------------- */
+  .progress {
+    @apply h-2 w-full overflow-hidden rounded-[2px] bg-primary-100;
+  }
+  .progress > span {
+    @apply block h-full bg-primary-600;
+  }
+
+  /* Empty states ----------------------------------------------------------- */
+  .empty {
+    @apply flex flex-col items-center gap-2 rounded-[6px] border border-dashed border-line bg-white px-6 py-10 text-center text-muted;
+  }
+
+  .sr-only-text {
+    @apply sr-only;
+  }
+}
+
+/* Rich lesson content (articles, homework instructions) --------------------- */
+@layer components {
+  .prose-aqlam {
+    @apply text-[1.05rem] leading-[1.9] text-ink;
+  }
+  .prose-aqlam > * + * {
+    @apply mt-4;
+  }
+  .prose-aqlam h1,
+  .prose-aqlam h2 {
+    @apply mt-6 text-xl font-extrabold;
+  }
+  .prose-aqlam h3 {
+    @apply mt-5 text-lg font-bold;
+  }
+  .prose-aqlam ul {
+    @apply list-disc ps-6;
+  }
+  .prose-aqlam ol {
+    @apply list-decimal ps-6;
+  }
+  .prose-aqlam img,
+  .prose-aqlam video {
+    @apply h-auto max-w-full rounded-[6px];
+  }
+  .prose-aqlam blockquote {
+    @apply border-s-4 border-secondary-300 ps-4 text-muted;
+  }
+  .prose-aqlam table {
+    @apply block w-full overflow-x-auto border-collapse;
+  }
+  .prose-aqlam th,
+  .prose-aqlam td {
+    @apply border border-line px-3 py-2;
+  }
+}
+
+/* ng-select dressed like .select ------------------------------------------- */
+.aq-select.ng-select .ng-select-container {
+  min-height: 3rem;
+  border: 1px solid var(--color-field);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+.aq-select.ng-select.ng-select-focused:not(.ng-select-opened) > .ng-select-container {
+  border-color: var(--color-secondary-600);
+  box-shadow: 0 0 0 3px var(--color-secondary-200);
+}
+.aq-select .ng-dropdown-panel {
+  font-family: var(--font-sans);
+  border-color: var(--color-line);
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  padding: 0.65rem 0.85rem;
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-marked {
+  background: var(--color-primary-50);
+}
+.aq-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-selected {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 700;
+}

@@ -10,17 +10,20 @@ import { NgSelectModule } from '@ng-select/ng-select';
 
 import { LookupsService, LookupDto, CurriculumDto } from '../../../../../../core/services/lookups.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { I18nService } from '@/app/core/transloco/i18n.service';
+import { errorMessages } from '@/app/core/utils/api-error.utils';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-step1-identity',
   templateUrl: './step1-identity.component.html',
-  styleUrls: ['./step1-identity.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    TranslocoDirective,
     FormField,
     NgSelectModule,
   ]
@@ -30,8 +33,11 @@ export default class Step1IdentityComponent {
   private router = inject(Router);
   private lookupsService = inject(LookupsService);
   protected orgContext = inject(OrgContextService);
+  private transloco = inject(TranslocoService);
 
   isSubmitting = signal(false);
+  error = signal<string | null>(null);
+  protected i18n = inject(I18nService);
 
   curricula = signal<CurriculumDto[]>([]);
   stages = signal<LookupDto[]>([]);
@@ -49,11 +55,11 @@ export default class Step1IdentityComponent {
 
   // Signal-based form definitions
   identityForm = form(this.formModel, (f) => {
-    required(f.title, { message: 'Title is required' });
-    required(f.curriculumId, { message: 'Curriculum is required' });
-    required(f.stageId, { message: 'Educational stage is required' });
-    required(f.gradeId, { message: 'Grade level is required' });
-    required(f.subjectId, { message: 'Subject is required' });
+    required(f.title, { message: this.transloco.translate('cb.s1.titleRequired') });
+    required(f.curriculumId, { message: this.transloco.translate('cb.s1.curriculumRequired') });
+    required(f.stageId, { message: this.transloco.translate('cb.s1.stageRequired') });
+    required(f.gradeId, { message: this.transloco.translate('cb.s1.gradeRequired') });
+    required(f.subjectId, { message: this.transloco.translate('cb.s1.subjectRequired') });
   });
 
   // Expose fields directly to template
@@ -176,9 +182,8 @@ export default class Step1IdentityComponent {
             this.router.navigate(this.orgContext.path('courses', currentDraft.id!, 'edit', 'step-2'));
           },
           error: (err) => {
-            console.error('API Error:', err);
             this.isSubmitting.set(false);
-            alert('Failed to connect to the backend. Is the API running?');
+            this.error.set(errorMessages(err, this.transloco.translate('cb.s4.connection')).join(' '));
           }
         });
       } else {
@@ -195,13 +200,17 @@ export default class Step1IdentityComponent {
             this.router.navigate(this.orgContext.path('courses', res.id, 'edit', 'step-2'));
           },
           error: (err) => {
-            console.error('API Error:', err);
             this.isSubmitting.set(false);
-            alert('Failed to connect to the backend. Is the API running?');
+            this.error.set(errorMessages(err, this.transloco.translate('cb.s4.connection')).join(' '));
           }
         });
       }
     });
+  }
+
+  /** Lookup label in the active language. */
+  label(): string {
+    return this.i18n.lang() === 'ar' ? 'nameAr' : 'nameEn';
   }
 
   goBack() {

@@ -6,6 +6,12 @@ export enum CourseStatus {
   Suspended = 'Suspended'
 }
 
+export enum CourseVisibility {
+  Private = 'Private',
+  Unlisted = 'Unlisted',
+  Public = 'Public'
+}
+
 export enum PricingType {
   Free = 'Free',
   Paid = 'Paid'
@@ -62,6 +68,9 @@ export interface CourseChapter {
 export interface CourseDraft {
   id?: string;
   status: CourseStatus;
+  visibility?: CourseVisibility;
+  /** Sent back as expectedVersion when saving the curriculum (409 if someone saved in between). */
+  curriculumVersion?: number;
 
   title?: string;
   slug?: string;
@@ -116,8 +125,15 @@ export interface UpdateCourseMediaRequest {
   promoVideoUrl?: string;
 }
 
-export interface UpdateCourseCurriculumRequest {
-  id: string;
+/** Chapters without `lessons` keep their lessons unchanged on the server. */
+export interface CurriculumChapterInput {
+  id?: string;
+  title: string;
+  lessons?: CourseLesson[];
+}
+
+export interface SyncCurriculumRequest {
+  expectedVersion: number;
   syllabusRequirements?: string;
-  chapters: CourseChapter[];
+  chapters: CurriculumChapterInput[];
 }

@@ -1,0 +1,71 @@
+<ng-container *transloco="let t">
+  <div class="page">
+    <a class="back-link" [routerLink]="orgContext.path('courses', courseId, 'curriculum')"><mat-icon svgIcon="chevron-right" class="icon-size-4 ltr:rotate-180" />{{ t('qs.back') }}</a>
+    <header class="page-header">
+      <h1 class="page-title">{{ t('qs.title') }}</h1>
+      <div class="flex flex-wrap gap-2">
+        <a class="btn btn-ghost" [routerLink]="orgContext.path('questions')"><mat-icon svgIcon="library" class="icon-size-5" />{{ t('qs.bank') }}</a>
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ t('qs.save') }}</button>
+      </div>
+    </header>
+
+    @if (errors().length) {
+      <div class="alert alert-danger mb-4" role="alert"><ul class="list-inside list-disc">@for (e of errors(); track $index) { <li>{{ e }}</li> }</ul></div>
+    }
+
+    @let s = settings();
+    <section class="card card-body mb-5 grid gap-4 sm:grid-cols-3">
+      <label class="field">
+        <span class="field-label">{{ t('qs.timeLimit') }}</span>
+        <input type="number" class="input" min="1" inputmode="numeric" [placeholder]="t('qs.noLimit')" [value]="s.timeLimitMinutes ?? ''" (input)="patch({ timeLimitMinutes: optionalNumber($any($event.target).value) })" />
+      </label>
+      <label class="field">
+        <span class="field-label">{{ t('qs.attempts') }}</span>
+        <input type="number" class="input" min="1" inputmode="numeric" [placeholder]="t('qs.unlimited')" [value]="s.maxAttempts ?? ''" (input)="patch({ maxAttempts: optionalNumber($any($event.target).value) })" />
+      </label>
+      <label class="field">
+        <span class="field-label">{{ t('qs.passMark') }}</span>
+        <input type="number" class="input" min="0" max="100" inputmode="numeric" [value]="s.passPercent" (input)="patch({ passPercent: +$any($event.target).value })" />
+      </label>
+      <label class="check"><input type="checkbox" [checked]="s.shuffleQuestions" (change)="patch({ shuffleQuestions: $any($event.target).checked })" />{{ t('qs.shuffleQuestions') }}</label>
+      <label class="check"><input type="checkbox" [checked]="s.shuffleOptions" (change)="patch({ shuffleOptions: $any($event.target).checked })" />{{ t('qs.shuffleOptions') }}</label>
+      <label class="check"><input type="checkbox" [checked]="s.showAnswersAfterSubmit" (change)="patch({ showAnswersAfterSubmit: $any($event.target).checked })" />{{ t('qs.showAnswers') }}</label>
+    </section>
+
+    <div class="grid gap-5 lg:grid-cols-2">
+      <section class="card">
+        <div class="card-header"><h2 class="section-title">{{ t('qs.inQuiz', { count: selected().length, points: totalPoints() }) }}</h2></div>
+        @for (item of selected(); track item.question.id; let i = $index, first = $first, last = $last) {
+          <article class="list-row flex-wrap">
+            <span class="w-6 text-sm font-bold text-muted">{{ i + 1 }}.</span>
+            <p class="min-w-0 flex-1 text-[0.95rem]">{{ item.question.text }}</p>
+            <div class="flex items-center gap-1">
+              <input type="number" class="input min-h-10 w-20 px-2 text-sm" min="0.5" step="0.5" inputmode="decimal" [attr.aria-label]="t('qs.pointsLabel')" [value]="item.points" (input)="setPoints(i, +$any($event.target).value)" />
+              <button type="button" class="btn-icon size-10" [attr.aria-label]="t('qs.moveUp')" [disabled]="first" (click)="move(i, -1)"><mat-icon svgIcon="chevron-up" class="icon-size-5" /></button>
+              <button type="button" class="btn-icon size-10" [attr.aria-label]="t('qs.moveDown')" [disabled]="last" (click)="move(i, 1)"><mat-icon svgIcon="chevron-down" class="icon-size-5" /></button>
+              <button type="button" class="btn-icon size-10" [attr.aria-label]="t('qs.remove')" (click)="removeAt(i)"><mat-icon svgIcon="x" class="icon-size-5" /></button>
+            </div>
+          </article>
+        } @empty {
+          <p class="px-5 py-8 text-center text-muted">{{ t('qs.addFromBank') }}</p>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2 class="section-title">{{ t('qs.fromBank') }}</h2></div>
+        <form class="flex gap-2 p-4 sm:px-5" (submit)="$event.preventDefault(); loadBank()">
+          <input class="input flex-1" type="search" [placeholder]="t('qb.search')" [attr.aria-label]="t('qb.search')" [value]="search()" (input)="search.set($any($event.target).value)" />
+          <button type="submit" class="btn btn-secondary">{{ t('action.search') }}</button>
+        </form>
+        @for (q of available(); track q.id) {
+          <article class="list-row">
+            <p class="min-w-0 flex-1 text-[0.95rem]">{{ q.text }}</p>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="add(q)"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('action.add') }}</button>
+          </article>
+        } @empty {
+          <p class="px-5 py-8 text-center text-muted">{{ t('qs.noMore') }} <a [routerLink]="orgContext.path('questions')">{{ t('qs.createInBank') }}</a></p>
+        }
+      </section>
+    </div>
+  </div>
+</ng-container>

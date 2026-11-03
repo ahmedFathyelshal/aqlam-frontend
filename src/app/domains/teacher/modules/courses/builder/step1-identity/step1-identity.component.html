@@ -1,122 +1,52 @@
-<div class="step-container">
-      
-      <!-- Content Header -->
-      <div class="step-header">
-        <div class="header-icon-box">
-          <mat-icon class="icon-size-6" svgIcon="book-open"></mat-icon>
-        </div>
-        <div class="header-text">
-          <h2>Course basics</h2>
-          <p>Give your course a clear name and tell students what they'll learn.</p>
-        </div>
-      </div>
+<ng-container *transloco="let tr">
+  <header class="mb-5">
+    <p class="text-sm font-bold text-primary-600">{{ tr('cb.step', { n: 1 }) }}</p>
+    <h1 class="page-title">{{ tr('cb.s1.title') }}</h1>
+    <p class="page-subtitle">{{ tr('cb.s1.intro') }}</p>
+  </header>
 
-      <!-- Form Content -->
-      <form class="step-form" (submit)="onNext($event)">
-        
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Course title <span class="required">*</span></label>
-            <input type="text"
-                   class="custom-input"
-                   [class.invalid]="identityForm.title().touched() && identityForm.title().invalid()"
-                   [formField]="identityForm.title"
-                   placeholder="e.g. Introduction to Physics">
-            <div class="error-text" *ngIf="identityForm.title().touched() && identityForm.title().errors().length > 0">
-              {{ identityForm.title().errors()[0].message }}
-            </div>
-          </div>
-        </div>
+  <form class="flex flex-col gap-4" (submit)="onNext($event)" novalidate>
+    <label class="field">
+      <span class="field-label">{{ tr('cb.s1.courseTitle') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+      <input type="text" class="input" [formField]="identityForm.title" [placeholder]="tr('cb.s1.titlePlaceholder')"
+             [attr.aria-invalid]="identityForm.title().touched() && identityForm.title().invalid()" />
+      @if (identityForm.title().touched() && identityForm.title().errors().length) { <span class="field-error">{{ identityForm.title().errors()[0].message }}</span> }
+    </label>
 
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Curriculum <span class="required">*</span></label>
-            <ng-select class="custom-ng-select"
-                       [items]="curricula()"
-                       bindLabel="nameEn"
-                       bindValue="id"
-                       groupBy="kind"
-                       [searchable]="true"
-                       [clearable]="false"
-                       [class.invalid]="identityForm.curriculumId().touched() && identityForm.curriculumId().invalid()"
-                       [formField]="identityForm.curriculumId"
-                       placeholder="Select curriculum...">
-            </ng-select>
-            <div class="error-text" *ngIf="identityForm.curriculumId().touched() && identityForm.curriculumId().errors().length > 0">
-              {{ identityForm.curriculumId().errors()[0].message }}
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row two-cols">
-          <div class="form-group">
-            <label>Educational Stage <span class="required">*</span></label>
-            <ng-select class="custom-ng-select"
-                       [items]="stages()"
-                       bindLabel="nameEn"
-                       bindValue="id"
-                       [searchable]="true"
-                       [clearable]="false"
-                       [class.invalid]="identityForm.stageId().touched() && identityForm.stageId().invalid()"
-                       [formField]="identityForm.stageId"
-                       placeholder="Select stage...">
-            </ng-select>
-            <div class="error-text" *ngIf="identityForm.stageId().touched() && identityForm.stageId().errors().length > 0">
-              {{ identityForm.stageId().errors()[0].message }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Grade Level <span class="required">*</span></label>
-            <ng-select class="custom-ng-select"
-                       [items]="grades()"
-                       bindLabel="nameEn"
-                       bindValue="id"
-                       [searchable]="true"
-                       [clearable]="false"
-                       [class.invalid]="identityForm.gradeId().touched() && identityForm.gradeId().invalid()"
-                       [formField]="identityForm.gradeId"
-                       placeholder="Select grade...">
-            </ng-select>
-            <div class="error-text" *ngIf="identityForm.gradeId().touched() && identityForm.gradeId().errors().length > 0">
-              {{ identityForm.gradeId().errors()[0].message }}
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Subject <span class="required">*</span></label>
-            <ng-select class="custom-ng-select"
-                       [items]="subjects()"
-                       bindLabel="nameEn"
-                       bindValue="id"
-                       [searchable]="true"
-                       [clearable]="false"
-                       [class.invalid]="identityForm.subjectId().touched() && identityForm.subjectId().invalid()"
-                       [formField]="identityForm.subjectId"
-                       placeholder="Select subject...">
-            </ng-select>
-            <div class="error-text" *ngIf="identityForm.subjectId().touched() && identityForm.subjectId().errors().length > 0">
-              {{ identityForm.subjectId().errors()[0].message }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Divider and Footer -->
-        <div class="step-footer-divider"></div>
-        
-        <div class="step-footer">
-          <button type="button" class="btn-back" (click)="goBack()">
-            <mat-icon class="icon-size-5" svgIcon="arrow-left"></mat-icon> Back
-          </button>
-          
-          <button type="submit" class="btn-continue" [disabled]="isSubmitting()">
-            <span *ngIf="!isSubmitting()">Continue</span>
-            <mat-icon class="icon-size-5" *ngIf="!isSubmitting()" svgIcon="arrow-right"></mat-icon>
-            <mat-spinner *ngIf="isSubmitting()" diameter="20" color="accent"></mat-spinner>
-          </button>
-        </div>
-
-      </form>
+    <div class="field">
+      <span class="field-label">{{ tr('cb.s1.curriculum') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+      <ng-select class="aq-select" [items]="curricula()" [bindLabel]="label()" bindValue="id" groupBy="kind" [searchable]="true" [clearable]="false"
+                 [formField]="identityForm.curriculumId" [placeholder]="tr('cb.s1.select')" [attr.aria-label]="tr('cb.s1.curriculum')" />
+      @if (identityForm.curriculumId().touched() && identityForm.curriculumId().errors().length) { <span class="field-error">{{ identityForm.curriculumId().errors()[0].message }}</span> }
     </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="field">
+        <span class="field-label">{{ tr('cb.s1.stage') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+        <ng-select class="aq-select" [items]="stages()" [bindLabel]="label()" bindValue="id" [searchable]="true" [clearable]="false"
+                   [formField]="identityForm.stageId" [placeholder]="tr('cb.s1.select')" [attr.aria-label]="tr('cb.s1.stage')" />
+        @if (identityForm.stageId().touched() && identityForm.stageId().errors().length) { <span class="field-error">{{ identityForm.stageId().errors()[0].message }}</span> }
+      </div>
+      <div class="field">
+        <span class="field-label">{{ tr('cb.s1.grade') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+        <ng-select class="aq-select" [items]="grades()" [bindLabel]="label()" bindValue="id" [searchable]="true" [clearable]="false"
+                   [formField]="identityForm.gradeId" [placeholder]="tr('cb.s1.select')" [attr.aria-label]="tr('cb.s1.grade')" />
+        @if (identityForm.gradeId().touched() && identityForm.gradeId().errors().length) { <span class="field-error">{{ identityForm.gradeId().errors()[0].message }}</span> }
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">{{ tr('cb.s1.subject') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
+      <ng-select class="aq-select" [items]="subjects()" [bindLabel]="label()" bindValue="id" [searchable]="true" [clearable]="false"
+                 [formField]="identityForm.subjectId" [placeholder]="tr('cb.s1.select')" [attr.aria-label]="tr('cb.s1.subject')" />
+      @if (identityForm.subjectId().touched() && identityForm.subjectId().errors().length) { <span class="field-error">{{ identityForm.subjectId().errors()[0].message }}</span> }
+    </div>
+
+    @if (error()) { <div class="alert alert-danger" role="alert">{{ error() }}</div> }
+
+    <div class="mt-2 flex flex-wrap justify-between gap-2 border-t border-line-soft pt-4">
+      <button type="button" class="btn btn-ghost" (click)="goBack()">{{ tr('cb.back') }}</button>
+      <button type="submit" class="btn btn-primary min-w-36" [disabled]="isSubmitting()">{{ tr('cb.continue') }}<mat-icon svgIcon="chevron-left" class="icon-size-5 ltr:rotate-180" /></button>
+    </div>
+  </form>
+</ng-container>

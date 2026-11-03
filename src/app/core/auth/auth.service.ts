@@ -13,6 +13,8 @@ export type AuthUser = {
   name: string;
   email?: string | null;
   roles: string[];
+  /** Set for accounts created by a school with a temporary password (bulk import). */
+  mustChangePassword?: boolean;
 }
 
 export type SignInRequest = {
@@ -91,6 +93,24 @@ export class AuthService {
       catchError(() => of(void 0)),
       finalize(() => this.signOutLocal())
     );
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<ApiResponse<unknown>>(ApiEndpoints.Auth.ChangePassword, { currentPassword, newPassword }).pipe(
+      unwrapApiResponse(),
+      tap(() => this.user.update(u => (u ? { ...u, mustChangePassword: false } : u))),
+      map(() => void 0)
+    );
+  }
+
+  /** Where a signed-in user starts: forced password change, then staff area, student area or parent portal. */
+  homeRoute(): string {
+    const user = this.user();
+    if (!user) return '/auth/sign-in';
+    if (user.mustChangePassword) return '/account/password';
+    if (this.orgContext.staffMemberships().length) return '/teacher';
+    if (user.roles?.includes('Student')) return '/student/dashboard';
+    return '/parent';
   }
 
   /** Loads the user's organizations; a failure here must not block sign-in. */

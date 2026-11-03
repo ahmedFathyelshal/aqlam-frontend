@@ -1,0 +1,51 @@
+<ng-container *transloco="let t">
+  <section class="card">
+    @if (preview()) {
+      <div class="alert alert-info m-4">{{ t('hw.previewNote') }}</div>
+    } @else if (assignment(); as a) {
+      <div class="flex flex-wrap gap-2 border-b border-line-soft p-4 sm:px-5">
+        <span class="badge badge-neutral">{{ t('hw.points', { points: a.maxPoints }) }}</span>
+        <span class="badge" [class]="a.dueAtUtc ? 'badge-warning' : 'badge-neutral'">{{ a.dueAtUtc ? t('hw.due', { date: date(a.dueAtUtc) }) : t('hw.noDue') }}</span>
+        @if (a.dueAtUtc && a.acceptLateSubmissions) { <span class="badge badge-neutral">{{ t('hw.lateAllowed') }}</span> }
+      </div>
+
+      @if (a.submission; as s) {
+        <div class="m-4 rounded-[6px] border p-4 sm:mx-5"
+             [class]="s.status === 'Graded' ? 'border-primary-300 bg-primary-50' : s.status === 'ReturnedForRevision' ? 'border-warning-300 bg-warning-50' : 'border-line bg-page'">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="badge" [class]="s.status === 'Graded' ? 'badge-success' : s.status === 'ReturnedForRevision' ? 'badge-warning' : 'badge-info'">{{ t('hw.status.' + s.status) }}</span>
+            @if (s.isLate) { <span class="badge badge-danger">{{ t('hw.late') }}</span> }
+            <span class="text-sm text-muted">{{ t('hw.submitted', { date: date(s.submittedAtUtc) }) }}</span>
+          </div>
+          @if (s.status === 'Graded') {
+            <p class="mt-2 text-lg font-extrabold text-primary-700">{{ t('hw.score', { score: s.score, max: s.maxPoints }) }}</p>
+          }
+          @if (s.feedback) {
+            <p class="mt-2 text-sm font-bold">{{ t('hw.feedback') }}</p>
+            <p class="text-[0.95rem] whitespace-pre-line">{{ s.feedback }}</p>
+          }
+        </div>
+      }
+
+      @if (a.canSubmit) {
+        <form class="flex flex-col gap-4 p-4 sm:px-5" (submit)="$event.preventDefault(); submit()">
+          <label class="field">
+            <span class="field-label">{{ t('hw.yourAnswer') }}</span>
+            <textarea class="textarea min-h-40" maxlength="20000" [value]="text()" (input)="text.set($any($event.target).value)"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">{{ t('hw.links') }}</span>
+            <textarea class="textarea min-h-20 font-mono text-sm" dir="ltr" [value]="links()" (input)="links.set($any($event.target).value)"></textarea>
+            <span class="field-hint">{{ t('hw.linkHint') }}</span>
+          </label>
+          @if (error(); as message) { <div class="alert alert-danger" role="alert">{{ message }}</div> }
+          <button type="submit" class="btn btn-primary w-full sm:w-auto sm:self-start" [disabled]="busy()">{{ a.submission ? t('hw.resubmit') : t('hw.submit') }}</button>
+        </form>
+      } @else if (!a.submission) {
+        <div class="alert alert-danger m-4">{{ t('hw.closed') }}</div>
+      }
+    } @else if (error(); as message) {
+      <div class="alert alert-danger m-4" role="alert">{{ message }}</div>
+    }
+  </section>
+</ng-container>

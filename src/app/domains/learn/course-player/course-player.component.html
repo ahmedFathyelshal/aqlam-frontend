@@ -1,0 +1,143 @@
+<ng-container *transloco="let t">
+  <div class="flex min-h-dvh flex-col bg-page">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-30 border-b border-line bg-white">
+      <div class="flex h-16 items-center gap-3 px-3 sm:px-5">
+        <a class="btn-icon" routerLink="/" [attr.aria-label]="t('action.back')"><mat-icon svgIcon="chevron-right" class="icon-size-5 ltr:rotate-180" /></a>
+        <aq-logo [size]="32" [wordmark]="false" class="hidden sm:block" />
+        <div class="min-w-0 flex-1">
+          <h1 class="truncate text-base font-extrabold sm:text-lg">{{ course()?.title ?? '…' }}</h1>
+          @if (course(); as c) {
+            <p class="truncate text-sm text-muted">
+              {{ t('player.complete', { percent: c.progressPercent }) }}
+              @if (c.accessExpiresAtUtc) { · {{ t('player.accessUntil', { date: date(c.accessExpiresAtUtc) }) }} }
+            </p>
+          }
+        </div>
+      </div>
+      @if (course(); as c) {
+        <div class="progress rounded-none"><span [style.width.%]="c.progressPercent"></span></div>
+      }
+    </header>
+
+    @if (course()?.isPreview) {
+      <div class="alert alert-warning rounded-none border-x-0 border-t-0">{{ t('player.preview') }}</div>
+    }
+
+    @if (courseError(); as error) {
+      <div class="page-narrow"><div class="alert alert-danger" role="alert">{{ error }}</div></div>
+    } @else {
+      <div class="flex flex-1 flex-col lg:flex-row">
+        <!-- Outline: collapsible on phones, side column on laptops -->
+        <aside class="border-b border-line bg-white lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:w-80 lg:shrink-0 lg:overflow-y-auto lg:border-e lg:border-b-0">
+          <button type="button" class="flex min-h-12 w-full items-center justify-between px-4 font-bold lg:hidden" [attr.aria-expanded]="outlineOpen()" (click)="outlineOpen.set(!outlineOpen())">
+            {{ outlineOpen() ? t('player.hideOutline') : t('player.showOutline') }}
+            <mat-icon svgIcon="chevron-down" class="icon-size-5 transition-transform" [class.rotate-180]="outlineOpen()" />
+          </button>
+          <nav class="p-2 lg:block" [class.hidden]="!outlineOpen()" [attr.aria-label]="t('player.outline')">
+            @if (course(); as c) {
+              @for (chapter of c.chapters; track chapter.id) {
+                <h2 class="px-3 pt-4 pb-1 text-sm font-extrabold text-muted">{{ chapter.title }}</h2>
+                @for (item of chapter.lessons; track item.id) {
+                  <a class="flex min-h-12 items-center gap-3 rounded-[6px] px-3 py-2 text-[0.95rem] text-ink no-underline hover:bg-neutral-50"
+                     [class.!bg-primary-100]="lesson()?.id === item.id" [class.font-bold]="lesson()?.id === item.id" [class.opacity-60]="item.isLocked"
+                     [attr.aria-current]="lesson()?.id === item.id ? 'page' : null" [routerLink]="lessonLink(item.id)">
+                    <mat-icon class="icon-size-5 shrink-0" [class.text-primary-600]="item.isCompleted" [class.text-muted]="!item.isCompleted"
+                              [svgIcon]="item.isCompleted ? 'circle-check' : item.isLocked ? 'lock' : item.type === 'Video' ? 'circle-play' : item.type === 'Quiz' ? 'circle-question-mark' : 'file-text'" />
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate">{{ item.title }}</span>
+                      @if (item.isLocked) { <span class="block text-xs text-muted">{{ lockText(item) }}</span> }
+                    </span>
+                  </a>
+                }
+              }
+            } @else {
+              <div class="flex justify-center p-8"><mat-spinner diameter="32" /></div>
+            }
+          </nav>
+        </aside>
+
+        <!-- Lesson -->
+        <main class="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
+          @if (loadingLesson()) {
+            <div class="flex justify-center p-16"><mat-spinner diameter="40" /></div>
+          } @else if (lessonError(); as error) {
+            <div class="empty mx-auto max-w-xl"><mat-icon svgIcon="lock" class="icon-size-10" /><p class="text-lg font-bold text-ink">{{ error }}</p></div>
+          } @else if (lesson(); as l) {
+            <article class="mx-auto flex max-w-4xl flex-col gap-5">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <h2 class="text-xl font-extrabold sm:text-2xl">{{ l.title }}</h2>
+                @if (l.isCompleted) {
+                  <span class="badge badge-success"><mat-icon svgIcon="circle-check" class="icon-size-4" />{{ t('player.completed') }}</span>
+                }
+              </div>
+
+              @switch (l.type) {
+                @case ('Video') {
+                  @if (videoSource(); as source) {
+                    @switch (source.kind) {
+                      @case ('file') {
+                        <video #video class="aspect-video w-full rounded-[6px] bg-black" controls controlsList="nodownload" preload="metadata"
+                               [src]="$any(source).url" (loadedmetadata)="onVideoReady(video)" (timeupdate)="onVideoTime(video)"
+                               (pause)="onVideoPausedOrEnded()" (ended)="onVideoPausedOrEnded()"></video>
+                      }
+                      @case ('unknown') {
+                        <a class="btn btn-secondary self-start" target="_blank" rel="noopener" [href]="$any(source).url">{{ t('player.openVideo') }}</a>
+                        <p class="field-hint">{{ t('player.cannotEmbed') }}</p>
+                      }
+                      @default {
+                        <iframe #embed class="aspect-video w-full rounded-[6px] bg-black" [src]="embedUrl()" [title]="l.title"
+                                allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+                                referrerpolicy="strict-origin-when-cross-origin" (load)="onEmbedLoad()"></iframe>
+                      }
+                    }
+                  } @else {
+                    <div class="empty">{{ t('player.noVideo') }}</div>
+                  }
+                }
+                @case ('Article') {
+                  <!-- Angular sanitizes bound HTML (scripts and event handlers are removed). -->
+                  <div class="card card-body prose-aqlam" [innerHTML]="l.content"></div>
+                  @if (!course()?.isPreview) {
+                    <button type="button" class="btn btn-primary self-start" [disabled]="l.isCompleted || markingDone()" (click)="markArticleDone()">
+                      {{ l.isCompleted ? t('player.done') : t('player.markDone') }}
+                    </button>
+                  }
+                }
+                @case ('Quiz') {
+                  <app-quiz-panel [org]="org" [lessonId]="l.id" [preview]="course()?.isPreview ?? false" (completed)="onAssessmentCompleted()" />
+                }
+                @case ('Assignment') {
+                  @if (l.content) { <div class="card card-body prose-aqlam" [innerHTML]="l.content"></div> }
+                  <app-assignment-panel [org]="org" [lessonId]="l.id" [preview]="course()?.isPreview ?? false" (completed)="onAssessmentCompleted()" />
+                }
+              }
+
+              @if (l.summary) { <p class="text-[1.02rem] leading-relaxed text-muted">{{ l.summary }}</p> }
+
+              @if (l.resources.length) {
+                <section class="card">
+                  <div class="card-header"><h3 class="section-title">{{ t('player.resources') }}</h3></div>
+                  @for (resource of l.resources; track resource.id) {
+                    <a class="list-row font-bold no-underline hover:bg-neutral-50" target="_blank" rel="noopener" [href]="resource.resourceUrl">
+                      <mat-icon class="icon-size-5" [svgIcon]="resource.type === 'Link' ? 'link' : 'file-down'" />{{ resource.displayName }}
+                    </a>
+                  }
+                </section>
+              }
+
+              <nav class="flex justify-between gap-2 border-t border-line pt-4">
+                @if (l.previousLessonId) {
+                  <a class="btn btn-ghost" [routerLink]="lessonLink(l.previousLessonId)"><mat-icon svgIcon="chevron-right" class="icon-size-5 ltr:rotate-180" />{{ t('player.previous') }}</a>
+                } @else { <span></span> }
+                @if (l.nextLessonId) {
+                  <a class="btn btn-primary" [routerLink]="lessonLink(l.nextLessonId)">{{ t('player.next') }}<mat-icon svgIcon="chevron-left" class="icon-size-5 ltr:rotate-180" /></a>
+                }
+              </nav>
+            </article>
+          }
+        </main>
+      </div>
+    }
+  </div>
+</ng-container>

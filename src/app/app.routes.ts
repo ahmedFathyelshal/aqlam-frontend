@@ -1,64 +1,41 @@
-import { Route } from '@angular/router';
-import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { Route } from '@angular/router';
+
 import { AuthService } from './core/auth/auth.service';
+import { authenticatedGuard } from './core/auth/guards/authenticated.guard';
 
 export const routes: Route[] = [
-  // Website routes
-  {
-    path: 'home',
-    loadChildren: () => import('./domains/website/routes'),
-  },
+  { path: 'auth', loadChildren: () => import('./domains/auth/routes') },
 
-  // Auth
-  {
-    path: 'auth',
-    loadChildren: () => import('./domains/auth/routes'),
-  },
+  // Staff area: owners, admins, coordinators, teachers, assistants
+  { path: 'teacher', loadChildren: () => import('./domains/teacher/routes') },
 
-  // Teacher
-  {
-    path: 'teacher',
-    loadChildren: () => import('./domains/teacher/routes'),
-  },
+  // Students
+  { path: 'student', loadChildren: () => import('./domains/student/routes') },
 
-  // Student
+  // Parents
+  { path: 'parent', loadChildren: () => import('./domains/parent/routes') },
+
+  // Course player (students; staff preview)
+  { path: 'learn', loadChildren: () => import('./domains/learn/routes') },
+
+  // Temporary passwords must be replaced first
   {
-    path: 'student',
-    loadChildren: () => import('./domains/student/routes'),
+    path: 'account/password',
+    canActivate: [authenticatedGuard],
+    loadComponent: () => import('./domains/auth/features/change-password'),
   },
 
   {
     path: '',
     pathMatch: 'full',
     redirectTo: () => {
-      const platformId = inject(PLATFORM_ID);
-      if (isPlatformServer(platformId)) {
-        // Fallback for SSR to prevent premature login redirects
-        return '/student/dashboard';
+      if (isPlatformServer(inject(PLATFORM_ID))) {
+        return '/auth/sign-in'; // the browser re-routes once the session is known
       }
-
-      const authService = inject(AuthService);
-      const user = authService.user();
-      
-      if (user?.roles?.includes('Teacher')) {
-        return '/teacher';
-      }
-      if (user?.roles?.includes('Student')) {
-        return '/student/dashboard';
-      }
-      
-      return '/auth/sign-in';
+      return inject(AuthService).homeRoute();
     },
   },
-  {
-    path: 'admin',
-    loadChildren: () => import('./domains/admin/routes'),
-  },
-
-  // Coming soon
-  {
-    path: 'coming-soon',
-    loadChildren: () => import('./domains/coming-soon/routes'),
-  },
+  { path: '**', redirectTo: '' },
 ];

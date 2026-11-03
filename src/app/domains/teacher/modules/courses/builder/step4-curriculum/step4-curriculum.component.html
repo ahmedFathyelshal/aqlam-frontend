@@ -1,92 +1,52 @@
-<div class="step-container">
-      
-      <!-- Content Header -->
-      <div class="step-header">
-        <div class="header-icon-box">
-          <mat-icon class="icon-size-6" svgIcon="clipboard-check"></mat-icon>
+<ng-container *transloco="let tr">
+  <header class="mb-5">
+    <p class="text-sm font-bold text-primary-600">{{ tr('cb.step', { n: 4 }) }}</p>
+    <h1 class="page-title">{{ tr('cb.s4.title') }}</h1>
+    <p class="page-subtitle">{{ tr('cb.s4.intro') }}</p>
+  </header>
+
+  <section class="mb-5 rounded-[6px] border border-line bg-page p-4">
+    <h2 class="mb-2 text-sm font-extrabold text-muted">{{ tr('cb.s4.completeness') }}</h2>
+    <ul class="flex flex-col gap-1.5">
+      @for (item of [
+        { ok: hasIdentity(), key: 'cb.s4.basics' },
+        { ok: hasCommercials(), key: 'cb.s4.pricing' },
+        { ok: hasMedia(), key: 'cb.s4.media' }
+      ]; track item.key) {
+        <li class="flex items-center gap-2 text-[0.95rem]" [class.font-bold]="item.ok">
+          <mat-icon class="icon-size-5" [class.text-primary-600]="item.ok" [class.text-neutral-400]="!item.ok" [svgIcon]="item.ok ? 'circle-check' : 'circle-minus'" />
+          {{ tr(item.key) }}
+        </li>
+      }
+    </ul>
+  </section>
+
+  <form class="flex flex-col gap-4" (submit)="$event.preventDefault()">
+    <fieldset class="flex flex-col gap-2">
+      <legend class="field-label">{{ tr('cb.s4.chapters') }} <span class="text-danger-700" aria-hidden="true">*</span></legend>
+      <p class="field-hint">{{ tr('cb.s4.chaptersHint') }}</p>
+      @for (ch of chapters(); track $index; let i = $index) {
+        <div class="flex items-center gap-2">
+          <span class="w-20 shrink-0 text-sm font-bold text-muted">{{ tr('cb.s4.chapter', { n: i + 1 }) }}</span>
+          <input type="text" class="input flex-1" [attr.aria-label]="tr('cb.s4.chapter', { n: i + 1 })" [value]="ch.title" (input)="updateChapterTitle(i, $any($event.target).value)" />
+          <button type="button" class="btn-icon" [attr.aria-label]="tr('cb.s4.removeChapter')" (click)="removeChapter(i)"><mat-icon svgIcon="trash-2" class="icon-size-5" /></button>
         </div>
-        <div class="header-text">
-          <h2>Curriculum & review</h2>
-          <p>Build your chapter structure and publish your course.</p>
-        </div>
+      }
+      <button type="button" class="btn btn-ghost btn-sm self-start" (click)="addChapter()"><mat-icon svgIcon="plus" class="icon-size-4" />{{ tr('cb.s4.addChapter') }}</button>
+      @if (chapterError()) { <div class="alert alert-danger" role="alert">{{ chapterError() }}</div> }
+    </fieldset>
+
+    <label class="field">
+      <span class="field-label">{{ tr('cb.s4.syllabus') }}</span>
+      <textarea class="textarea" rows="4" [value]="syllabusReqs()" (input)="syllabusReqs.set($any($event.target).value)" [placeholder]="tr('cb.s4.syllabusPlaceholder')"></textarea>
+    </label>
+
+    <div class="mt-2 flex flex-col-reverse gap-2 border-t border-line-soft pt-4 sm:flex-row sm:justify-between">
+      <button type="button" class="btn btn-ghost" (click)="goBack()" [disabled]="isPublishing() || isSaving()">{{ tr('cb.back') }}</button>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <button type="button" class="btn btn-secondary" (click)="onSaveDraft()" [disabled]="isPublishing() || isSaving()">{{ tr('cb.s4.saveDraft') }}</button>
+        <button type="button" class="btn btn-primary" (click)="onPublish()" [disabled]="isPublishing() || isSaving() || !canPublish()"><mat-icon svgIcon="rocket" class="icon-size-5" />{{ tr('cb.s4.publish') }}</button>
       </div>
-
-      <!-- Completeness Summary Panel -->
-      <div class="summary-panel">
-        <div class="summary-title">Course Completeness</div>
-        <div class="summary-items">
-          <div class="summary-item" [class.success]="hasIdentity()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasIdentity()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasIdentity()" svgIcon="minus-circle"></mat-icon>
-            <span>Basics (Title, Stage, Grade, Subject)</span>
-          </div>
-          <div class="summary-item" [class.success]="hasCommercials()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasCommercials()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasCommercials()" svgIcon="minus-circle"></mat-icon>
-            <span>Pricing & Access rules</span>
-          </div>
-          <div class="summary-item" [class.success]="hasMedia()">
-            <mat-icon class="icon-size-5 text-green-500" *ngIf="hasMedia()" svgIcon="check-circle"></mat-icon><mat-icon class="icon-size-5 text-gray-400" *ngIf="!hasMedia()" svgIcon="minus-circle"></mat-icon>
-            <span>Media (Thumbnail, Subtitle)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Form Content -->
-      <form class="step-form">
-        
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Chapter Outline <span class="required">*</span></label>
-            <p class="hint">Add the high-level chapters for your course. You will add lessons later.</p>
-            
-            <div class="chapters-list">
-              <div class="chapter-item" *ngFor="let ch of chapters(); let i = index">
-                <div class="chapter-drag-handle"><mat-icon class="icon-size-5" svgIcon="grip-vertical"></mat-icon></div>
-                <div class="chapter-index">Chapter {{ i + 1 }}</div>
-                <input type="text" class="custom-input" [value]="ch.title" (input)="updateChapterTitle(i, $any($event.target).value)">
-                <button type="button" class="btn-icon-danger" (click)="removeChapter(i)">
-                  <mat-icon class="icon-size-5" svgIcon="trash-2"></mat-icon>
-                </button>
-              </div>
-            </div>
-            
-            <button type="button" class="btn-add-chapter" (click)="addChapter()">
-              <mat-icon class="icon-size-5" svgIcon="plus"></mat-icon> Add Chapter
-            </button>
-            <div class="error-text mt-1" *ngIf="chapterError()">{{ chapterError() }}</div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label>Syllabus Requirements (Optional)</label>
-            <textarea class="custom-input custom-textarea"
-                      [value]="syllabusReqs()"
-                      (input)="syllabusReqs.set($any($event.target).value)"
-                      placeholder="List any prerequisites or necessary materials..."
-                      rows="4"></textarea>
-          </div>
-        </div>
-
-        <!-- Divider and Footer -->
-        <div class="step-footer-divider"></div>
-        
-        <div class="step-footer">
-          <button type="button" class="btn-back" (click)="goBack()" [disabled]="isPublishing() || isSaving()">
-            <mat-icon class="icon-size-5" svgIcon="arrow-left"></mat-icon> Back
-          </button>
-          
-          <div class="footer-actions">
-            <button type="button" class="btn-draft" (click)="onSaveDraft()" [disabled]="isPublishing() || isSaving()">
-               <span *ngIf="!isSaving()">Save Draft & Exit</span>
-               <mat-spinner *ngIf="isSaving()" diameter="20" color="primary"></mat-spinner>
-            </button>
-            <button type="button" class="btn-publish" (click)="onPublish()" [disabled]="isPublishing() || isSaving() || !canPublish()">
-               <span *ngIf="!isPublishing()">Publish Course</span>
-               <mat-icon class="icon-size-5" *ngIf="!isPublishing()" svgIcon="rocket"></mat-icon>
-               <mat-spinner *ngIf="isPublishing()" diameter="20" color="accent"></mat-spinner>
-            </button>
-          </div>
-        </div>
-
-      </form>
     </div>
+  </form>
+</ng-container>

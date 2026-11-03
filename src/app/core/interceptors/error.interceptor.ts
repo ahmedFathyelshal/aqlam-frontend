@@ -24,8 +24,9 @@ export const errorInterceptor: HttpInterceptorFn = (
         return throwError(() => ApiValidationError.fromResponseBody(error.error));
       }
 
-      // Refresh failures (including 403 replay detection) are handled by auth.interceptor.
-      if (error.status === 401 || error.status === 404 || error.status === 409 || isRefreshRequest(req)) {
+      // Refresh failures (including 403 replay detection) are handled by auth.interceptor; learning 403s carry
+      // a reason (locked lesson, expired access) that the player shows itself.
+      if (error.status === 401 || error.status === 404 || error.status === 409 || isRefreshRequest(req) || (error.status === 403 && isLearningRequest(req))) {
         return throwError(() => error);
       }
 
@@ -54,3 +55,5 @@ export const errorInterceptor: HttpInterceptorFn = (
 };
 
 const isRefreshRequest = (req: HttpRequest<unknown>) => req.url.endsWith('/Auth/refresh');
+
+const isLearningRequest = (req: HttpRequest<unknown>) => req.url.includes('/learn/') || req.url.endsWith('/me/join');

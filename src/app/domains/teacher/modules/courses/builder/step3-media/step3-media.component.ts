@@ -6,16 +6,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-step3-media',
   templateUrl: './step3-media.component.html',
-  styleUrls: ['./step3-media.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslocoDirective,
     FormField,
   ]
 })
@@ -23,6 +24,7 @@ export default class Step3MediaComponent {
   private builderState = inject(CourseBuilderStateService);
   private router = inject(Router);
   protected orgContext = inject(OrgContextService);
+  private transloco = inject(TranslocoService);
 
   isSubmitting = signal(false);
   previewUrl = signal<string | null>(null);
@@ -34,10 +36,10 @@ export default class Step3MediaComponent {
   });
 
   mediaForm = form(this.formModel, (f) => {
-    required(f.subtitle, { message: 'Subtitle is required' });
+    required(f.subtitle, { message: this.transloco.translate('cb.s3.subtitleRequired') });
     validate(f.subtitle, (ctx) => {
       if (ctx.value() && ctx.value().length > 250) {
-        return { kind: 'maxlength', message: 'Subtitle must be under 250 characters' };
+        return { kind: 'maxlength', message: this.transloco.translate('cb.s3.subtitleMax') };
       }
       return null;
     });
@@ -47,7 +49,7 @@ export default class Step3MediaComponent {
       if (val) {
         const regex = /^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be|vimeo\.com|video\.bunny\.net)\/.+$/;
         if (!regex.test(val)) {
-          return { kind: 'pattern', message: 'Must be a valid YouTube, Vimeo, or Bunny.net URL' };
+          return { kind: 'pattern', message: this.transloco.translate('cb.s3.videoInvalid') };
         }
       }
       return null;
@@ -76,7 +78,7 @@ export default class Step3MediaComponent {
     const file = event.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        this.thumbnailError.set('File size exceeds 2MB limit');
+        this.thumbnailError.set(this.transloco.translate('cb.s3.tooBig'));
         return;
       }
       this.thumbnailError.set(null);
@@ -89,7 +91,7 @@ export default class Step3MediaComponent {
     event.preventDefault();
     submit(this.mediaForm, async () => {
       if (!this.previewUrl()) {
-        this.thumbnailError.set('Course thumbnail is required');
+        this.thumbnailError.set(this.transloco.translate('cb.s3.thumbnailRequired'));
         return;
       }
 

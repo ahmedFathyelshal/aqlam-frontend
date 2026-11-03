@@ -1,61 +1,25 @@
-    <ng-container *transloco="let t">
-      <div class="builder-page-container">
-        
-        <div class="builder-card">
-          <!-- Stepper Header -->
-          <header class="stepper-header">
-            <nav class="stepper-nav">
-              <!-- Step 1 -->
-              <a routerLink="step-1" routerLinkActive="active-step" class="step-link">
-                <div class="step-indicator">1</div>
-                <div class="step-text">
-                  <span class="step-title">Basics</span>
-                  <span class="step-subtitle">Title & subject</span>
-                </div>
-              </a>
-              <div class="step-divider"></div>
-              
-              <!-- Step 2 -->
-              <a routerLink="step-2" routerLinkActive="active-step" class="step-link">
-                <div class="step-indicator">2</div>
-                <div class="step-text">
-                  <span class="step-title">Pricing</span>
-                  <span class="step-subtitle">Format & price</span>
-                </div>
-              </a>
-              <div class="step-divider"></div>
-              
-              <!-- Step 3 -->
-              <a routerLink="step-3" routerLinkActive="active-step" class="step-link">
-                <div class="step-indicator">3</div>
-                <div class="step-text">
-                  <span class="step-title">Media</span>
-                  <span class="step-subtitle">Thumbnail & video</span>
-                </div>
-              </a>
-              <div class="step-divider"></div>
-              
-              <!-- Step 4 -->
-              <a routerLink="step-4" routerLinkActive="active-step" class="step-link">
-                <div class="step-indicator">4</div>
-                <div class="step-text">
-                  <span class="step-title">Curriculum</span>
-                  <span class="step-subtitle">Lessons & publish</span>
-                </div>
-              </a>
-            </nav>
-          </header>
+<ng-container *transloco="let tr">
+  <div class="page-narrow max-w-4xl">
+    <nav class="mb-5 grid grid-cols-4 gap-1.5" [attr.aria-label]="tr('cb.step', { n: 1 })">
+      @for (step of steps; track step.path; let i = $index) {
+        <a class="flex flex-col gap-1 rounded-[6px] border border-line bg-white px-2 py-2 text-ink no-underline sm:flex-row sm:items-center sm:gap-2.5 sm:px-3"
+           [routerLink]="step.path" routerLinkActive="!border-primary-600 !bg-primary-50" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'step' : null">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
+                [class]="rla.isActive ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-muted'">{{ i + 1 }}</span>
+          <span class="flex min-w-0 flex-col leading-tight">
+            <span class="truncate text-sm font-bold">{{ tr('cb.steps.' + step.key) }}</span>
+            <span class="hidden truncate text-xs text-muted md:block">{{ tr('cb.steps.' + step.key + 'Hint') }}</span>
+          </span>
+        </a>
+      }
+    </nav>
 
-          <!-- Main Content Area -->
-          <main class="builder-content">
-            <div *ngIf="isLoading(); else outlet" class="loading-state">
-               <mat-spinner diameter="40"></mat-spinner>
-            </div>
-            <ng-template #outlet>
-              <router-outlet></router-outlet>
-            </ng-template>
-          </main>
-        </div>
-
-      </div>
-    </ng-container>
+    <section class="card card-body">
+      @if (isLoading()) {
+        <div class="flex justify-center p-10"><mat-spinner diameter="40" /></div>
+      } @else {
+        <router-outlet />
+      }
+    </section>
+  </div>
+</ng-container>

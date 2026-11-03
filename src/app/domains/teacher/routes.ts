@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from '@/app/core/auth/guards/role.guard';
-import { orgGuard, redirectToDefaultOrg } from '@/app/core/organizations/org.guard';
+import { orgGuard, redirectToDefaultOrg, staffGuard } from '@/app/core/organizations/org.guard';
 import { TeacherLayout } from './layout/layout';
 
 const builderSteps = (includeLaterSteps: boolean): Routes => [
@@ -19,8 +18,7 @@ const routes: Routes = [
   {
     path: '',
     component: TeacherLayout,
-    canActivate: [roleGuard],
-    data: { roles: ['Teacher'] },
+    canActivate: [staffGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: redirectToDefaultOrg },
       {
@@ -44,9 +42,32 @@ const routes: Routes = [
             children: builderSteps(true),
           },
           {
+            path: 'questions',
+            loadComponent: () => import('./modules/assessments/question-bank/question-bank.component'),
+          },
+          {
+            path: 'courses/:id/lessons/:lessonId/quiz',
+            loadComponent: () => import('./modules/assessments/quiz-setup/quiz-setup.component'),
+          },
+          {
+            path: 'courses/:id/lessons/:lessonId/assignment',
+            loadComponent: () => import('./modules/assessments/assignment-setup/assignment-setup.component'),
+          },
+          {
+            path: 'courses/:id/submissions',
+            loadComponent: () => import('./modules/assessments/grading/grading.component'),
+          },
+          {
             path: 'courses/:id/curriculum',
             loadComponent: () => import('./modules/courses/curriculum-workspace/curriculum-workspace.component'),
           },
+          // School & center operations
+          { path: 'classes', loadComponent: () => import('./modules/school/classes/classes.component') },
+          { path: 'classes/:classId', loadComponent: () => import('./modules/school/classes/class-detail.component') },
+          { path: 'classes/:classId/attendance', loadComponent: () => import('./modules/school/attendance/attendance.component') },
+          { path: 'announcements', loadComponent: () => import('./modules/school/announcements/announcements.component') },
+          { path: 'members', loadComponent: () => import('./modules/school/members/members.component') },
+          { path: 'settings', loadComponent: () => import('./modules/school/settings/settings.component') },
         ],
       },
     ],

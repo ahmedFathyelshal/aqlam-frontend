@@ -11,7 +11,6 @@ import { OrgContextService } from '@/app/core/organizations/org-context.service'
 @Component({
   selector: 'app-builder-layout',
   templateUrl: './builder-layout.component.html',
-  styleUrls: ['./builder-layout.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -28,6 +27,13 @@ export default class BuilderLayoutComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   protected orgContext = inject(OrgContextService);
+
+  protected readonly steps = [
+    { path: 'step-1', key: 'basics' },
+    { path: 'step-2', key: 'pricing' },
+    { path: 'step-3', key: 'media' },
+    { path: 'step-4', key: 'curriculum' },
+  ];
 
   state = this.builderState.state;
   isLoading = computed(() => this.route.snapshot.paramMap.has('id') ? !this.state().id : false);

@@ -10,7 +10,8 @@ import {
   UpdateCourseIdentityRequest,
   UpdateCourseCommercialsRequest,
   UpdateCourseMediaRequest,
-  UpdateCourseCurriculumRequest,
+  CurriculumChapterInput,
+  SyncCurriculumRequest,
   CourseStatus
 } from './course-builder.models';
 
@@ -59,21 +60,35 @@ export class CourseBuilderStateService {
     );
   }
 
-  updateChapters(id: string, chapters: any[], syllabusRequirements?: string): Observable<void> {
-    const request: UpdateCourseCurriculumRequest = { id, chapters, syllabusRequirements };
+  /**
+   * Saves the curriculum without losing ids. Sends the version that was loaded; the server answers 409 if
+   * someone else saved in between. The returned draft (with new ids and version) replaces the local state.
+   */
+  syncCurriculum(id: string, chapters: CurriculumChapterInput[], syllabusRequirements?: string): Observable<CourseDraft> {
+    const request: SyncCurriculumRequest = {
+      expectedVersion: this.state().curriculumVersion ?? 0,
+      syllabusRequirements,
+      chapters,
+    };
     return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.UpdateCurriculum(this.orgContext.requireActiveSlug(), id), request).pipe(
-      map(() => void 0),
-      tap(() => this.state.update(s => ({ ...s, chapters, syllabusRequirements })))
+      map(response => response.data),
+      tap(draft => this.state.update(s => ({ ...s, ...draft })))
     );
   }
 
-  publishCourse(id: string): Observable<void> {
-    // Currently mocked as there's no backend endpoint yet
-    return new Observable<void>(obs => {
-      this.state.update(s => ({ ...s, status: CourseStatus.Published }));
-      obs.next();
-      obs.complete();
-    });
+  /** What still blocks publishing; an empty list means the course is ready. */
+  getPublishChecklist(id: string): Observable<string[]> {
+    return this.http.get<ApiResponse<string[]>>(ApiEndpoints.TeacherCourses.PublishChecklist(this.orgContext.requireActiveSlug(), id)).pipe(
+      map(response => response.data ?? [])
+    );
+  }
+
+  /** Moves the course through its lifecycle; a 400 carries the publish checklist as errors. */
+  changeStatus(id: string, status: CourseStatus): Observable<CourseDraft> {
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.Status(this.orgContext.requireActiveSlug(), id), { status }).pipe(
+      map(response => response.data),
+      tap(draft => this.state.update(s => ({ ...s, status: draft.status })))
+    );
   }
 
   getCourseDraft(id: string): Observable<CourseDraft> {
