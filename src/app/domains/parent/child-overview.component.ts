@@ -7,6 +7,7 @@ import { switchMap } from 'rxjs';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { OrgDatePipe, todayIn } from '@/app/core/organizations/org-date';
+import { AcademicsService, PublishedTerm } from '@/app/core/school/academics.service';
 import { Child, ChildOverview, FamilyService } from '@/app/core/school/family.service';
 
 /** Read-only view of one child in one school or center: today, attendance, subjects and results. */
@@ -82,6 +83,21 @@ import { Child, ChildOverview, FamilyService } from '@/app/core/school/family.se
             </div>
           </section>
 
+          @if (terms().length) {
+            <section class="card mb-4">
+              <div class="card-header"><h2 class="section-title">{{ t('report.list') }}</h2></div>
+              @for (term of terms(); track term.termId) {
+                <div class="list-row">
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-bold">{{ term.termName }}</p>
+                    <p class="text-sm text-muted">{{ term.yearName }}</p>
+                  </div>
+                  <a class="btn btn-secondary btn-sm" [routerLink]="['/parent', org, 'children', childId(), 'report-cards', term.termId]">{{ t('report.open') }}</a>
+                </div>
+              }
+            </section>
+          }
+
           <section class="card">
             <div class="card-header"><h2 class="section-title">{{ t('parent.results') }}</h2></div>
             @for (g of o.grades; track $index) {
@@ -109,12 +125,14 @@ import { Child, ChildOverview, FamilyService } from '@/app/core/school/family.se
 })
 export default class ChildOverviewComponent {
   private family = inject(FamilyService);
+  private academics = inject(AcademicsService);
   private orgContext = inject(OrgContextService);
   private route = inject(ActivatedRoute);
 
   protected org = this.route.snapshot.paramMap.get('org')!;
   protected childId = signal(this.route.snapshot.paramMap.get('childId')!);
   protected overview = signal<ChildOverview | null>(null);
+  protected terms = signal<PublishedTerm[]>([]);
   protected notFound = signal(false);
   private children = signal<Child[]>([]);
 
@@ -136,6 +154,8 @@ export default class ChildOverviewComponent {
           this.childId.set(params.get('childId')!);
           this.overview.set(null);
           this.notFound.set(false);
+          this.terms.set([]);
+          this.academics.publishedTerms(this.org, params.get('childId')!).subscribe({ next: t => this.terms.set(t), error: () => this.terms.set([]) });
           return this.family.overview(this.org, params.get('childId')!);
         }),
         takeUntilDestroyed(inject(DestroyRef))

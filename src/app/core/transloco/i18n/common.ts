@@ -5,6 +5,7 @@ export const common = {
     nav: {
       dashboard: 'لوحة التحكم',
       classes: 'الفصول',
+      academicYears: 'الأعوام الدراسية',
       groups: 'المجموعات',
       announcements: 'الإعلانات',
       questions: 'بنك الأسئلة',
@@ -73,6 +74,7 @@ export const common = {
     app: { name: 'Aqlam', tagline: 'Learning platform for schools and centers' },
     nav: {
       dashboard: 'Dashboard',
+      academicYears: 'Academic years',
       classes: 'Classes',
       groups: 'Groups',
       announcements: 'Announcements',

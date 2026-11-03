@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -8,6 +8,7 @@ import { AuthService } from '@/app/core/auth/auth.service';
 import { LearningService, MyCourse } from '@/app/core/learning/learning.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { formatOrgDate, todayIn } from '@/app/core/organizations/org-date';
+import { AcademicsService } from '@/app/core/school/academics.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
 
 /** Student home: continue learning, all courses (school, centers, teachers) and joining with a code. */
@@ -64,6 +65,21 @@ import { I18nService } from '@/app/core/transloco/i18n.service';
             </section>
           </div>
 
+          <div class="flex h-fit flex-col gap-5">
+          @if (reportCards().length) {
+            <section class="card">
+              <div class="card-header"><h2 class="section-title">{{ t('report.list') }}</h2></div>
+              @for (r of reportCards(); track r.termId) {
+                <div class="list-row">
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-bold">{{ r.termName }}</p>
+                    <p class="truncate text-sm text-muted">{{ r.yearName }} · {{ r.orgName }}</p>
+                  </div>
+                  <a class="btn btn-secondary btn-sm" [routerLink]="['/student', r.slug, 'report-cards', r.termId]">{{ t('report.open') }}</a>
+                </div>
+              }
+            </section>
+          }
           <section class="card card-body h-fit">
             <h2 class="section-title">{{ t('student.haveCode') }}</h2>
             <p class="field-hint mt-1">{{ t('student.codeHint') }}</p>
@@ -75,6 +91,7 @@ import { I18nService } from '@/app/core/transloco/i18n.service';
               <div class="alert mt-3" [class]="m.kind === 'error' ? 'alert-danger' : 'alert-success'" role="status">{{ m.text }}</div>
             }
           </section>
+          </div>
         </div>
       </div>
     </ng-container>
@@ -83,11 +100,13 @@ import { I18nService } from '@/app/core/transloco/i18n.service';
 export default class StudentDashboardComponent {
   protected auth = inject(AuthService);
   private learning = inject(LearningService);
+  private academics = inject(AcademicsService);
   private orgContext = inject(OrgContextService);
   private transloco = inject(TranslocoService);
   private i18n = inject(I18nService);
 
   protected courses = signal<MyCourse[] | null>(null);
+  protected reportCards = signal<{ termId: string; termName: string; yearName: string; slug: string; orgName: string }[]>([]);
   protected joinCode = signal('');
   protected joining = signal(false);
   protected joinMessage = signal<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -101,6 +120,18 @@ export default class StudentDashboardComponent {
 
   constructor() {
     this.learning.myCourses().subscribe({ next: c => this.courses.set(c), error: () => this.courses.set([]) });
+    effect(() => {
+      const me = this.auth.user()?.id;
+      const schools = this.orgContext.memberships().filter(m => m.roles.includes('Student'));
+      this.reportCards.set([]);
+      if (!me) return;
+      for (const org of schools) {
+        this.academics.publishedTerms(org.slug, me).subscribe({
+          next: terms => this.reportCards.update(list => [...list, ...terms.map(t => ({ ...t, slug: org.slug, orgName: org.name }))]),
+          error: () => undefined, // report cards are optional here; the rest of the page still works
+        });
+      }
+    });
   }
 
   protected date(value: string): string {

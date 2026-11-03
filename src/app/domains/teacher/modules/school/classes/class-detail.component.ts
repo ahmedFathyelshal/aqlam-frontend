@@ -6,7 +6,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { AuthService } from '@/app/core/auth/auth.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { ClassDetail, Member, RosterResult, SchoolService, TeachingAssignment } from '@/app/core/school/school.service';
-import { LookupDto, LookupsService } from '@/app/core/services/lookups.service';
+import { CurriculumDto, LookupDto, LookupsService } from '@/app/core/services/lookups.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 import { ClassForm } from './class-form';
@@ -58,12 +58,13 @@ import { ClassForm } from './class-form';
               <div class="card-header"><h2 class="section-title">{{ t('classes.detail.subjects') }}</h2></div>
               @for (a of d.assignments; track a.id) {
                 <div class="list-row flex-wrap">
-                  <div class="min-w-0 flex-1">
+                  <div class="min-w-0 flex-1 basis-40">
                     <p class="font-bold">{{ a.subjectName }}</p>
                     <p class="text-sm text-muted">{{ a.teacherName || a.teacherUserName }}</p>
                   </div>
                   <span class="badge" [class]="statusBadge(a.courseStatus)">{{ t('courseStatus.' + (a.courseStatus ?? 'Draft')) }}</span>
                   @if (canManage() || a.teacherUserId === me()) {
+                    <a class="btn btn-secondary btn-sm" [routerLink]="orgContext.path('classes', d.class.id, 'assignments', a.id, 'gradebook')"><mat-icon svgIcon="table-2" class="icon-size-4" />{{ t('gradebook.open') }}</a>
                     <a class="btn btn-ghost btn-sm" [routerLink]="orgContext.path('courses', a.courseId, 'curriculum')">{{ t('classes.detail.openCourse') }}</a>
                   }
                   @if (canManage()) {
@@ -103,6 +104,14 @@ import { ClassForm } from './class-form';
                       </select>
                     </label>
                   </div>
+                  <label class="field">
+                    <span class="field-label">{{ t('assign.curriculum') }}</span>
+                    <select class="select" (change)="curriculumId.set(+$any($event.target).value || null)">
+                      <option value="" [selected]="!curriculumId()">{{ t('assign.sameAsClass') }}</option>
+                      @for (c of curricula(); track c.id) { <option [value]="c.id" [selected]="c.id === curriculumId()">{{ name(c) }}</option> }
+                    </select>
+                    <span class="field-hint">{{ t('assign.curriculumHint') }}</span>
+                  </label>
                   <p class="field-hint">{{ t('classes.detail.assignHint') }}</p>
                   <button type="button" class="btn btn-secondary self-start" [disabled]="!teacherId() || (!subjectId() && !subjectName().trim())" (click)="assign()">{{ t('classes.detail.assign') }}</button>
                   @if (assignError()) { <p class="field-error">{{ assignError() }}</p> }
@@ -170,6 +179,8 @@ export default class ClassDetailComponent {
   protected detail = signal<ClassDetail | null>(null);
   protected members = signal<Member[]>([]);
   protected subjects = signal<LookupDto[]>([]);
+  protected curricula = signal<CurriculumDto[]>([]);
+  protected curriculumId = signal<number | null>(null);
   protected teachers = computed(() => this.members().filter(m => m.roles.includes('Teacher') && m.status === 'Active'));
 
   protected editing = signal(false);
@@ -186,6 +197,7 @@ export default class ClassDetailComponent {
     if (this.canManage()) {
       this.school.members(this.org).subscribe(m => this.members.set(m));
       this.lookups.getSubjects().subscribe(s => this.subjects.set(s));
+      this.lookups.getCurricula(this.orgContext.activeOrg()?.countryCode).subscribe(c => this.curricula.set(c));
     }
   }
 
@@ -228,12 +240,13 @@ export default class ClassDetailComponent {
   protected assign(): void {
     this.assignError.set(null);
     this.school
-      .assignTeacher(this.org, this.classId, { subjectId: this.subjectId(), subjectName: this.subjectId() ? null : this.subjectName().trim(), teacherUserId: this.teacherId() })
+      .assignTeacher(this.org, this.classId, { subjectId: this.subjectId(), subjectName: this.subjectId() ? null : this.subjectName().trim(), teacherUserId: this.teacherId(), curriculumId: this.curriculumId() })
       .subscribe({
         next: () => {
           this.subjectId.set(null);
           this.subjectName.set('');
           this.teacherId.set('');
+          this.curriculumId.set(null);
           this.load();
         },
         error: (err: unknown) => this.assignError.set(errorMessages(err, 'Error').join(' ')),
@@ -248,7 +261,11 @@ export default class ClassDetailComponent {
   }
 
   protected removeAssignment(assignment: TeachingAssignment): void {
-    this.school.removeAssignment(this.org, this.classId, assignment.id).subscribe(() => this.load());
+    this.assignError.set(null);
+    this.school.removeAssignment(this.org, this.classId, assignment.id).subscribe({
+      next: () => this.load(),
+      error: (err: unknown) => this.assignError.set(errorMessages(err, 'Error').join(' ')),
+    });
   }
 
   private load(): void {

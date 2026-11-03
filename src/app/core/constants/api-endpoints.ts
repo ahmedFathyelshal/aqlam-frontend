@@ -34,6 +34,7 @@ export const ApiEndpoints = {
     Assignment: (org: string, id: string, assignmentId: string) => orgUrl(org, `/classes/${id}/assignments/${assignmentId}`),
     Attendance: (org: string, classId: string) => orgUrl(org, `/classes/${classId}/attendance`),
     AttendanceSummary: (org: string, classId: string, from: string, to: string) => orgUrl(org, `/classes/${classId}/attendance/summary?from=${from}&to=${to}`),
+    AttendanceExport: (org: string, classId: string, from: string, to: string) => orgUrl(org, `/classes/${classId}/attendance/export?from=${from}&to=${to}`),
     Announcements: (org: string) => orgUrl(org, '/announcements'),
     Members: (org: string) => orgUrl(org, '/members'),
     MemberImport: (org: string) => orgUrl(org, '/members/import'),
@@ -45,6 +46,15 @@ export const ApiEndpoints = {
     ParentInvite: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parent-invites`),
     Settings: (org: string) => orgUrl(org, '/settings'),
     Child: (org: string, childId: string) => orgUrl(org, `/children/${childId}`),
+  },
+  Academics: {
+    Years: (org: string) => orgUrl(org, '/academic-years'),
+    Year: (org: string, id: string) => orgUrl(org, `/academic-years/${id}`),
+    YearCurrent: (org: string, id: string) => orgUrl(org, `/academic-years/${id}/current`),
+    TermReportCards: (org: string, termId: string) => orgUrl(org, `/academic-years/terms/${termId}/report-cards`),
+    Gradebook: (org: string, classId: string, assignmentId: string) => orgUrl(org, `/classes/${classId}/assignments/${assignmentId}/gradebook`),
+    ReportCard: (org: string, studentId: string, termId: string) => orgUrl(org, `/report-cards/students/${studentId}/terms/${termId}`),
+    PublishedTerms: (org: string, studentId: string) => orgUrl(org, `/report-cards/students/${studentId}/terms`),
   },
   Learn: {
     Course: (org: string, courseId: string) => orgUrl(org, `/learn/courses/${courseId}`),
