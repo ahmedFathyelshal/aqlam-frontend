@@ -30,6 +30,7 @@ export type ClassSummary = {
   capacity: number | null;
   studentCount: number;
   schedule: WeeklySlot[];
+  academicYearId: string | null;
 };
 
 export type ClassInput = {
@@ -42,6 +43,7 @@ export type ClassInput = {
   homeroomTeacherUserId: string | null;
   capacity: number | null;
   schedule: WeeklySlot[];
+  academicYearId: string | null;
 };
 
 export type ClassStudent = { userId: string; userName: string; fullName: string; gender: Gender | null; addedAtUtc: string };
@@ -55,6 +57,7 @@ export type TeachingAssignment = {
   teacherName: string | null;
   courseId: string;
   courseStatus: string | null;
+  curriculumId: number | null;
 };
 
 export type ClassDetail = { class: ClassSummary; students: ClassStudent[]; assignments: TeachingAssignment[] };
@@ -134,6 +137,7 @@ export type OrganizationSettings = {
   weekStartDay: string;
   logoUrl: string | null;
   primaryColor: string | null;
+  gradingScale: 'Percent' | 'Letters' | 'Descriptive';
 };
 
 /** Classes, rosters, attendance, announcements, members and settings of an organization. */
@@ -180,7 +184,7 @@ export class SchoolService {
     return this.del(ApiEndpoints.School.ClassStudent(org, classId, userId));
   }
 
-  assignTeacher(org: string, classId: string, body: { subjectId: number | null; subjectName: string | null; teacherUserId: string }): Observable<TeachingAssignment> {
+  assignTeacher(org: string, classId: string, body: { subjectId: number | null; subjectName: string | null; teacherUserId: string; curriculumId: number | null }): Observable<TeachingAssignment> {
     return this.post(ApiEndpoints.School.Assignments(org, classId), body);
   }
 
@@ -257,6 +261,10 @@ export class SchoolService {
 
   parentInvite(org: string, studentId: string): Observable<ParentInvite> {
     return this.post(ApiEndpoints.School.ParentInvite(org, studentId), {});
+  }
+
+  exportAttendance(org: string, classId: string, from: string, to: string): Observable<Blob> {
+    return this.http.get(ApiEndpoints.School.AttendanceExport(org, classId, from, to), { responseType: 'blob' });
   }
 
   // ---- settings ---------------------------------------------------------------------------------------

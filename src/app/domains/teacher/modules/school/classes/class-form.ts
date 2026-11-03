@@ -3,6 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { AcademicsService, AcademicYear } from '@/app/core/school/academics.service';
 import { Branch, ClassInput, ClassSummary, Member, SchoolService, WeeklySlot } from '@/app/core/school/school.service';
 import { CurriculumDto, LookupDto, LookupsService } from '@/app/core/services/lookups.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
@@ -46,6 +47,15 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
             }
           </select>
         </label>
+        @if (years().length) {
+          <label class="field">
+            <span class="field-label">{{ t('years.field') }}</span>
+            <select class="select" (change)="patch({ academicYearId: $any($event.target).value || null })">
+              @if (!f.academicYearId) { <option value="" selected>{{ t('years.defaultCurrent') }}</option> }
+              @for (y of years(); track y.id) { <option [value]="y.id" [selected]="y.id === f.academicYearId">{{ y.name }}</option> }
+            </select>
+          </label>
+        }
         <label class="field">
           <span class="field-label">{{ t('classes.form.curriculum') }}</span>
           <select class="select" [value]="f.curriculumId ?? ''" (change)="selectCurriculum($any($event.target).value)">
@@ -113,6 +123,7 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
 export class ClassForm implements OnInit {
   private school = inject(SchoolService);
   private lookups = inject(LookupsService);
+  private academics = inject(AcademicsService);
   private orgContext = inject(OrgContextService);
   private i18n = inject(I18nService);
 
@@ -124,8 +135,9 @@ export class ClassForm implements OnInit {
   protected readonly days = WEEK_DAYS;
   protected form = signal<ClassInput>({
     name: '', kind: 'Section', gender: 'Mixed', branchId: null, curriculumId: null, gradeId: null,
-    homeroomTeacherUserId: null, capacity: null, schedule: [],
+    homeroomTeacherUserId: null, capacity: null, schedule: [], academicYearId: null,
   });
+  protected years = signal<AcademicYear[]>([]);
   protected branches = signal<Branch[]>([]);
   protected members = signal<Member[]>([]);
   protected curricula = signal<CurriculumDto[]>([]);
@@ -148,6 +160,7 @@ export class ClassForm implements OnInit {
     }
 
     this.school.branches(org.slug).subscribe(b => this.branches.set(b));
+    this.academics.years(org.slug).subscribe({ next: y => this.years.set(y), error: () => this.years.set([]) });
     this.school.members(org.slug).subscribe(m => this.members.set(m));
     this.lookups.getCurricula(org.countryCode).subscribe(c => this.curricula.set(c));
     if (existing?.curriculumId) this.lookups.getEducationStages(existing.curriculumId).subscribe(s => this.stages.set(s));

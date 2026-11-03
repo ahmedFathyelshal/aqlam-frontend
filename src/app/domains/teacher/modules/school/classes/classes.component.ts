@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
+import { AcademicsService, AcademicYear } from '@/app/core/school/academics.service';
 import { Branch, ClassSummary, GenderSegment, SchoolService } from '@/app/core/school/school.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 import { ClassForm } from './class-form';
@@ -41,6 +42,12 @@ import { ClassForm } from './class-form';
             <select class="select w-auto min-w-44" [attr.aria-label]="t('classes.form.branch')" [value]="branchFilter()" (change)="branchFilter.set($any($event.target).value)">
               <option value="">{{ t('classes.allBranches') }}</option>
               @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+            </select>
+          }
+          @if (years().length > 1) {
+            <select class="select w-auto min-w-44" [attr.aria-label]="t('years.field')" (change)="yearFilter.set($any($event.target).value)">
+              <option value="">{{ t('years.filterAll') }}</option>
+              @for (y of years(); track y.id) { <option [value]="y.id">{{ y.name }}</option> }
             </select>
           }
         </div>
@@ -138,6 +145,7 @@ export default class ClassesComponent {
   protected orgContext = inject(OrgContextService);
   private school = inject(SchoolService);
   private router = inject(Router);
+  private academics = inject(AcademicsService);
 
   protected canManage = computed(() => this.orgContext.can('classes.manage'));
   protected isCenter = computed(() => this.orgContext.activeOrg()?.type === 'Center');
@@ -146,7 +154,10 @@ export default class ClassesComponent {
   protected classes = signal<ClassSummary[]>([]);
   protected branches = signal<Branch[]>([]);
   protected branchFilter = signal('');
-  protected visible = computed(() => this.classes().filter(c => !this.branchFilter() || c.branchId === this.branchFilter()));
+  protected years = signal<AcademicYear[]>([]);
+  protected yearFilter = signal('');
+  protected visible = computed(() => this.classes().filter(c =>
+    (!this.branchFilter() || c.branchId === this.branchFilter()) && (!this.yearFilter() || c.academicYearId === this.yearFilter())));
   protected branchName = signal('');
   protected branchGender = signal<GenderSegment>('Mixed');
   protected branchError = signal<string | null>(null);
@@ -186,6 +197,7 @@ export default class ClassesComponent {
   }
 
   private load(): void {
+    this.academics.years(this.org).subscribe({ next: y => this.years.set(y), error: () => this.years.set([]) });
     this.school.classes(this.org, this.mine()).subscribe(c => this.classes.set(c));
   }
 

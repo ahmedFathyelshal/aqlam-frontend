@@ -19,7 +19,7 @@ export type PortalNavItem = { key: string; icon: string; link: string; exact?: b
   template: `
     <ng-container *transloco="let t">
       <div class="flex min-h-dvh flex-col bg-page">
-        <header class="sticky top-0 z-30 border-b border-line bg-white">
+        <header class="sticky top-0 z-30 border-b border-line bg-white print:hidden">
           <div class="mx-auto flex h-16 max-w-6xl items-center gap-3 px-3 sm:px-6">
             <a [routerLink]="items()[0]?.link ?? '/'" class="no-underline"><aq-logo [size]="36" /></a>
             <nav class="ms-6 hidden items-center gap-1 sm:flex" [attr.aria-label]="t('nav.menu')">
@@ -40,7 +40,7 @@ export type PortalNavItem = { key: string; icon: string; link: string; exact?: b
           <router-outlet />
         </main>
 
-        <nav class="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white pb-[env(safe-area-inset-bottom)] sm:hidden"
+        <nav class="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white pb-[env(safe-area-inset-bottom)] sm:hidden print:hidden"
              [style.grid-template-columns]="'repeat(' + items().length + ', minmax(0, 1fr))'" [attr.aria-label]="t('nav.menu')">
           @for (item of items(); track item.link) {
             <a class="flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted no-underline"

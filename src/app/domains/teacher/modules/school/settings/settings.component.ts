@@ -55,6 +55,13 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
               </div>
               <p class="field-hint mt-2">{{ t('settings.preview', { date: preview() }) }}</p>
             </fieldset>
+            <label class="field">
+              <span class="field-label">{{ t('scale.title') }}</span>
+              <select class="select" (change)="patch({ gradingScale: $any($event.target).value })">
+                @for (scale of scales; track scale) { <option [value]="scale" [selected]="scale === s.gradingScale">{{ t('scale.' + scale) }}</option> }
+              </select>
+              <span class="field-hint">{{ t('scale.hint') }}</span>
+            </label>
             <div class="grid gap-4 sm:grid-cols-[1fr_9rem]">
               <label class="field">
                 <span class="field-label">{{ t('settings.logo') }}</span>
@@ -83,6 +90,7 @@ export default class SettingsComponent {
 
   protected readonly days = WEEK_DAYS;
   protected readonly calendars = ['Gregorian', 'Hijri', 'Both'] as const;
+  protected readonly scales = ['Descriptive', 'Letters', 'Percent'] as const;
   protected settings = signal<OrganizationSettings | null>(null);
   protected saving = signal(false);
   protected saved = signal(false);

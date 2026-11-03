@@ -20,6 +20,7 @@ type NavItem = { key: string; icon: string; path: string; permission?: Permissio
 const ITEMS: NavItem[] = [
   { key: 'nav.dashboard', icon: 'layout-dashboard', path: 'dashboard', mobile: true },
   { key: 'nav.classes', icon: 'school', path: 'classes', permission: 'members.view', schoolOnly: true, mobile: true },
+  { key: 'nav.academicYears', icon: 'calendar-range', path: 'academic-years', permission: 'classes.manage', schoolOnly: true },
   { key: 'nav.announcements', icon: 'megaphone', path: 'announcements', permission: 'announcements.send', schoolOnly: true, mobile: true },
   { key: 'nav.questions', icon: 'library', path: 'questions', permission: 'courses.edit' },
   { key: 'nav.members', icon: 'users', path: 'members', permission: 'members.view', schoolOnly: true },

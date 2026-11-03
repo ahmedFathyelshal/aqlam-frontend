@@ -11,6 +11,7 @@ const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./children.component') },
       { path: ':org/children/:childId', loadComponent: () => import('./child-overview.component') },
+      { path: ':org/children/:childId/report-cards/:termId', loadComponent: () => import('@/app/shared/components/report-card/report-card-page') },
     ],
   },
 ];

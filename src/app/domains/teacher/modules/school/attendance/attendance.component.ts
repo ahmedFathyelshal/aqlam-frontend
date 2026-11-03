@@ -5,6 +5,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { formatOrgDate, OrgDatePipe, todayIn } from '@/app/core/organizations/org-date';
+import { saveBlob } from '@/app/core/school/academics.service';
 import { AttendanceOutbox, isOfflineError } from '@/app/core/school/attendance-outbox';
 import { AttendanceLine, AttendanceStatus, AttendanceSummaryRow, ClassSummary, SchoolService } from '@/app/core/school/school.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
@@ -117,6 +118,23 @@ const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
           </section>
         }
         <button type="button" class="btn btn-ghost mt-4" (click)="toggleSummary()">{{ summary() ? t('att.hideSummary') : t('att.summary') }}</button>
+        @if (summary()) {
+          <section class="card card-body mt-4">
+            <h2 class="section-title mb-3">{{ t('attExport.title') }}</h2>
+            <div class="flex flex-wrap items-end gap-3">
+              <label class="field min-w-36 flex-1">
+                <span class="field-label">{{ t('attExport.from') }}</span>
+                <input class="input" type="date" [value]="exportFrom()" (input)="exportFrom.set($any($event.target).value)" />
+              </label>
+              <label class="field min-w-36 flex-1">
+                <span class="field-label">{{ t('attExport.to') }}</span>
+                <input class="input" type="date" [value]="exportTo()" (input)="exportTo.set($any($event.target).value)" />
+              </label>
+              <button type="button" class="btn btn-secondary" [disabled]="!exportFrom() || !exportTo()" (click)="exportExcel()"><mat-icon svgIcon="file-spreadsheet" class="icon-size-5" />{{ t('attExport.action') }}</button>
+            </div>
+            @if (exportError()) { <p class="field-error mt-2">{{ exportError() }}</p> }
+          </section>
+        }
       </div>
 
       <!-- Save bar: above the phone tab bar, at the bottom on larger screens -->
@@ -154,6 +172,9 @@ export default class AttendanceComponent {
   protected errors = signal<string[]>([]);
   protected message = signal<string | null>(null);
   protected summary = signal<AttendanceSummaryRow[] | null>(null);
+  protected exportFrom = signal('');
+  protected exportTo = signal('');
+  protected exportError = signal<string | null>(null);
 
   protected counts = computed(() => {
     const result: Record<AttendanceStatus, number> = { Present: 0, Absent: 0, Late: 0, Excused: 0 };
@@ -239,7 +260,17 @@ export default class AttendanceComponent {
     }
     const from = new Date(`${this.today}T12:00:00Z`);
     from.setUTCDate(from.getUTCDate() - 30);
+    this.exportFrom.set(from.toISOString().slice(0, 10));
+    this.exportTo.set(this.today);
     this.school.attendanceSummary(this.org, this.classId, from.toISOString().slice(0, 10), this.today).subscribe(rows => this.summary.set(rows));
+  }
+
+  protected exportExcel(): void {
+    this.exportError.set(null);
+    this.school.exportAttendance(this.org, this.classId, this.exportFrom(), this.exportTo()).subscribe({
+      next: blob => saveBlob(blob, `attendance-${this.classInfo()?.name ?? this.classId}-${this.exportFrom()}-${this.exportTo()}.xlsx`),
+      error: () => this.exportError.set(this.transloco.translate('error.generic')),
+    });
   }
 
   private load(): void {

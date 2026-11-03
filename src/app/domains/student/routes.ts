@@ -14,6 +14,7 @@ const routes: Routes = [
         path: 'dashboard',
         loadComponent: () => import('./modules/dashboard/dashboard.component'),
       },
+      { path: ':org/report-cards/:termId', loadComponent: () => import('@/app/shared/components/report-card/report-card-page') },
     ],
   },
 ];
