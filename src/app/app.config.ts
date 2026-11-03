@@ -20,7 +20,6 @@ import {
   withInMemoryScrolling,
 } from '@angular/router';
 import { provideIcons } from '@/app/core/icons/provider';
-import { provideTheming } from '@/app/core/theming';
 import { provideTransloco } from '@jsverse/transloco';
 import { authInterceptor } from '@/app/core/auth/auth.interceptor';
 import { errorInterceptor } from '@/app/core/interceptors/error.interceptor';
@@ -65,26 +64,17 @@ export const appConfig: ApplicationConfig = {
 
     // Core
     provideIcons(),
-    provideTheming({
-      scheme: 'system',
-      primary: '#1565C0',
-      error: '#dc2626',
-    }),
 
     // Third-party
     provideTransloco({
       config: {
         availableLangs: [
-          {
-            id: 'en',
-            label: 'English',
-          },
-          {
-            id: 'ar',
-            label: 'العربية',
-          },
+          { id: 'ar', label: 'العربية' },
+          { id: 'en', label: 'English' },
         ],
-        defaultLang: 'en',
+        defaultLang: 'ar',
+        fallbackLang: 'ar',
+        missingHandler: { useFallbackTranslation: true },
         reRenderOnLangChange: true,
         prodMode: !isDevMode(),
       },

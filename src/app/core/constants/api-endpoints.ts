@@ -12,6 +12,7 @@ export const ApiEndpoints = {
     Refresh: buildUrl('/Auth/refresh'),
     Logout: buildUrl('/Auth/logout'),
     Me: buildUrl('/Auth/me'),
+    ChangePassword: buildUrl('/Auth/change-password'),
   },
   Me: {
     Memberships: buildUrl('/me/memberships'),

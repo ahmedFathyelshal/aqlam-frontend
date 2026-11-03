@@ -1,31 +1,26 @@
 <!doctype html>
-<html id="fuse" lang="en">
+<html lang="ar" dir="rtl">
 
 <head>
   <base href="/" />
-  <title>Aqlam Academy</title>
+  <title>أقلام</title>
 
-  <!-- Meta -->
   <meta charset="utf-8" />
-  <meta name="description" content="Fuse - Angular Admin Template & Starter" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="أقلام — منصة تعليمية للمدارس والمراكز والمعلمين" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#146C43" />
 
-  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="icon" type="image/png" href="favicon.png" />
 
-  <!-- Preload fonts -->
-  <link rel="preload" href="/fonts/geist/Geist.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/geist/Geist-Italic.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/geist/GeistMono.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/fonts/geist/GeistMono-Italic.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- Tajawal for all text; Reem Kufi only for the ق of the logo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@700&text=%D9%82&display=swap" />
 </head>
 
 <body>
-  <!-- prettier-ignore -->
-  <script>
-    !function () { try { const e = document.documentElement.classList; e.remove("scheme-dark", "scheme-light"); const c = localStorage.getItem("scheme"), t = window.matchMedia("(prefers-color-scheme: dark)").matches, s = "dark" === c || "system" === c && t ? "scheme-dark" : "scheme-light"; e.add(s) } catch (e) { } }();
-  </script>
-
   <app-root></app-root>
 </body>
 

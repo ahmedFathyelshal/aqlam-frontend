@@ -18,10 +18,6 @@ const routes: Routes = [
           import('./features/forgot-password/forgot-password'),
       },
       {
-        path: 'reset-password',
-        loadComponent: () => import('./features/reset-password/reset-password'),
-      },
-      {
         path: 'sign-in',
         loadComponent: () => import('./features/sign-in/sign-in'),
       },

@@ -1,4 +1,5 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
+import { I18nService } from '../transloco/i18n.service';
 import { CalendarDisplay, OrgContextService } from './org-context.service';
 
 export type OrgDateStyle = 'date' | 'datetime';
@@ -25,9 +26,10 @@ export function formatOrgDate(
   const time: Intl.DateTimeFormatOptions =
     options.style === 'datetime' && !isDayOnly ? { hour: '2-digit', minute: '2-digit' } : {};
 
-  const gregorian = () => new Intl.DateTimeFormat(`${locale}-u-ca-gregory`, { ...parts, ...time }).format(date);
+  // Western digits in both languages (matches the design); calendar chosen per organization.
+  const gregorian = () => new Intl.DateTimeFormat(`${locale}-u-ca-gregory-nu-latn`, { ...parts, ...time }).format(date);
   const hijri = (withTime: boolean) =>
-    new Intl.DateTimeFormat(`${locale}-u-ca-islamic-umalqura`, { ...parts, ...(withTime ? time : {}) }).format(date);
+    new Intl.DateTimeFormat(`${locale}-u-ca-islamic-umalqura-nu-latn`, { ...parts, ...(withTime ? time : {}) }).format(date);
 
   switch (calendar) {
     case 'Hijri':
@@ -43,10 +45,11 @@ export function formatOrgDate(
 @Pipe({ name: 'orgDate', pure: false })
 export class OrgDatePipe implements PipeTransform {
   private orgContext = inject(OrgContextService);
+  private i18n = inject(I18nService);
 
   transform(value: string | Date | null | undefined, style: OrgDateStyle = 'date', calendar?: CalendarDisplay): string {
     const org = this.orgContext.activeOrg();
-    return formatOrgDate(value, calendar ?? org?.calendar ?? 'Gregorian', { style, timeZone: org?.timeZone });
+    return formatOrgDate(value, calendar ?? org?.calendar ?? 'Gregorian', { style, timeZone: org?.timeZone, locale: this.i18n.lang() });
   }
 }
 

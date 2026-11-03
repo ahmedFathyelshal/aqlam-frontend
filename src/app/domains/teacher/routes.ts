@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from '@/app/core/auth/guards/role.guard';
-import { orgGuard, redirectToDefaultOrg } from '@/app/core/organizations/org.guard';
+import { orgGuard, redirectToDefaultOrg, staffGuard } from '@/app/core/organizations/org.guard';
 import { TeacherLayout } from './layout/layout';
 
 const builderSteps = (includeLaterSteps: boolean): Routes => [
@@ -19,8 +18,7 @@ const routes: Routes = [
   {
     path: '',
     component: TeacherLayout,
-    canActivate: [roleGuard],
-    data: { roles: ['Teacher'] },
+    canActivate: [staffGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: redirectToDefaultOrg },
       {

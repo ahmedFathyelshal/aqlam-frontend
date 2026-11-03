@@ -1,0 +1,50 @@
+/* Angular Material is kept only for overlays (menus, snack bars, dialogs) and mat-icon.
+   Its M3 system tokens are pointed at the Aqlam palette and font. */
+html {
+  --mat-sys-primary: #146c43;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #e7f3ec;
+  --mat-sys-on-primary-container: #0f5534;
+  --mat-sys-secondary: #1d5c96;
+  --mat-sys-on-secondary: #ffffff;
+  --mat-sys-surface: #ffffff;
+  --mat-sys-surface-container: #ffffff;
+  --mat-sys-on-surface: #1b2733;
+  --mat-sys-on-surface-variant: #4b5865;
+  --mat-sys-outline: #aeb8c2;
+  --mat-sys-outline-variant: #d5dbe1;
+  --mat-sys-error: #b42318;
+  --mat-sys-corner-extra-small: 6px;
+  --mat-sys-corner-small: 6px;
+  --mat-sys-corner-medium: 6px;
+
+  --mat-sys-body-large-font: var(--font-sans);
+  --mat-sys-body-medium-font: var(--font-sans);
+  --mat-sys-body-small-font: var(--font-sans);
+  --mat-sys-label-large-font: var(--font-sans);
+  --mat-sys-label-medium-font: var(--font-sans);
+  --mat-sys-title-medium-font: var(--font-sans);
+  --mat-sys-title-large-font: var(--font-sans);
+  --mat-sys-headline-small-font: var(--font-sans);
+}
+
+.mat-mdc-menu-panel {
+  border: 1px solid var(--color-line);
+  box-shadow: 0 8px 24px rgb(27 39 51 / 0.12) !important;
+}
+
+.mat-mdc-menu-item {
+  min-height: 44px;
+  font-family: var(--font-sans);
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__surface {
+  font-family: var(--font-sans);
+  border-radius: 6px !important;
+}
+.error-toast .mdc-snackbar__surface {
+  background: #a3261b !important;
+}
+.warning-toast .mdc-snackbar__surface {
+  background: #6e4700 !important;
+}

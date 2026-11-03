@@ -1,59 +1,39 @@
-import { Injectable, inject, PLATFORM_ID, signal } from '@angular/core';
-import { TranslocoService } from '@jsverse/transloco';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { Directionality } from '@angular/cdk/bidi';
+import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 
-@Injectable({
-  providedIn: 'root'
-})
+export type AppLang = 'ar' | 'en';
+
+/**
+ * Language and text direction. Arabic (RTL) is the default; English (LTR) is the second language.
+ * The choice is remembered on the device.
+ */
+@Injectable({ providedIn: 'root' })
 export class I18nService {
   private transloco = inject(TranslocoService);
   private document = inject(DOCUMENT);
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private platformId = inject(PLATFORM_ID);
+  readonly lang = signal<AppLang>('ar');
+  readonly currentDir = signal<'ltr' | 'rtl'>('rtl');
 
-  // Expose current direction as a Signal so we can bind it to Material components
-  public currentDir = signal<'ltr' | 'rtl'>('ltr');
-
-  // Initialize the language and direction
   init(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      // 1. Load saved language from localStorage if available
-      const savedLang = localStorage.getItem('app_lang');
-      if (savedLang) {
-        this.transloco.setActiveLang(savedLang);
-      }
-    }
-
-    // 2. Subscribe to language changes to update HTML and save preference
-    this.transloco.langChanges$.subscribe((lang) => {
-      this.updateDirectionality(lang);
-      
-      if (isPlatformBrowser(this.platformId)) {
-        localStorage.setItem('app_lang', lang);
-      }
-    });
-    
-    // Set initial
-    this.updateDirectionality(this.transloco.getActiveLang());
+    const saved = this.isBrowser ? (localStorage.getItem('app_lang') as AppLang | null) : null;
+    this.transloco.langChanges$.subscribe(lang => this.apply(lang as AppLang));
+    this.transloco.setActiveLang(saved === 'en' ? 'en' : 'ar');
   }
 
-  private updateDirectionality(lang: string): void {
-    const htmlElement = this.document.documentElement;
-    
-    // Set lang attribute
-    htmlElement.setAttribute('lang', lang);
+  toggle(): void {
+    this.transloco.setActiveLang(this.lang() === 'ar' ? 'en' : 'ar');
+  }
 
-    // Set dir attribute based on language
-    if (lang === 'ar') {
-      htmlElement.setAttribute('dir', 'rtl');
-      this.currentDir.set('rtl');
-    } else {
-      htmlElement.setAttribute('dir', 'ltr');
-      this.currentDir.set('ltr');
-    }
-    
-    // If you ever need to forcefully dispatch an event for third party libraries
-    // window.dispatchEvent(new Event('resize')); 
+  private apply(lang: AppLang): void {
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    this.lang.set(lang);
+    this.currentDir.set(dir);
+    const html = this.document.documentElement;
+    html.setAttribute('lang', lang);
+    html.setAttribute('dir', dir);
+    if (this.isBrowser) localStorage.setItem('app_lang', lang);
   }
 }

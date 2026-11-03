@@ -1,51 +1,22 @@
-import { Component, inject, signal } from '@angular/core';
-import {
-  email,
-  form,
-  FormField,
-  required,
-  submit,
-} from '@angular/forms/signals';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCard } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 
+/** Until SMS recovery exists, passwords are reset by the school or center. */
 @Component({
   selector: 'auth-forgot-password',
-  templateUrl: './forgot-password.html',
-  imports: [
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCheckboxModule,
-    FormField,
-    MatCard,
-  ],
+  imports: [RouterLink, MatIconModule, TranslocoDirective],
+  template: `
+    <ng-container *transloco="let t">
+      <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-secondary-100 text-secondary-600">
+        <mat-icon svgIcon="key-round" class="icon-size-7" />
+      </div>
+      <h1 class="text-2xl font-extrabold sm:text-3xl">{{ t('auth.forgotTitle') }}</h1>
+      <p class="mt-3 text-[1.05rem] leading-relaxed">{{ t('auth.forgotBody') }}</p>
+      <p class="mt-2 text-muted">{{ t('auth.forgotSoon') }}</p>
+      <a routerLink="/auth/sign-in" class="btn btn-secondary btn-block mt-8">{{ t('auth.backToSignIn') }}</a>
+    </ng-container>
+  `,
 })
-export default class AuthForgotPassword {
-  // Dependencies
-  private router = inject(Router);
-
-  // State
-  protected forgotPasswordFormModel = signal({
-    email: '',
-  });
-  protected forgotPasswordForm = form(this.forgotPasswordFormModel, (form) => {
-    required(form.email, { message: 'You must enter an email address' });
-    email(form.email, { message: 'You must enter a valid email address' });
-  });
-
-  forgotPassword(event: Event) {
-    event.preventDefault();
-
-    submit(this.forgotPasswordForm, async () => {
-      // Navigate to a route, demo purposes only
-      this.router.navigateByUrl('/auth/reset-password');
-    });
-  }
-}
+export default class AuthForgotPassword {}
