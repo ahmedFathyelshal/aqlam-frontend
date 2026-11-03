@@ -4,7 +4,7 @@
     <header class="sticky top-0 z-30 border-b border-line bg-white">
       <div class="flex h-16 items-center gap-3 px-3 sm:px-5">
         <a class="btn-icon" routerLink="/" [attr.aria-label]="t('action.back')"><mat-icon svgIcon="chevron-right" class="icon-size-5 ltr:rotate-180" /></a>
-        <aq-logo [size]="32" [wordmark]="false" class="hidden sm:inline-flex" />
+        <aq-logo [size]="32" [wordmark]="false" class="hidden sm:block" />
         <div class="min-w-0 flex-1">
           <h1 class="truncate text-base font-extrabold sm:text-lg">{{ course()?.title ?? '…' }}</h1>
           @if (course(); as c) {

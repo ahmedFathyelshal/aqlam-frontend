@@ -45,7 +45,7 @@ const AUDIENCES: AnnouncementAudience[] = ['Students', 'Parents', 'Staff'];
                   <span class="field-label">{{ t('ann.class') }}</span>
                   <select class="select" [value]="d.classGroupId ?? ''" (change)="patch({ classGroupId: $any($event.target).value || null })">
                     <option value="">{{ t('ann.choose') }}</option>
-                    @for (c of classes(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                    @for (c of classes(); track c.id) { <option [value]="c.id" [selected]="c.id === d.classGroupId">{{ c.name }}</option> }
                   </select>
                 </label>
               }

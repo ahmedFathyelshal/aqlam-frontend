@@ -144,6 +144,6 @@ export default class ChildOverviewComponent {
   }
 
   protected firstName(name: string): string {
-    return name.split(/[\s.]+/)[0] || name;
+    return name.trim().split(/\s+/)[0] || name; // usernames like s.omar stay whole
   }
 }

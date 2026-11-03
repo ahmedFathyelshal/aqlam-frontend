@@ -42,7 +42,7 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
           <select class="select" [value]="f.branchId ?? ''" (change)="patch({ branchId: $any($event.target).value || null })">
             <option value="">{{ t('classes.form.none') }}</option>
             @for (b of branches(); track b.id) {
-              <option [value]="b.id">{{ b.name }}{{ b.gender !== 'Mixed' ? ' · ' + t('gender.' + b.gender) : '' }}</option>
+              <option [value]="b.id" [selected]="b.id === f.branchId">{{ b.name }}{{ b.gender !== 'Mixed' ? ' · ' + t('gender.' + b.gender) : '' }}</option>
             }
           </select>
         </label>
@@ -50,7 +50,7 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
           <span class="field-label">{{ t('classes.form.curriculum') }}</span>
           <select class="select" [value]="f.curriculumId ?? ''" (change)="selectCurriculum($any($event.target).value)">
             <option value="">{{ t('classes.form.none') }}</option>
-            @for (c of curricula(); track c.id) { <option [value]="c.id">{{ name(c) }}</option> }
+            @for (c of curricula(); track c.id) { <option [value]="c.id" [selected]="c.id === f.curriculumId">{{ name(c) }}</option> }
           </select>
         </label>
         <div class="grid grid-cols-2 gap-3">
@@ -65,7 +65,7 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
             <span class="field-label">{{ t('classes.form.grade') }}</span>
             <select class="select" [value]="f.gradeId ?? ''" (change)="patch({ gradeId: +$any($event.target).value || null })" [disabled]="!grades().length">
               <option value="">{{ t('classes.form.none') }}</option>
-              @for (g of grades(); track g.id) { <option [value]="g.id">{{ name(g) }}</option> }
+              @for (g of grades(); track g.id) { <option [value]="g.id" [selected]="g.id === f.gradeId">{{ name(g) }}</option> }
             </select>
           </label>
         </div>
@@ -73,7 +73,7 @@ export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'
           <span class="field-label">{{ t('classes.form.homeroom') }}</span>
           <select class="select" [value]="f.homeroomTeacherUserId ?? ''" (change)="patch({ homeroomTeacherUserId: $any($event.target).value || null })">
             <option value="">{{ t('classes.form.none') }}</option>
-            @for (m of teachers(); track m.userId) { <option [value]="m.userId">{{ m.fullName || m.userName }}</option> }
+            @for (m of teachers(); track m.userId) { <option [value]="m.userId" [selected]="m.userId === f.homeroomTeacherUserId">{{ m.fullName || m.userName }}</option> }
           </select>
         </label>
         <label class="field">

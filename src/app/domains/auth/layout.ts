@@ -15,7 +15,7 @@ import { AqLangToggle } from '@/app/shared/ui/user-menu';
       <div class="flex min-h-dvh flex-col bg-white lg:flex-row">
         <section class="flex flex-col items-center gap-3 bg-primary-600 px-6 pt-10 pb-8 text-white lg:w-[44%] lg:items-start lg:justify-center lg:px-16">
           <aq-logo [size]="72" [inverse]="true" [wordmark]="false" class="lg:hidden" />
-          <aq-logo [size]="88" [inverse]="true" class="hidden lg:inline-flex" />
+          <aq-logo [size]="88" [inverse]="true" class="hidden lg:block" />
           <p class="text-center text-[0.95rem] text-primary-100 lg:mt-6 lg:text-start lg:text-xl lg:font-bold lg:text-white">{{ t('auth.brandLine') }}</p>
           <ul class="mt-4 hidden flex-col gap-3 lg:flex">
             @for (point of $any(t('auth.brandPoints')); track $index) {

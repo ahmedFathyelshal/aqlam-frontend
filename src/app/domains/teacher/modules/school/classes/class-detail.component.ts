@@ -69,7 +69,7 @@ import { ClassForm } from './class-form';
                   @if (canManage()) {
                     <div class="flex w-full items-center gap-2 sm:w-auto">
                       <select class="select min-h-10 flex-1 text-sm sm:w-44" [attr.aria-label]="t('classes.detail.changeTeacher')" [value]="a.teacherUserId" (change)="changeTeacher(a, $any($event.target).value)">
-                        @for (m of teachers(); track m.userId) { <option [value]="m.userId">{{ m.fullName || m.userName }}</option> }
+                        @for (m of teachers(); track m.userId) { <option [value]="m.userId" [selected]="m.userId === a.teacherUserId">{{ m.fullName || m.userName }}</option> }
                       </select>
                       <button type="button" class="btn-icon" [attr.aria-label]="t('classes.detail.removeSubject')" (click)="removeAssignment(a)"><mat-icon svgIcon="trash-2" class="icon-size-5" /></button>
                     </div>

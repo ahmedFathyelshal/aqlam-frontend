@@ -2,17 +2,10 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { tap } from 'rxjs/operators';
 
 import { CourseBuilderStateService } from '../builder/course-builder-state.service';
@@ -23,6 +16,7 @@ import {
   CourseDraft,
   CourseLesson,
   LessonResource,
+  CourseStatus,
   LessonType,
   ResourceType
 } from '../builder/course-builder.models';
@@ -38,19 +32,11 @@ type DrawerTarget =
   imports: [
     CommonModule,
     RouterLink,
-    MatButtonModule,
     MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatCheckboxModule,
     MatProgressSpinnerModule,
-    MatSidenavModule,
-    MatDividerModule,
-    MatTooltipModule,
+    TranslocoDirective,
   ],
   templateUrl: './curriculum-workspace.component.html',
-  styleUrls: ['./curriculum-workspace.component.scss'],
 })
 export default class CurriculumWorkspaceComponent {
   private route = inject(ActivatedRoute);
@@ -58,6 +44,11 @@ export default class CurriculumWorkspaceComponent {
   protected orgContext = inject(OrgContextService);
   private builderState = inject(CourseBuilderStateService);
   private snackBar = inject(MatSnackBar);
+  private transloco = inject(TranslocoService);
+
+  isPublishing = signal(false);
+  /** What still blocks publishing (from the server's checklist). */
+  publishIssues = signal<string[]>([]);
 
   courseId = signal<string>('');
   isLoading = signal(true);
@@ -85,22 +76,25 @@ export default class CurriculumWorkspaceComponent {
   });
 
   drawerTitle = computed(() => {
-    if (this.drawerMode() === 'chapter') return this.activeChapter()?.title ?? 'New Chapter';
-    if (this.drawerMode() === 'lesson') return this.activeLesson()?.title ?? 'New Lesson';
+    if (this.drawerMode() === 'chapter') return this.activeChapter()?.title || this.transloco.translate('cw.untitledChapter');
+    if (this.drawerMode() === 'lesson') return this.activeLesson()?.title || this.transloco.translate('cw.untitledLesson');
     return '';
   });
 
   LessonTypeOptions = [
-    { value: LessonType.Video, label: 'Video', icon: 'circle-play' },
-    { value: LessonType.Article, label: 'Article', icon: 'file-text' },
-    { value: LessonType.Quiz, label: 'Quiz', icon: 'circle-question-mark' },
-    { value: LessonType.Assignment, label: 'Assignment', icon: 'clipboard-list' },
+    { value: LessonType.Video, icon: 'circle-play' },
+    { value: LessonType.Article, icon: 'file-text' },
+    { value: LessonType.Quiz, icon: 'circle-question-mark' },
+    { value: LessonType.Assignment, icon: 'clipboard-list' },
   ];
 
-  ResourceTypeOptions = [
-    { value: ResourceType.File, label: 'File / PDF' },
-    { value: ResourceType.Link, label: 'External Link' },
-  ];
+  ResourceTypeOptions = [ResourceType.File, ResourceType.Link];
+
+  lessonCount = computed(() => this.chapters().reduce((sum, c) => sum + c.lessons.length, 0));
+
+  lessonIcon(type: LessonType): string {
+    return this.LessonTypeOptions.find(o => o.value === type)?.icon ?? 'file-text';
+  }
 
   constructor() {
     effect(
@@ -185,18 +179,38 @@ export default class CurriculumWorkspaceComponent {
       .subscribe({
         next: (draft) => {
           this.course.set(this.normalize(draft));
-          this.snackBar.open('Curriculum saved.', 'Close', { duration: 3000 });
+          this.publishIssues.set([]);
+          this.snackBar.open(this.transloco.translate('cw.saved'), '✓', { duration: 3000 });
         },
         error: (err: unknown) => {
           if (err instanceof HttpErrorResponse && err.status === 409) {
-            this.snackBar.open('Someone else changed this course. Reloading the latest version.', 'Close', { duration: 6000 });
+            this.snackBar.open(this.transloco.translate('cw.conflict'), '✓', { duration: 6000 });
             this.loadCourse(id);
             return;
           }
-          const message = err instanceof ApiValidationError && err.errors.length ? err.errors.join(' • ') : 'Failed to save curriculum.';
-          this.snackBar.open(message, 'Close', { duration: 6000 });
+          const message = err instanceof ApiValidationError && err.errors.length ? err.errors.join(' • ') : this.transloco.translate('cw.saveFailed');
+          this.snackBar.open(message, '✓', { duration: 6000 });
         },
       });
+  }
+
+  /** Publishes after checking the server's checklist; unsaved edits must be saved first. */
+  publish() {
+    const id = this.courseId();
+    if (!id) return;
+    this.isPublishing.set(true);
+    this.publishIssues.set([]);
+    this.builderState.changeStatus(id, CourseStatus.Published).subscribe({
+      next: draft => {
+        this.isPublishing.set(false);
+        this.course.update(c => ({ ...c, status: draft.status }));
+        this.snackBar.open(this.transloco.translate('cw.published'), '✓', { duration: 5000 });
+      },
+      error: (err: unknown) => {
+        this.isPublishing.set(false);
+        this.publishIssues.set(err instanceof ApiValidationError && err.errors.length ? err.errors : [this.transloco.translate('cb.s4.publishFailed')]);
+      },
+    });
   }
 
   openChapter(chapterIndex: number) {
@@ -227,7 +241,7 @@ export default class CurriculumWorkspaceComponent {
       ...c,
       chapters: [
         ...(c.chapters ?? []),
-        { title: `New Chapter`, order: (c.chapters?.length ?? 0), lessons: [] },
+        { title: this.transloco.translate('cw.newChapter'), order: (c.chapters?.length ?? 0), lessons: [] },
       ],
     }));
     this.openChapter((this.course().chapters?.length ?? 1) - 1);
@@ -248,9 +262,9 @@ export default class CurriculumWorkspaceComponent {
       const lessons: CourseLesson[] = [
         ...chapter.lessons,
         {
-          title: 'New Lesson',
+          title: this.transloco.translate('cw.newLesson'),
           order: chapter.lessons.length,
-          isPublished: false,
+          isPublished: true, // the course itself is a draft until published
           type: LessonType.Video,
           isFreePreview: false,
           unlockDaysAfterEnrollment: 0,

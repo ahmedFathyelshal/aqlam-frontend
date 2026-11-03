@@ -6,8 +6,9 @@ import { Component, computed, input } from '@angular/core';
  */
 @Component({
   selector: 'aq-logo',
-  host: { class: 'inline-flex items-center gap-2.5' },
+  // No display on the host, so callers can hide it responsively (e.g. class="hidden lg:block").
   template: `
+    <span class="inline-flex items-center gap-2.5">
     <span
       class="relative inline-flex shrink-0 items-center justify-center rounded-full"
       [style.width.px]="size()"
@@ -41,6 +42,7 @@ import { Component, computed, input } from '@angular/core';
       </span>
     }
     <span class="sr-only">أقلام Aqlam</span>
+    </span>
   `,
 })
 export class AqLogo {

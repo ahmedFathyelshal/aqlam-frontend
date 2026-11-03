@@ -51,7 +51,7 @@ const STATUS_BADGE: Record<string, string> = {
           </div>
         </header>
 
-        <section class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section class="mb-6 grid gap-3" [class]="isSchool() ? 'grid-cols-3' : 'grid-cols-2'">
           @if (isSchool()) {
             <div class="stat"><div class="stat-label">{{ t('dash.classesCount') }}</div><div class="stat-value text-ink">{{ classes().length }}</div></div>
           }
@@ -63,7 +63,7 @@ const STATUS_BADGE: Record<string, string> = {
           @if (isSchool()) {
             <section class="card lg:col-span-2">
               <div class="card-header">
-                <h2 class="section-title">{{ t('dash.myClasses') }}</h2>
+                <h2 class="section-title">{{ orgContext.can('classes.manage') ? t('nav.classes') : t('dash.myClasses') }}</h2>
                 <a class="text-sm font-bold" [routerLink]="orgContext.path('classes')">{{ t('action.viewAll') }}</a>
               </div>
               @for (c of classes(); track c.id) {
@@ -122,7 +122,8 @@ export default class TeacherDashboardComponent {
       .pipe(map(r => r.data ?? []))
       .subscribe({ next: c => this.courses.set(c), error: () => this.courses.set([]) });
     if (this.isSchool() && this.orgContext.can('members.view')) {
-      this.school.classes(org, true).subscribe({ next: c => this.classes.set(c), error: () => this.classes.set([]) });
+      // Managers see every class; teachers the ones they teach.
+      this.school.classes(org, !this.orgContext.can('classes.manage')).subscribe({ next: c => this.classes.set(c), error: () => this.classes.set([]) });
     }
   }
 

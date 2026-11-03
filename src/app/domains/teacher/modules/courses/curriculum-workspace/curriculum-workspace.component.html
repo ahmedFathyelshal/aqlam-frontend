@@ -1,466 +1,231 @@
-<div class="curriculum-workspace">
+<ng-container *transloco="let t">
   @if (isLoading()) {
-    <div class="cw-loading">
-      <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
-      <p>Loading curriculum workspace...</p>
-    </div>
+    <div class="flex flex-col items-center gap-3 p-16 text-muted"><mat-spinner diameter="40" />{{ t('cw.loading') }}</div>
   } @else {
-    <div class="cw-header">
-      <div class="cw-header-left">
-        <button
-          mat-icon-button
-          type="button"
-          [routerLink]="orgContext.path('dashboard')"
-          aria-label="Back"
-        >
-          <mat-icon svgIcon="arrow-left"></mat-icon>
-        </button>
-        <div class="cw-title-group">
-          <h1>{{ course().title || 'Curriculum Workspace' }}</h1>
-          @if (course().subtitle) {
-            <p class="cw-subtitle">{{ course().subtitle }}</p>
-          }
-        </div>
-      </div>
-      <div class="cw-actions">
-        <a mat-button type="button" [routerLink]="orgContext.path('courses', courseId(), 'submissions')">Grading</a>
-        <a mat-button type="button" target="_blank" [routerLink]="['/learn', orgContext.requireActiveSlug(), courseId()]">Preview as student</a>
-        <button
-          type="button"
-          mat-button="filled"
-          [disabled]="isSaving()"
-          (click)="saveCurriculum()"
-        >
-          @if (isSaving()) {
-            <mat-progress-spinner mode="indeterminate" diameter="16" class="mr-2"></mat-progress-spinner>
-          } @else {
-            <mat-icon svgIcon="save" class="mr-2"></mat-icon>
-          }
-          Save curriculum
-        </button>
-      </div>
-    </div>
-
-    <div class="cw-content">
-      <div class="cw-tree">
-        <div class="cw-tree-header">
-          <h2>Course structure</h2>
-          <p class="muted">
-            {{ chapters().length }} chapter{{ chapters().length === 1 ? '' : 's' }}
-            ·
-            {{ chapters().reduce((s, c) => s + c.lessons.length, 0) }} lesson(s)
-          </p>
-        </div>
-
-        @if (chapters().length === 0) {
-          <div class="cw-empty">
-            <mat-icon svgIcon="book-open"></mat-icon>
-            <p>No chapters yet. Start by adding your first chapter.</p>
-            <button
-              type="button"
-              mat-button="raised"
-              (click)="addChapter()"
-            >
-              <mat-icon svgIcon="plus"></mat-icon>
-              Add first chapter
-            </button>
+    @let ci = activeChapterIndex();
+    @let li = activeLessonIndex();
+    <div class="page max-w-7xl">
+      <!-- Header -->
+      <a class="back-link" [routerLink]="orgContext.path('dashboard')"><mat-icon svgIcon="chevron-right" class="icon-size-4 ltr:rotate-180" />{{ t('nav.dashboard') }}</a>
+      <header class="page-header">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="page-title">{{ course().title || t('cw.untitledCourse') }}</h1>
+            <span class="badge" [class]="course().status === 'Published' ? 'badge-success' : course().status === 'Draft' ? 'badge-warning' : 'badge-info'">{{ t('courseStatus.' + course().status) }}</span>
           </div>
-        }
+          @if (course().subtitle) { <p class="page-subtitle">{{ course().subtitle }}</p> }
+        </div>
+        <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+          <a class="btn btn-ghost btn-sm" [routerLink]="orgContext.path('courses', courseId(), 'edit')">{{ t('cw.settings') }}</a>
+          <a class="btn btn-ghost btn-sm" [routerLink]="orgContext.path('courses', courseId(), 'submissions')">{{ t('cw.grading') }}</a>
+          <a class="btn btn-ghost btn-sm" target="_blank" [routerLink]="['/learn', orgContext.requireActiveSlug(), courseId()]">{{ t('cw.preview') }}</a>
+          <button type="button" class="btn btn-secondary flex-1 sm:flex-none" [disabled]="isSaving()" (click)="saveCurriculum()"><mat-icon svgIcon="save" class="icon-size-5" />{{ t('cw.save') }}</button>
+          @if (course().status !== 'Published' && orgContext.can('courses.publish')) {
+            <button type="button" class="btn btn-primary flex-1 sm:flex-none" [disabled]="isPublishing() || isSaving()" (click)="publish()"><mat-icon svgIcon="rocket" class="icon-size-5" />{{ t('cw.publish') }}</button>
+          }
+        </div>
+      </header>
 
-        <div class="chapters-list">
-          @for (chapter of chapters(); track chapter.id || chapter.title + $index; let ci = $index) {
-            <div class="chapter-card">
-              <div class="chapter-header">
-                <button
-                  class="chapter-header-main"
-                  type="button"
-                  (click)="openChapter(ci)"
-                >
-                  <span class="chapter-index">Ch.{{ ci + 1 }}</span>
-                  <div class="chapter-title-block">
-                    <div class="chapter-title">{{ chapter.title || 'Untitled chapter' }}</div>
-                    <div class="chapter-meta">
-                      {{ chapter.lessons.length }} lesson{{ chapter.lessons.length === 1 ? '' : 's' }}
-                    </div>
-                  </div>
-                </button>
-                <div class="chapter-actions">
-                  <button
-                    type="button"
-                    mat-icon-button
-                    matTooltip="Edit chapter"
-                    (click)="openChapter(ci)"
-                  >
-                    <mat-icon svgIcon="pencil"></mat-icon>
-                  </button>
-                  <button
-                    type="button"
-                    mat-icon-button
-                    matTooltip="Remove chapter"
-                    (click)="removeChapter(ci)"
-                  >
-                    <mat-icon svgIcon="trash-2" class="danger"></mat-icon>
-                  </button>
-                </div>
-              </div>
+      @if (publishIssues().length) {
+        <div class="alert alert-warning mb-4" role="alert">
+          <div>
+            <p class="font-bold">{{ t('cw.missing') }}</p>
+            <ul class="mt-1 list-inside list-disc">@for (issue of publishIssues(); track $index) { <li>{{ issue }}</li> }</ul>
+          </div>
+        </div>
+      }
 
-              <div class="lessons-list">
-                @for (lesson of chapter.lessons; track lesson.id || lesson.title + $index; let li = $index) {
-                  <button
-                    type="button"
-                    class="lesson-row"
-                    [class.unpublished]="!lesson.isPublished"
-                    (click)="openLesson(ci, li)"
-                  >
-                    <span class="lesson-index">{{ li + 1 }}</span>
-                    <div class="lesson-icon">
-                      @for (opt of LessonTypeOptions; track opt.value) {
-                        @if (opt.value === lesson.type) {
-                          <mat-icon [svgIcon]="opt.icon"></mat-icon>
-                        }
-                      }
-                    </div>
-                    <div class="lesson-title-block">
-                      <div class="lesson-title">{{ lesson.title || 'Untitled lesson' }}</div>
-                      <div class="lesson-meta">
-                        <span>{{ lesson.type }}</span>
-                        @if (lesson.durationInMinutes) {
-                          <span> · {{ lesson.durationInMinutes }} min</span>
-                        }
-                        @if (lesson.isFreePreview) {
-                          <span class="badge preview">Free preview</span>
-                        }
-                        @if (!lesson.isPublished) {
-                          <span class="badge draft">Draft</span>
-                        }
-                      </div>
-                    </div>
-                    <div
-                      class="lesson-resources"
-                      matTooltip="Resources"
-                    >
-                      <mat-icon svgIcon="paperclip"></mat-icon>
-                      <span>{{ lesson.resources.length }}</span>
-                    </div>
-                  </button>
-                }
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <!-- Tree -->
+        <section class="flex flex-col gap-3">
+          <div class="flex items-baseline justify-between">
+            <h2 class="section-title">{{ t('cw.structure') }}</h2>
+            <span class="text-sm text-muted">{{ t('cw.counts', { chapters: chapters().length, lessons: lessonCount() }) }}</span>
+          </div>
 
-                <button
-                  type="button"
-                  class="add-lesson"
-                  (click)="addLesson(ci)"
-                >
-                  <mat-icon svgIcon="plus"></mat-icon>
-                  Add lesson
-                </button>
-              </div>
+          @if (chapters().length === 0) {
+            <div class="empty">
+              <mat-icon svgIcon="book-open" class="icon-size-8" />{{ t('cw.empty') }}
+              <button type="button" class="btn btn-primary mt-2" (click)="addChapter()"><mat-icon svgIcon="plus" class="icon-size-5" />{{ t('cw.addFirst') }}</button>
             </div>
+          }
+
+          @for (chapter of chapters(); track chapter.id || chapter.title + $index; let c = $index) {
+            <article class="card" [class.!border-primary-600]="ci === c && li === null && drawerMode() === 'chapter'">
+              <div class="flex items-center gap-2 border-b border-line-soft p-2 ps-3">
+                <button type="button" class="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-start" (click)="openChapter(c)">
+                  <span class="badge badge-neutral">{{ t('cw.chapterShort', { n: c + 1 }) }}</span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-extrabold">{{ chapter.title || t('cw.untitledChapter') }}</span>
+                    <span class="text-sm text-muted">{{ t('cw.lessonsCount', { count: chapter.lessons.length }) }}</span>
+                  </span>
+                </button>
+                <button type="button" class="btn-icon" [attr.aria-label]="t('cw.editChapter')" (click)="openChapter(c)"><mat-icon svgIcon="pencil" class="icon-size-5" /></button>
+                <button type="button" class="btn-icon" [attr.aria-label]="t('cw.removeChapter')" (click)="removeChapter(c)"><mat-icon svgIcon="trash-2" class="icon-size-5 text-danger-700" /></button>
+              </div>
+              @for (lesson of chapter.lessons; track lesson.id || lesson.title + $index; let l = $index) {
+                <button type="button" class="flex min-h-12 w-full items-center gap-3 border-b border-line-soft px-3 py-2 text-start last:border-b-0 hover:bg-neutral-50"
+                        [class.!bg-primary-50]="ci === c && li === l" (click)="openLesson(c, l)">
+                  <span class="w-5 text-center text-sm text-muted">{{ l + 1 }}</span>
+                  <mat-icon class="icon-size-5 shrink-0 text-secondary-600" [svgIcon]="lessonIcon(lesson.type)" />
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate font-bold" [class.text-muted]="!lesson.isPublished">{{ lesson.title || t('cw.untitledLesson') }}</span>
+                    <span class="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                      {{ t('cw.types.' + lesson.type) }}
+                      @if (lesson.durationInMinutes) { · {{ t('cw.minutes', { count: lesson.durationInMinutes }) }} }
+                      @if (lesson.isFreePreview) { <span class="badge badge-info">{{ t('cw.freePreview') }}</span> }
+                      @if (!lesson.isPublished) { <span class="badge badge-warning">{{ t('cw.draft') }}</span> }
+                    </span>
+                  </span>
+                  @if (lesson.resources.length) {
+                    <span class="flex items-center gap-1 text-xs text-muted"><mat-icon svgIcon="paperclip" class="icon-size-4" />{{ lesson.resources.length }}</span>
+                  }
+                </button>
+              }
+              <button type="button" class="flex min-h-11 w-full items-center justify-center gap-2 text-sm font-bold text-secondary-600 hover:bg-secondary-50" (click)="addLesson(c)">
+                <mat-icon svgIcon="plus" class="icon-size-4" />{{ t('cw.addLesson') }}
+              </button>
+            </article>
           }
 
           @if (chapters().length > 0) {
-            <button type="button" class="add-chapter" (click)="addChapter()">
-              <mat-icon svgIcon="plus"></mat-icon>
-              Add chapter
-            </button>
+            <button type="button" class="btn btn-secondary" (click)="addChapter()"><mat-icon svgIcon="plus" class="icon-size-5" />{{ t('cw.addChapter') }}</button>
           }
-        </div>
-      </div>
+        </section>
 
-      <mat-drawer-container class="cw-drawer-container">
-        <mat-drawer-content class="cw-main">
-          <div class="cw-right-placeholder">
-            <div class="hint-box">
-              <h3>Curriculum workspace</h3>
-              <ul>
-                <li>Manage the hierarchical chapter/lesson tree on the left.</li>
-                <li>Click a <strong>chapter</strong> or <strong>lesson</strong> to open its editor on the right.</li>
-                <li>Attach <em>Lesson Resources</em> (PDFs, links) inside the lesson editor.</li>
-                <li>Click <strong>Save curriculum</strong> to persist changes.</li>
-              </ul>
-              <img src="/images/logo/logo.svg" alt="logo" class="hint-logo" />
-            </div>
-          </div>
-        </mat-drawer-content>
-
-        <mat-drawer
-          class="cw-drawer"
-          position="end"
-          mode="over"
-          [(opened)]="drawerOpened"
-          (closed)="closeDrawer()"
-          disableClose="true"
-        >
+        <!-- Editor: side column on laptops, full screen on phones -->
+        @if (drawerMode()) {
+          <div class="fixed inset-0 z-40 bg-ink/40 lg:hidden" aria-hidden="true" (click)="closeDrawer()"></div>
+        }
+        <section class="lg:sticky lg:top-20 lg:self-start"
+                 [class]="drawerMode() ? 'fixed inset-x-0 bottom-0 top-12 z-50 overflow-y-auto rounded-t-[12px] bg-white lg:static lg:z-auto lg:rounded-none lg:bg-transparent' : 'hidden lg:block'">
           @if (drawerMode()) {
-            <div class="drawer-header">
-              <div>
-                <div class="drawer-eyebrow">
-                  @if (drawerMode() === 'chapter') { Chapter details }
-                  @if (drawerMode() === 'lesson') { Lesson details }
+            <div class="card lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+              <div class="card-header sticky top-0 z-10 bg-white">
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-primary-600">{{ drawerMode() === 'chapter' ? t('cw.chapterDetails') : t('cw.lessonDetails') }}</p>
+                  <h2 class="truncate text-lg font-extrabold">{{ drawerTitle() }}</h2>
                 </div>
-                <h2>{{ drawerTitle() }}</h2>
+                <button type="button" class="btn-icon" [attr.aria-label]="t('action.close')" (click)="closeDrawer()"><mat-icon svgIcon="x" class="icon-size-5" /></button>
               </div>
-              <button type="button" mat-icon-button (click)="closeDrawer()">
-                <mat-icon svgIcon="x"></mat-icon>
-              </button>
-            </div>
 
-            <mat-divider></mat-divider>
+              <div class="card-body flex flex-col gap-4">
+                @if (drawerMode() === 'chapter' && ci !== null) {
+                  <label class="field">
+                    <span class="field-label">{{ t('cw.chapterTitle') }}</span>
+                    <input class="input" [value]="activeChapter()?.title" (input)="updateChapterTitle(ci, $any($event.target).value)" />
+                  </label>
+                  <p class="text-muted">{{ t('cw.lessonsInChapter', { count: activeChapter()?.lessons?.length ?? 0 }) }}</p>
+                  <button type="button" class="btn btn-secondary self-start" (click)="addLesson(ci)"><mat-icon svgIcon="plus" class="icon-size-5" />{{ t('cw.addLessonHere') }}</button>
+                  <button type="button" class="btn btn-danger self-start" (click)="removeChapter(ci)"><mat-icon svgIcon="trash-2" class="icon-size-5" />{{ t('cw.deleteChapter') }}</button>
+                }
 
-            <div class="drawer-body">
-              @if (drawerMode() === 'chapter' && activeChapterIndex() !== null) {
-                <div class="field-block">
-                  <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Chapter title</mat-label>
-                    <input
-                      matInput
-                      [value]="activeChapter()?.title"
-                      (input)="updateChapterTitle($any(activeChapterIndex()), $any($event.target).value)"
-                    />
-                  </mat-form-field>
-                </div>
+                @if (drawerMode() === 'lesson' && ci !== null && li !== null) {
+                  @let lesson = activeLesson();
+                  @if (lesson) {
+                    <label class="field">
+                      <span class="field-label">{{ t('cw.lessonTitle') }}</span>
+                      <input class="input" [value]="lesson.title" (input)="updateLessonField(ci, li, 'title', $any($event.target).value)" />
+                    </label>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                      <label class="field">
+                        <span class="field-label">{{ t('cw.type') }}</span>
+                        <select class="select" [value]="lesson.type" (change)="updateLessonField(ci, li, 'type', $any($event.target).value)">
+                          @for (opt of LessonTypeOptions; track opt.value) { <option [value]="opt.value">{{ t('cw.types.' + opt.value) }}</option> }
+                        </select>
+                      </label>
+                      <label class="field">
+                        <span class="field-label">{{ t('cw.duration') }}</span>
+                        <input type="number" class="input" min="0" inputmode="numeric" [value]="lesson.durationInMinutes ?? ''"
+                               (input)="updateLessonField(ci, li, 'durationInMinutes', $any($event.target).value === '' ? undefined : +$any($event.target).value)" />
+                      </label>
+                    </div>
 
-                <div class="field-block">
-                  <div class="field-label">Lessons</div>
-                  <p class="muted small">
-                    {{ activeChapter()?.lessons?.length ?? 0 }} lesson(s) in this chapter.
-                  </p>
-                  <button
-                    type="button"
-                    mat-button="outlined"
-                    (click)="addLesson($any(activeChapterIndex()))"
-                  >
-                    <mat-icon svgIcon="plus"></mat-icon>
-                    Add lesson to this chapter
-                  </button>
-                </div>
-
-                <mat-divider></mat-divider>
-                <div class="drawer-danger">
-                  <button
-                    type="button"
-                    mat-button="danger"
-                    (click)="removeChapter($any(activeChapterIndex()))"
-                  >
-                    <mat-icon svgIcon="trash-2"></mat-icon>
-                    Delete chapter
-                  </button>
-                </div>
-              }
-
-              @if (drawerMode() === 'lesson' && activeChapterIndex() !== null && activeLessonIndex() !== null) {
-                @let lesson = activeLesson();
-
-                @if (lesson) {
-                  <div class="field-block">
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Lesson title</mat-label>
-                      <input
-                        matInput
-                        [value]="lesson.title"
-                        (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'title', $any($event.target).value)"
-                      />
-                    </mat-form-field>
-                  </div>
-
-                  <div class="field-grid">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Type</mat-label>
-                      <mat-select
-                        [value]="lesson.type"
-                        (valueChange)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'type', $event)"
-                      >
-                        @for (opt of LessonTypeOptions; track opt.value) {
-                          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Duration (minutes)</mat-label>
-                      <input
-                        type="number"
-                        matInput
-                        [value]="lesson.durationInMinutes ?? ''"
-                        (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'durationInMinutes', $any($event.target).value === '' ? undefined : +$any($event.target).value)"
-                      />
-                    </mat-form-field>
-                  </div>
-
-                  @if (lesson.type === 'Quiz' || lesson.type === 'Assignment') {
-                    <div class="field-block">
+                    @if (lesson.type === 'Quiz' || lesson.type === 'Assignment') {
                       @if (lesson.id) {
-                        <a
-                          mat-button="outlined"
-                          [routerLink]="orgContext.path('courses', courseId(), 'lessons', lesson.id, lesson.type === 'Quiz' ? 'quiz' : 'assignment')"
-                        >
-                          {{ lesson.type === 'Quiz' ? 'Set up quiz questions' : 'Set up assignment' }}
+                        <a class="btn btn-secondary self-start" [routerLink]="orgContext.path('courses', courseId(), 'lessons', lesson.id, lesson.type === 'Quiz' ? 'quiz' : 'assignment')">
+                          <mat-icon [svgIcon]="lesson.type === 'Quiz' ? 'circle-question-mark' : 'clipboard-list'" class="icon-size-5" />{{ lesson.type === 'Quiz' ? t('cw.setupQuiz') : t('cw.setupAssignment') }}
                         </a>
                       } @else {
-                        <p class="text-sm text-neutral-500">Save the curriculum first, then set up this {{ lesson.type === 'Quiz' ? 'quiz' : 'assignment' }}.</p>
+                        <div class="alert alert-info">{{ t('cw.saveBeforeSetup') }}</div>
                       }
-                    </div>
-                  }
-
-                  <div class="field-row">
-                    <mat-checkbox
-                      [checked]="lesson.isPublished"
-                      (change)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'isPublished', $event.checked)"
-                    >
-                      Published
-                    </mat-checkbox>
-                    <mat-checkbox
-                      [checked]="lesson.isFreePreview"
-                      (change)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'isFreePreview', $event.checked)"
-                    >
-                      Free preview
-                    </mat-checkbox>
-                  </div>
-
-                  @if (lesson.type === 'Video') {
-                    <div class="field-block">
-                      <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Video URL</mat-label>
-                        <input
-                          matInput
-                          [value]="lesson.videoUrl"
-                          (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'videoUrl', $any($event.target).value)"
-                        />
-                      </mat-form-field>
-                    </div>
-                  }
-
-                  <div class="field-block">
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Summary</mat-label>
-                      <textarea
-                        matInput
-                        rows="2"
-                        [value]="lesson.summary"
-                        (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'summary', $any($event.target).value)"
-                      ></textarea>
-                    </mat-form-field>
-                  </div>
-
-                  <div class="field-block">
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Content / Description</mat-label>
-                      <textarea
-                        matInput
-                        rows="6"
-                        [value]="lesson.content"
-                        (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'content', $any($event.target).value)"
-                      ></textarea>
-                    </mat-form-field>
-                  </div>
-
-                  <div class="drip-block">
-                    <div class="field-label">Access rules</div>
-                    <div class="field-grid">
-                      <mat-form-field appearance="outline">
-                        <mat-label>Unlock days after enrollment</mat-label>
-                        <input
-                          type="number"
-                          matInput
-                          [value]="lesson.unlockDaysAfterEnrollment"
-                          (input)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'unlockDaysAfterEnrollment', +$any($event.target).value || 0)"
-                        />
-                      </mat-form-field>
-                    </div>
-                    <mat-checkbox
-                      [checked]="lesson.requirePreviousLessonCompletion"
-                      (change)="updateLessonField($any(activeChapterIndex()), $any(activeLessonIndex()), 'requirePreviousLessonCompletion', $event.checked)"
-                    >
-                      Require previous lesson completion
-                    </mat-checkbox>
-                  </div>
-
-                  <mat-divider></mat-divider>
-
-                  <div class="field-block">
-                    <div class="field-label-with-actions">
-                      <div>
-                        <div class="field-label">Lesson resources</div>
-                        <p class="muted small">Attach PDFs, worksheets, or external links to this lesson.</p>
-                      </div>
-                      <button
-                        type="button"
-                        mat-button="outlined"
-                        (click)="addResource($any(activeChapterIndex()), $any(activeLessonIndex()))"
-                      >
-                        <mat-icon svgIcon="plus"></mat-icon>
-                        Add resource
-                      </button>
-                    </div>
-
-                    @if (lesson.resources.length === 0) {
-                      <div class="no-resources muted">No resources yet.</div>
                     }
 
-                    <div class="resources-list">
-                      @for (res of lesson.resources; track res.id || res.displayName + $index; let ri = $index) {
-                        <div class="resource-card">
-                          <div class="resource-header">
-                            <mat-select
-                              class="resource-type"
-                              [value]="res.type"
-                              (valueChange)="updateResourceField($any(activeChapterIndex()), $any(activeLessonIndex()), ri, 'type', $event)"
-                            >
-                              @for (opt of ResourceTypeOptions; track opt.value) {
-                                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                              }
-                            </mat-select>
-                            <button
-                              type="button"
-                              mat-icon-button
-                              (click)="removeResource($any(activeChapterIndex()), $any(activeLessonIndex()), ri)"
-                            >
-                              <mat-icon svgIcon="trash-2" class="danger"></mat-icon>
-                            </button>
-                          </div>
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>Display name</mat-label>
-                            <input
-                              matInput
-                              [value]="res.displayName"
-                              (input)="updateResourceField($any(activeChapterIndex()), $any(activeLessonIndex()), ri, 'displayName', $any($event.target).value)"
-                            />
-                          </mat-form-field>
-                          <mat-form-field appearance="outline" class="w-full">
-                            <mat-label>URL / Link</mat-label>
-                            <input
-                              matInput
-                              [value]="res.resourceUrl"
-                              (input)="updateResourceField($any(activeChapterIndex()), $any(activeLessonIndex()), ri, 'resourceUrl', $any($event.target).value)"
-                            />
-                          </mat-form-field>
-                          <mat-checkbox
-                            [checked]="res.isDownloadable"
-                            (change)="updateResourceField($any(activeChapterIndex()), $any(activeLessonIndex()), ri, 'isDownloadable', $event.checked)"
-                          >
-                            Allow download
-                          </mat-checkbox>
-                        </div>
-                      }
+                    <div class="flex flex-wrap gap-x-6">
+                      <label class="check"><input type="checkbox" [checked]="lesson.isPublished" (change)="updateLessonField(ci, li, 'isPublished', $any($event.target).checked)" />{{ t('cw.isPublished') }}</label>
+                      <label class="check"><input type="checkbox" [checked]="lesson.isFreePreview" (change)="updateLessonField(ci, li, 'isFreePreview', $any($event.target).checked)" />{{ t('cw.isFreePreview') }}</label>
                     </div>
-                  </div>
 
-                  <mat-divider></mat-divider>
-                  <div class="drawer-danger">
-                    <button
-                      type="button"
-                      mat-button="danger"
-                      (click)="removeLesson($any(activeChapterIndex()), $any(activeLessonIndex()))"
-                    >
-                      <mat-icon svgIcon="trash-2"></mat-icon>
-                      Delete lesson
-                    </button>
-                  </div>
+                    @if (lesson.type === 'Video') {
+                      <label class="field">
+                        <span class="field-label">{{ t('cw.videoUrl') }}</span>
+                        <input class="input" dir="ltr" inputmode="url" [value]="lesson.videoUrl ?? ''" (input)="updateLessonField(ci, li, 'videoUrl', $any($event.target).value)" />
+                      </label>
+                    }
+                    <label class="field">
+                      <span class="field-label">{{ t('cw.summary') }}</span>
+                      <textarea class="textarea min-h-16" rows="2" [value]="lesson.summary ?? ''" (input)="updateLessonField(ci, li, 'summary', $any($event.target).value)"></textarea>
+                    </label>
+                    <label class="field">
+                      <span class="field-label">{{ t('cw.content') }}</span>
+                      <textarea class="textarea min-h-36" rows="6" [value]="lesson.content ?? ''" (input)="updateLessonField(ci, li, 'content', $any($event.target).value)"></textarea>
+                    </label>
+
+                    <fieldset class="flex flex-col gap-3 rounded-[6px] border border-line-soft p-3">
+                      <legend class="field-label px-1">{{ t('cw.accessRules') }}</legend>
+                      <label class="field sm:max-w-xs">
+                        <span class="text-sm">{{ t('cw.unlockDays') }}</span>
+                        <input type="number" class="input" min="0" inputmode="numeric" [value]="lesson.unlockDaysAfterEnrollment" (input)="updateLessonField(ci, li, 'unlockDaysAfterEnrollment', +$any($event.target).value || 0)" />
+                      </label>
+                      <label class="check"><input type="checkbox" [checked]="lesson.requirePreviousLessonCompletion" (change)="updateLessonField(ci, li, 'requirePreviousLessonCompletion', $any($event.target).checked)" />{{ t('cw.requirePrevious') }}</label>
+                    </fieldset>
+
+                    <section class="flex flex-col gap-3">
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h3 class="font-extrabold">{{ t('cw.resources') }}</h3>
+                          <p class="field-hint">{{ t('cw.resourcesHint') }}</p>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="addResource(ci, li)"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('cw.addResource') }}</button>
+                      </div>
+                      @for (res of lesson.resources; track res.id || res.displayName + $index; let r = $index) {
+                        <div class="flex flex-col gap-3 rounded-[6px] border border-line p-3">
+                          <div class="flex items-center gap-2">
+                            <select class="select min-h-10 flex-1" [attr.aria-label]="t('cw.type')" [value]="res.type" (change)="updateResourceField(ci, li, r, 'type', $any($event.target).value)">
+                              @for (opt of ResourceTypeOptions; track opt) { <option [value]="opt">{{ t('cw.resourceTypes.' + opt) }}</option> }
+                            </select>
+                            <button type="button" class="btn-icon" [attr.aria-label]="t('cw.removeResource')" (click)="removeResource(ci, li, r)"><mat-icon svgIcon="trash-2" class="icon-size-5 text-danger-700" /></button>
+                          </div>
+                          <label class="field">
+                            <span class="text-sm">{{ t('cw.displayName') }}</span>
+                            <input class="input min-h-10" [value]="res.displayName" (input)="updateResourceField(ci, li, r, 'displayName', $any($event.target).value)" />
+                          </label>
+                          <label class="field">
+                            <span class="text-sm">{{ t('cw.url') }}</span>
+                            <input class="input min-h-10" dir="ltr" inputmode="url" [value]="res.resourceUrl" (input)="updateResourceField(ci, li, r, 'resourceUrl', $any($event.target).value)" />
+                          </label>
+                          <label class="check"><input type="checkbox" [checked]="res.isDownloadable" (change)="updateResourceField(ci, li, r, 'isDownloadable', $any($event.target).checked)" />{{ t('cw.downloadable') }}</label>
+                        </div>
+                      } @empty {
+                        <p class="text-sm text-muted">{{ t('cw.noResources') }}</p>
+                      }
+                    </section>
+
+                    <button type="button" class="btn btn-danger self-start" (click)="removeLesson(ci, li)"><mat-icon svgIcon="trash-2" class="icon-size-5" />{{ t('cw.deleteLesson') }}</button>
+                  }
                 }
-              }
+              </div>
+            </div>
+          } @else {
+            <div class="rounded-[6px] border border-dashed border-line bg-white p-6">
+              <h3 class="font-extrabold">{{ t('cw.hintTitle') }}</h3>
+              <ul class="mt-2 flex flex-col gap-2 text-muted">
+                @for (hint of $any(t('cw.hints')); track $index) { <li class="flex gap-2"><mat-icon svgIcon="check" class="icon-size-5 shrink-0 text-primary-600" />{{ hint }}</li> }
+              </ul>
             </div>
           }
-        </mat-drawer>
-      </mat-drawer-container>
+        </section>
+      </div>
     </div>
   }
-</div>
+</ng-container>
