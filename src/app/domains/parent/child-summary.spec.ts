@@ -4,6 +4,8 @@ import { courseAverages, dayCount, summarizeChild } from './child-summary';
 
 type Day = ChildOverview['attendance']['days'][number];
 
+const RULES = { followUpAbsentDays: 3, followUpLateDays: 5, goodGradePercent: 75, lowGradePercent: 60 };
+
 /** One record per day from 2026-10-01, in the order given. */
 function days(pattern: string): Day[] {
   const names: Record<string, string> = { P: 'Present', A: 'Absent', L: 'Late', E: 'Excused' };
@@ -20,36 +22,44 @@ function overview(pattern: string, grades: ChildOverview['grades'] = []): Pick<C
 
 describe('summarizeChild', () => {
   it('gives no verdict without data', () => {
-    const s = summarizeChild(overview(''));
+    const s = summarizeChild(overview(''), RULES);
     expect([s.attendance, s.grades, s.needsFollowUp]).toEqual(['none', 'none', false]);
   });
 
   it('reports good grades with absence that needs follow-up (the approved example)', () => {
-    const s = summarizeChild(overview('PPPPPPLPPPPPAPPLAPAP', [grade(88), grade(83)]));
+    const s = summarizeChild(overview('PPPPPPLPPPPPAPPLAPAP', [grade(88), grade(83)]), RULES);
     expect(s).toMatchObject({ grades: 'good', attendance: 'followUp', needsFollowUp: true, days: 20, present: 15, absent: 3, late: 2 });
   });
 
   it('does not flag two absences or an excused absence', () => {
-    expect(summarizeChild(overview('PPAPA')).attendance).toBe('regular');
-    expect(summarizeChild(overview('EEEEEE')).attendance).toBe('regular');
+    expect(summarizeChild(overview('PPAPA'), RULES).attendance).toBe('regular');
+    expect(summarizeChild(overview('EEEEEE'), RULES).attendance).toBe('regular');
   });
 
   it('flags repeated lateness', () => {
-    expect(summarizeChild(overview('LLLLLP')).attendance).toBe('followUp');
+    expect(summarizeChild(overview('LLLLLP'), RULES).attendance).toBe('followUp');
   });
 
   it('grades by average at the thresholds, ignoring unmarked work', () => {
-    expect(summarizeChild(overview('P', [grade(75)])).grades).toBe('good');
-    expect(summarizeChild(overview('P', [grade(74.9)])).grades).toBe('mid');
-    expect(summarizeChild(overview('P', [grade(60)])).grades).toBe('mid');
-    const low = summarizeChild(overview('P', [grade(59), grade(null)]));
+    expect(summarizeChild(overview('P', [grade(75)]), RULES).grades).toBe('good');
+    expect(summarizeChild(overview('P', [grade(74.9)]), RULES).grades).toBe('mid');
+    expect(summarizeChild(overview('P', [grade(60)]), RULES).grades).toBe('mid');
+    const low = summarizeChild(overview('P', [grade(59), grade(null)]), RULES);
     expect([low.grades, low.needsFollowUp]).toEqual(['low', true]);
   });
 
+  it('follows the limits the school set', () => {
+    const strict = { followUpAbsentDays: 1, followUpLateDays: 1, goodGradePercent: 90, lowGradePercent: 80 };
+    expect(summarizeChild(overview('PPA'), strict).attendance).toBe('followUp');
+    expect(summarizeChild(overview('PPL'), strict).attendance).toBe('followUp');
+    expect(summarizeChild(overview('P', [grade(85)]), strict).grades).toBe('mid');
+    expect(summarizeChild(overview('P', [grade(79)]), strict).grades).toBe('low');
+  });
+
   it('says absences are recent only when most of them are', () => {
-    expect(summarizeChild(overview('PPPPPPPPPPPPPPPPAPPA')).mostAbsencesRecent).toBe(true);
-    expect(summarizeChild(overview('AAPPPPPPPPPPPPPPPPPA')).mostAbsencesRecent).toBe(false);
-    expect(summarizeChild(overview('PPPPPPPPPPPPPPPPPPPA')).mostAbsencesRecent).toBe(false); // one day is no trend
+    expect(summarizeChild(overview('PPPPPPPPPPPPPPPPAPPA'), RULES).mostAbsencesRecent).toBe(true);
+    expect(summarizeChild(overview('AAPPPPPPPPPPPPPPPPPA'), RULES).mostAbsencesRecent).toBe(false);
+    expect(summarizeChild(overview('PPPPPPPPPPPPPPPPPPPA'), RULES).mostAbsencesRecent).toBe(false); // one day is no trend
   });
 });
 

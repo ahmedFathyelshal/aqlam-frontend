@@ -8,6 +8,9 @@ import { ApiResponse } from '../models/api-response.model';
 export type ChildOrganization = { organizationId: string; slug: string; name: string };
 export type Child = { userId: string; userName: string; fullName: string; organizations: ChildOrganization[] };
 
+/** Set by each school in its settings. */
+export type SummaryRules = { followUpAbsentDays: number; followUpLateDays: number; goodGradePercent: number; lowGradePercent: number };
+
 export type ChildOverview = {
   userId: string;
   fullName: string;
@@ -22,7 +25,7 @@ export type ChildOverview = {
     /** The latest school days, oldest first; a day with several sessions shows its most serious status. */
     days: { date: string; status: string }[];
   };
-  school: { name: string; logoUrl: string | null; contactPhone: string | null; contactEmail: string | null };
+  school: { name: string; logoUrl: string | null; contactPhone: string | null; contactEmail: string | null; summaryRules: SummaryRules };
   grades: { kind: 'Quiz' | 'Assignment'; courseId: string; lessonTitle: string | null; score: number | null; maxScore: number; percent: number | null; status: string; atUtc: string }[];
 };
 

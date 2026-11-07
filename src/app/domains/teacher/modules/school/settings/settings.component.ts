@@ -88,6 +88,19 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
               </div>
             </fieldset>
 
+            <fieldset>
+              <legend class="field-label">{{ t('settings.limits') }}</legend>
+              <p class="field-hint mb-2">{{ t('settings.limitsHint') }}</p>
+              <div class="grid gap-4 sm:grid-cols-2">
+                @for (limit of limits; track limit.field) {
+                  <label class="field">
+                    <span class="field-label">{{ t('settings.' + limit.field) }}</span>
+                    <input class="input" dir="ltr" type="number" inputmode="numeric" [min]="limit.min" [max]="limit.max" [value]="s[limit.field]" (input)="patchLimit(limit.field, $any($event.target).value)" />
+                  </label>
+                }
+              </div>
+            </fieldset>
+
             @if (errors().length) { <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div> }
             @if (saved()) { <div class="alert alert-success" role="status">{{ t('settings.saved') }}</div> }
             <button type="button" class="btn btn-primary self-stretch sm:self-end" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>
@@ -106,6 +119,13 @@ export default class SettingsComponent {
   protected readonly days = WEEK_DAYS;
   protected readonly calendars = ['Gregorian', 'Hijri', 'Both'] as const;
   protected readonly scales = ['Descriptive', 'Letters', 'Percent'] as const;
+  protected readonly limits = [
+    { field: 'followUpAbsentDays', min: 1, max: 20 },
+    { field: 'followUpLateDays', min: 1, max: 20 },
+    { field: 'goodGradePercent', min: 1, max: 100 },
+    { field: 'lowGradePercent', min: 0, max: 100 },
+    { field: 'achievementPercent', min: 1, max: 100 },
+  ] as const;
   protected settings = signal<OrganizationSettings | null>(null);
   protected saving = signal(false);
   protected saved = signal(false);
@@ -127,6 +147,10 @@ export default class SettingsComponent {
   protected patch(changes: Partial<OrganizationSettings>): void {
     this.settings.update(s => (s ? { ...s, ...changes } : s));
     this.saved.set(false);
+  }
+
+  protected patchLimit(field: (typeof this.limits)[number]['field'], value: string): void {
+    this.patch({ [field]: Number(value) });
   }
 
   protected save(): void {

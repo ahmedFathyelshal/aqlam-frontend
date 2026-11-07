@@ -186,7 +186,7 @@ export default class ChildOverviewComponent {
   protected siblings = computed(() => this.children().filter(c => c.organizations.some(o => o.slug === this.org)));
   protected summary = computed(() => {
     const o = this.overview();
-    return o ? summarizeChild(o) : null;
+    return o ? summarizeChild(o, o.school.summaryRules) : null;
   });
   protected averages = computed(() => courseAverages(this.overview()?.grades ?? []));
 

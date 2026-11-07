@@ -1,14 +1,7 @@
-import { ChildOverview } from '@/app/core/school/family.service';
+import { ChildOverview, SummaryRules } from '@/app/core/school/family.service';
 
-/** Thresholds behind the sentence a parent reads first. Product decisions: change them here and in the spec. */
-export const SUMMARY_RULES = {
-  absentDaysForFollowUp: 3,
-  lateDaysForFollowUp: 5,
-  goodGradePercent: 75,
-  lowGradePercent: 60,
-  /** "Most absences were recent" looks at this many calendar days back from the latest record. */
-  recentWindowDays: 14,
-};
+/** "Most absences were recent" looks at this many calendar days back from the latest record. */
+const RECENT_WINDOW_DAYS = 14;
 
 export type GradeLevel = 'good' | 'mid' | 'low' | 'none';
 export type AttendanceLevel = 'regular' | 'followUp' | 'none';
@@ -27,22 +20,22 @@ export type ChildSummary = {
 
 const DAY_MS = 86_400_000;
 
-/** Reads a child's overview into one judgement. Only facts in the data are used; no data means no verdict. */
-export function summarizeChild(overview: Pick<ChildOverview, 'attendance' | 'grades'>): ChildSummary {
+/** Reads a child's overview into one judgement, using the school's own limits. No data means no verdict. */
+export function summarizeChild(overview: Pick<ChildOverview, 'attendance' | 'grades'>, rules: SummaryRules): ChildSummary {
   const days = overview.attendance.days;
   const count = (status: string) => days.filter(d => d.status === status).length;
   const absent = count('Absent');
   const late = count('Late');
 
   const attendance: AttendanceLevel = !days.length ? 'none'
-    : absent >= SUMMARY_RULES.absentDaysForFollowUp || late >= SUMMARY_RULES.lateDaysForFollowUp ? 'followUp'
+    : absent >= rules.followUpAbsentDays || late >= rules.followUpLateDays ? 'followUp'
     : 'regular';
 
   const marked = overview.grades.flatMap(g => (g.percent === null ? [] : [g.percent]));
   const average = marked.length ? marked.reduce((sum, p) => sum + p, 0) / marked.length : null;
   const grades: GradeLevel = average === null ? 'none'
-    : average >= SUMMARY_RULES.goodGradePercent ? 'good'
-    : average >= SUMMARY_RULES.lowGradePercent ? 'mid'
+    : average >= rules.goodGradePercent ? 'good'
+    : average >= rules.lowGradePercent ? 'mid'
     : 'low';
 
   return {
@@ -61,7 +54,7 @@ export function summarizeChild(overview: Pick<ChildOverview, 'attendance' | 'gra
 function isMostlyRecent(days: ChildOverview['attendance']['days']): boolean {
   const latest = new Date(days[days.length - 1].date).getTime();
   const absences = days.filter(d => d.status === 'Absent');
-  const recent = absences.filter(d => latest - new Date(d.date).getTime() < SUMMARY_RULES.recentWindowDays * DAY_MS);
+  const recent = absences.filter(d => latest - new Date(d.date).getTime() < RECENT_WINDOW_DAYS * DAY_MS);
   return recent.length * 2 > absences.length;
 }
 

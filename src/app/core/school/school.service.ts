@@ -140,6 +140,11 @@ export type OrganizationSettings = {
   gradingScale: 'Percent' | 'Letters' | 'Descriptive';
   contactPhone: string | null;
   contactEmail: string | null;
+  followUpAbsentDays: number;
+  followUpLateDays: number;
+  goodGradePercent: number;
+  lowGradePercent: number;
+  achievementPercent: number;
 };
 
 /** Classes, rosters, attendance, announcements, members and settings of an organization. */

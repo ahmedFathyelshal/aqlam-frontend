@@ -75,7 +75,7 @@ export type MyCourse = {
 export type NextLesson = { courseId: string; lessonId: string; title: string; chapterTitle: string; type: LearnerLesson['type']; durationInMinutes: number | null };
 export type DueItem = { courseId: string; courseTitle: string; lessonId: string; title: string; dueAtUtc: string; isOverdue: boolean };
 export type LatestResult = { kind: 'Quiz' | 'Assignment'; courseId: string; courseTitle: string; lessonId: string; title: string; percent: number; atUtc: string };
-export type LearnerHome = { nextLessons: NextLesson[]; due: DueItem[]; latestResult: LatestResult | null };
+export type LearnerHome = { nextLessons: NextLesson[]; due: DueItem[]; latestResult: LatestResult | null; achievementPercent: number };
 
 export type JoinResult = { membershipStatus: 'Active' | 'Pending'; name: string; slug: string; type: string };
 

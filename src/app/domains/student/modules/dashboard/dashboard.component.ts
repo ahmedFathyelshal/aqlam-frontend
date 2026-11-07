@@ -13,9 +13,6 @@ import { AcademicsService } from '@/app/core/school/academics.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
 import { AqInkBar } from '@/app/shared/ui/ink-bar';
 
-/** From this score a result counts as an achievement and gets the gold treatment. */
-const ACHIEVEMENT_PERCENT = 85;
-
 type OrgItem<T> = T & { slug: string };
 
 /** Student home: what to study now, what is due, every subject, and the latest result. */
@@ -227,8 +224,11 @@ export default class StudentDashboardComponent {
       .sort((a, b) => a.dueAtUtc.localeCompare(b.dueAtUtc))
   );
 
-  protected latest = computed<OrgItem<LatestResult> | null>(() => {
-    const results = this.homes().flatMap(({ slug, home }) => (home.latestResult ? [{ ...home.latestResult, slug }] : []));
+  /** Each school decides from which score a result counts as an achievement (the gold treatment). */
+  protected latest = computed<OrgItem<LatestResult & { achievementPercent: number }> | null>(() => {
+    const results = this.homes().flatMap(({ slug, home }) =>
+      home.latestResult ? [{ ...home.latestResult, slug, achievementPercent: home.achievementPercent }] : []
+    );
     return results.sort((a, b) => b.atUtc.localeCompare(a.atUtc))[0] ?? null;
   });
 
@@ -291,8 +291,8 @@ export default class StudentDashboardComponent {
     return Math.round(result.percent);
   }
 
-  protected isAchievement(result: LatestResult): boolean {
-    return result.percent >= ACHIEVEMENT_PERCENT;
+  protected isAchievement(result: LatestResult & { achievementPercent: number }): boolean {
+    return result.percent >= result.achievementPercent;
   }
 
   protected join(): void {
