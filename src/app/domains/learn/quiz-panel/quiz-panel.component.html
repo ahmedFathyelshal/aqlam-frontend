@@ -12,7 +12,7 @@
       <header class="sticky top-16 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-line bg-white px-4 py-3 sm:px-5">
         <span class="text-sm text-muted">{{ t('quiz.answered', { done: answeredCount(), total: a.questions.length }) }}</span>
         @if (remaining() !== null) {
-          <span class="flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 font-mono text-lg font-bold"
+          <span class="flex items-center gap-1.5 rounded-ui px-2.5 py-1 font-mono text-lg font-bold"
                 [class]="remaining()! < 60000 ? 'bg-danger-50 text-danger-700' : 'bg-secondary-100 text-secondary-700'" dir="ltr"
                 [attr.aria-label]="t('quiz.timeLeft')">
             <mat-icon svgIcon="clock" class="icon-size-4" />{{ remainingText() }}
@@ -33,7 +33,7 @@
               @if (q.type === 'MultipleChoice') { <p class="field-hint">{{ t('quiz.selectAll') }}</p> }
               <div class="flex flex-col gap-2" [attr.role]="q.type === 'MultipleChoice' ? 'group' : 'radiogroup'">
                 @for (o of q.options; track o.id) {
-                  <button type="button" class="flex min-h-12 w-full items-center gap-3 rounded-[6px] border px-4 py-2.5 text-start text-[1rem]"
+                  <button type="button" class="flex min-h-12 w-full items-center gap-3 rounded-ui border px-4 py-2.5 text-start text-[1rem]"
                           [class]="isSelected(q, o.id) ? 'border-primary-600 bg-primary-50 font-bold' : 'border-line bg-white hover:bg-neutral-50'"
                           [attr.role]="q.type === 'MultipleChoice' ? 'checkbox' : 'radio'" [attr.aria-checked]="isSelected(q, o.id)" (click)="choose(q, o.id)">
                     <mat-icon class="icon-size-5 shrink-0" [class.text-primary-600]="isSelected(q, o.id)"
@@ -62,7 +62,7 @@
       @if (r.items; as items) {
         <ol class="flex flex-col gap-3 p-4 sm:p-5">
           @for (item of items; track item.questionId; let i = $index) {
-            <li class="rounded-[6px] border p-4" [class]="item.isCorrect ? 'border-primary-300 bg-primary-50' : 'border-danger-300 bg-danger-50'">
+            <li class="rounded-ui border p-4" [class]="item.isCorrect ? 'border-primary-300 bg-primary-50' : 'border-danger-300 bg-danger-50'">
               <p class="font-bold">{{ i + 1 }}. {{ questionText(item.questionId) }}</p>
               <p class="mt-1 text-sm font-bold" [class.text-primary-700]="item.isCorrect" [class.text-danger-700]="!item.isCorrect">
                 {{ item.isCorrect ? t('quiz.correct') : t('quiz.wrong') }} · <span dir="ltr">{{ item.awardedPoints }} / {{ item.points }}</span>

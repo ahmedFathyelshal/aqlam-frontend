@@ -67,7 +67,7 @@ import { ReportCard } from '@/app/core/school/academics.service';
             </table>
           </div>
 
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-[6px] bg-primary-100 px-4 py-3 text-primary-700">
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-ui bg-primary-100 px-4 py-3 text-primary-700">
             <span class="font-extrabold">{{ t('report.overall') }}</span>
             <span class="text-xl font-extrabold">
               <span dir="ltr">{{ c.overallPercent === null ? '–' : c.overallPercent + '%' }}</span>
@@ -80,10 +80,10 @@ import { ReportCard } from '@/app/core/school/academics.service';
 
         <h2 class="section-title mt-6 mb-2">{{ t('report.attendance') }}</h2>
         <div class="grid grid-cols-4 gap-2 text-center">
-          <div class="rounded-[4px] bg-primary-100 py-2"><div class="text-2xl font-extrabold text-primary-700">{{ c.attendance.present }}</div><div class="text-xs text-primary-700">{{ t('attendance.Present') }}</div></div>
-          <div class="rounded-[4px] bg-danger-50 py-2"><div class="text-2xl font-extrabold text-danger-700">{{ c.attendance.absent }}</div><div class="text-xs text-danger-700">{{ t('attendance.Absent') }}</div></div>
-          <div class="rounded-[4px] bg-warning-50 py-2"><div class="text-2xl font-extrabold text-warning-700">{{ c.attendance.late }}</div><div class="text-xs text-warning-700">{{ t('attendance.Late') }}</div></div>
-          <div class="rounded-[4px] bg-secondary-100 py-2"><div class="text-2xl font-extrabold text-secondary-600">{{ c.attendance.excused }}</div><div class="text-xs text-secondary-600">{{ t('attendance.Excused') }}</div></div>
+          <div class="rounded-chip bg-primary-100 py-2"><div class="text-2xl font-extrabold text-primary-700">{{ c.attendance.present }}</div><div class="text-xs text-primary-700">{{ t('attendance.Present') }}</div></div>
+          <div class="rounded-chip bg-danger-50 py-2"><div class="text-2xl font-extrabold text-danger-700">{{ c.attendance.absent }}</div><div class="text-xs text-danger-700">{{ t('attendance.Absent') }}</div></div>
+          <div class="rounded-chip bg-warning-50 py-2"><div class="text-2xl font-extrabold text-warning-700">{{ c.attendance.late }}</div><div class="text-xs text-warning-700">{{ t('attendance.Late') }}</div></div>
+          <div class="rounded-chip bg-secondary-100 py-2"><div class="text-2xl font-extrabold text-secondary-600">{{ c.attendance.excused }}</div><div class="text-xs text-secondary-600">{{ t('attendance.Excused') }}</div></div>
         </div>
       </article>
     </ng-container>

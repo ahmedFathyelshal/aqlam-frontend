@@ -4,6 +4,7 @@ import { Route } from '@angular/router';
 
 import { AuthService } from './core/auth/auth.service';
 import { authenticatedGuard } from './core/auth/guards/authenticated.guard';
+import { environment } from '@/environments/environment';
 
 export const routes: Route[] = [
   { path: 'auth', loadChildren: () => import('./domains/auth/routes') },
@@ -27,6 +28,13 @@ export const routes: Route[] = [
     loadComponent: () => import('./domains/auth/features/change-password'),
   },
 
+  // Visitors see the public home page once it is switched on; signed-in users go to their home below.
+  {
+    path: '',
+    pathMatch: 'full',
+    canMatch: [() => environment.publicHome && !inject(AuthService).isAuthenticated()],
+    loadComponent: () => import('./domains/public/landing.component'),
+  },
   {
     path: '',
     pathMatch: 'full',

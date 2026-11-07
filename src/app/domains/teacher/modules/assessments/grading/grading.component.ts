@@ -42,7 +42,7 @@ type GradeForm = { feedback: string; score: string };
                 </div>
               </div>
               <div class="card-body flex flex-col gap-3">
-                @if (s.text) { <p class="rounded-[6px] bg-page p-3 text-[0.95rem] whitespace-pre-line">{{ s.text }}</p> }
+                @if (s.text) { <p class="rounded-ui bg-page p-3 text-[0.95rem] whitespace-pre-line">{{ s.text }}</p> }
                 @for (link of s.links; track link) {
                   <a class="flex items-center gap-2 text-sm font-bold break-all" target="_blank" rel="noopener" [href]="link" dir="ltr"><mat-icon svgIcon="link" class="icon-size-4 shrink-0" />{{ link }}</a>
                 }

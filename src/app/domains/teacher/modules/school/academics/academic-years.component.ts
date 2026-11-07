@@ -47,7 +47,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
             <fieldset class="flex flex-col gap-3">
               <legend class="field-label mb-2">{{ t('years.terms') }}</legend>
               @for (term of f.terms; track $index; let i = $index) {
-                <div class="grid items-end gap-3 rounded-[6px] border border-line-soft p-3 sm:grid-cols-[1fr_10rem_10rem_auto]">
+                <div class="grid items-end gap-3 rounded-ui border border-line-soft p-3 sm:grid-cols-[1fr_10rem_10rem_auto]">
                   <label class="field">
                     <span class="field-label">{{ t('years.termName') }}</span>
                     <input class="input" maxlength="100" [value]="term.name" (input)="patchTerm(i, { name: $any($event.target).value })" />

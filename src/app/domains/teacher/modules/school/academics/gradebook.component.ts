@@ -200,7 +200,7 @@ type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoin
 
                 @if (itemDraft()?.categoryId === c.id) {
                   @if (itemDraft(); as d) {
-                    <div class="mt-3 rounded-[6px] border border-line-soft p-3">
+                    <div class="mt-3 rounded-ui border border-line-soft p-3">
                       <div class="grid gap-3 sm:grid-cols-[1fr_9rem]">
                         <label class="field">
                           <span class="field-label">{{ t('gradebook.itemTitle') }}</span>

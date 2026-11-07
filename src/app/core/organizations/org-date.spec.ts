@@ -1,6 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { formatOrgDate, todayIn } from './org-date';
+import { formatLongDay, formatOrgDate, formatShortDay, hourIn, todayIn } from './org-date';
 import { grants } from './permissions';
+
+describe('formatLongDay', () => {
+  it('shows the weekday and follows the calendar setting', () => {
+    expect(formatLongDay('2026-11-08', 'Gregorian', 'en')).toBe('Sunday, November 8');
+    const both = formatLongDay('2026-11-08', 'Both', 'ar');
+    expect(both).toContain('الأحد');
+    expect(both).toContain('نوفمبر');
+    expect(both).toContain('جمادى');
+    expect(both).toMatch(/[0-9]/);
+    expect(both).not.toMatch(/[٠-٩]/);
+  });
+});
+
+describe('formatShortDay', () => {
+  const now = new Date('2026-11-08T09:00:00Z'); // a Sunday
+  const short = (value: string, calendar: 'Gregorian' | 'Hijri' | 'Both' = 'Gregorian') => formatShortDay(value, calendar, 'en', 'Asia/Riyadh', undefined, now);
+
+  it('uses words close to today', () => {
+    expect(short('2026-11-08')).toBe('Today');
+    expect(short('2026-11-09')).toBe('Tomorrow');
+    expect(short('2026-11-05')).toBe('Thursday');
+    expect(short('2026-11-11')).toBe('Wednesday');
+  });
+
+  it('uses day and month further away, in one calendar only', () => {
+    expect(short('2026-10-20')).toBe('October 20');
+    expect(short('2026-10-20', 'Both')).toBe('October 20');
+    expect(short('2026-10-20', 'Hijri')).not.toContain('October');
+  });
+
+  it('reads a moment as the day it is in the time zone', () => {
+    expect(short('2026-11-08T22:00:00Z')).toBe('Tomorrow'); // already 1 am on the 9th in Riyadh
+  });
+});
+
+describe('hourIn', () => {
+  it('reads the hour in the time zone', () => {
+    expect(hourIn('Asia/Riyadh', new Date('2026-11-08T09:30:00Z'))).toBe(12);
+    expect(hourIn('UTC', new Date('2026-11-08T00:30:00Z'))).toBe(0);
+  });
+});
 
 describe('formatOrgDate', () => {
   it('shows Gregorian by default', () => {

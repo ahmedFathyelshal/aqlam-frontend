@@ -10,7 +10,7 @@
       <legend class="field-label mb-1.5">{{ tr('cb.s2.pricing') }} <span class="text-danger-700" aria-hidden="true">*</span></legend>
       <div class="grid grid-cols-2 gap-2">
         @for (option of ['Free', 'Paid']; track option) {
-          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-[6px] border px-4"
+          <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-ui border px-4"
                  [class]="commercialsForm.pricingType().value() === option ? 'border-primary-600 bg-primary-50' : 'border-line bg-white'">
             <input type="radio" class="size-5 accent-primary-600" [value]="option" [formField]="commercialsForm.pricingType" />
             <mat-icon [svgIcon]="option === 'Free' ? 'gift' : 'tag'" class="icon-size-5 text-primary-600" />
@@ -27,7 +27,7 @@
         <input type="number" class="input" inputmode="decimal" [formField]="commercialsForm.price" placeholder="100" />
         @if (commercialsForm.price().touched() && commercialsForm.price().errors().length) { <span class="field-error">{{ commercialsForm.price().errors()[0].message }}</span> }
       </label>
-      <label class="flex cursor-pointer items-start gap-3 rounded-[6px] border border-line p-3">
+      <label class="flex cursor-pointer items-start gap-3 rounded-ui border border-line p-3">
         <input type="checkbox" class="mt-1 size-5 accent-primary-600" [formField]="commercialsForm.codeActivationOnly" />
         <span class="flex flex-col">
           <span class="font-bold">{{ tr('cb.s2.codeOnly') }}</span>

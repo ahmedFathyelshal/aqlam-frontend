@@ -138,6 +138,8 @@ export type OrganizationSettings = {
   logoUrl: string | null;
   primaryColor: string | null;
   gradingScale: 'Percent' | 'Letters' | 'Descriptive';
+  contactPhone: string | null;
+  contactEmail: string | null;
 };
 
 /** Classes, rosters, attendance, announcements, members and settings of an organization. */

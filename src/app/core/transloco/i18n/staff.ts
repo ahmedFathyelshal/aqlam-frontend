@@ -152,6 +152,10 @@ export const staff = {
       approve: 'موافقة',
     },
     settings: {
+      contact: 'بيانات التواصل',
+      contactHint: 'تظهر لأولياء الأمور عند الضغط على «تواصل مع المدرسة».',
+      contactPhone: 'رقم الهاتف',
+      contactEmail: 'البريد الإلكتروني',
       title: 'الإعدادات',
       name: 'اسم الجهة',
       timeZone: 'المنطقة الزمنية',
@@ -318,6 +322,10 @@ export const staff = {
       approve: 'Approve',
     },
     settings: {
+      contact: 'Contact details',
+      contactHint: 'Parents see these when they tap "Contact the school".',
+      contactPhone: 'Phone number',
+      contactEmail: 'Email',
       title: 'Settings',
       name: 'Organization name',
       timeZone: 'Time zone',

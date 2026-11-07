@@ -10,7 +10,7 @@
       </div>
 
       @if (a.submission; as s) {
-        <div class="m-4 rounded-[6px] border p-4 sm:mx-5"
+        <div class="m-4 rounded-ui border p-4 sm:mx-5"
              [class]="s.status === 'Graded' ? 'border-primary-300 bg-primary-50' : s.status === 'ReturnedForRevision' ? 'border-warning-300 bg-warning-50' : 'border-line bg-page'">
           <div class="flex flex-wrap items-center gap-2">
             <span class="badge" [class]="s.status === 'Graded' ? 'badge-success' : s.status === 'ReturnedForRevision' ? 'badge-warning' : 'badge-info'">{{ t('hw.status.' + s.status) }}</span>

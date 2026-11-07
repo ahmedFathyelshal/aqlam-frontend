@@ -79,7 +79,7 @@ const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
                 <span class="min-w-0 flex-1 truncate text-[1.02rem] font-bold">{{ row.fullName }}</span>
                 <div class="flex gap-1" role="radiogroup" [attr.aria-label]="row.fullName">
                   @for (s of statuses; track s.value) {
-                    <button type="button" role="radio" class="size-11 rounded-[6px] border text-base font-extrabold"
+                    <button type="button" role="radio" class="size-11 rounded-ui border text-base font-extrabold"
                             [class]="row.status === s.value ? s.on : 'border-line bg-white text-muted'"
                             [attr.aria-checked]="row.status === s.value" [attr.aria-label]="t('attendance.' + s.value)" [title]="t('attendance.' + s.value)"
                             (click)="setStatus(i, s.value)">{{ t('attendanceShort.' + s.value) }}</button>

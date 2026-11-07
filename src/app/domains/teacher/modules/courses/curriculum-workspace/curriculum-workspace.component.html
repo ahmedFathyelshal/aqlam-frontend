@@ -171,7 +171,7 @@
                       <textarea class="textarea min-h-36" rows="6" [value]="lesson.content ?? ''" (input)="updateLessonField(ci, li, 'content', $any($event.target).value)"></textarea>
                     </label>
 
-                    <fieldset class="flex flex-col gap-3 rounded-[6px] border border-line-soft p-3">
+                    <fieldset class="flex flex-col gap-3 rounded-ui border border-line-soft p-3">
                       <legend class="field-label px-1">{{ t('cw.accessRules') }}</legend>
                       <label class="field sm:max-w-xs">
                         <span class="text-sm">{{ t('cw.unlockDays') }}</span>
@@ -189,7 +189,7 @@
                         <button type="button" class="btn btn-secondary btn-sm" (click)="addResource(ci, li)"><mat-icon svgIcon="plus" class="icon-size-4" />{{ t('cw.addResource') }}</button>
                       </div>
                       @for (res of lesson.resources; track res.id || res.displayName + $index; let r = $index) {
-                        <div class="flex flex-col gap-3 rounded-[6px] border border-line p-3">
+                        <div class="flex flex-col gap-3 rounded-ui border border-line p-3">
                           <div class="flex items-center gap-2">
                             <select class="select min-h-10 flex-1" [attr.aria-label]="t('cw.type')" [value]="res.type" (change)="updateResourceField(ci, li, r, 'type', $any($event.target).value)">
                               @for (opt of ResourceTypeOptions; track opt) { <option [value]="opt">{{ t('cw.resourceTypes.' + opt) }}</option> }
@@ -217,7 +217,7 @@
               </div>
             </div>
           } @else {
-            <div class="rounded-[6px] border border-dashed border-line bg-white p-6">
+            <div class="rounded-ui border border-dashed border-line bg-white p-6">
               <h3 class="font-extrabold">{{ t('cw.hintTitle') }}</h3>
               <ul class="mt-2 flex flex-col gap-2 text-muted">
                 @for (hint of $any(t('cw.hints')); track $index) { <li class="flex gap-2"><mat-icon svgIcon="check" class="icon-size-5 shrink-0 text-primary-600" />{{ hint }}</li> }

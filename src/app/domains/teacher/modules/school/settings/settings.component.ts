@@ -73,6 +73,21 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
               </label>
             </div>
 
+            <fieldset>
+              <legend class="field-label">{{ t('settings.contact') }}</legend>
+              <p class="field-hint mb-2">{{ t('settings.contactHint') }}</p>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="field">
+                  <span class="field-label">{{ t('settings.contactPhone') }}</span>
+                  <input class="input" dir="ltr" type="tel" inputmode="tel" maxlength="32" [value]="s.contactPhone ?? ''" (input)="patch({ contactPhone: $any($event.target).value || null })" />
+                </label>
+                <label class="field">
+                  <span class="field-label">{{ t('settings.contactEmail') }}</span>
+                  <input class="input" dir="ltr" type="email" inputmode="email" maxlength="256" [value]="s.contactEmail ?? ''" (input)="patch({ contactEmail: $any($event.target).value || null })" />
+                </label>
+              </div>
+            </fieldset>
+
             @if (errors().length) { <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div> }
             @if (saved()) { <div class="alert alert-success" role="status">{{ t('settings.saved') }}</div> }
             <button type="button" class="btn btn-primary self-stretch sm:self-end" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>

@@ -57,6 +57,7 @@ export const ApiEndpoints = {
     PublishedTerms: (org: string, studentId: string) => orgUrl(org, `/report-cards/students/${studentId}/terms`),
   },
   Learn: {
+    Home: (org: string) => orgUrl(org, '/learn/home'),
     Course: (org: string, courseId: string) => orgUrl(org, `/learn/courses/${courseId}`),
     Enroll: (org: string, courseId: string) => orgUrl(org, `/learn/courses/${courseId}/enroll`),
     Lesson: (org: string, lessonId: string) => orgUrl(org, `/learn/lessons/${lessonId}`),

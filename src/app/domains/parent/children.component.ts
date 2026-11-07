@@ -25,7 +25,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
               </div>
               <div class="mt-3 flex flex-col gap-2">
                 @for (org of child.organizations; track org.organizationId) {
-                  <a class="flex min-h-12 items-center justify-between gap-2 rounded-[6px] border border-line px-4 text-ink no-underline hover:bg-neutral-50" [routerLink]="['/parent', org.slug, 'children', child.userId]">
+                  <a class="flex min-h-12 items-center justify-between gap-2 rounded-ui border border-line px-4 text-ink no-underline hover:bg-neutral-50" [routerLink]="['/parent', org.slug, 'children', child.userId]">
                     <span class="font-bold">{{ org.name }}</span>
                     <mat-icon svgIcon="chevron-left" class="icon-size-5 text-muted ltr:rotate-180" />
                   </a>

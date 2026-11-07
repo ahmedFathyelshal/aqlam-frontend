@@ -68,7 +68,7 @@ const STATUS_BADGE: Record<string, string> = {
               </div>
               @for (c of classes(); track c.id) {
                 <div class="list-row">
-                  <span class="flex size-10 shrink-0 items-center justify-center rounded-[6px] bg-primary-100 text-primary-700"><mat-icon svgIcon="school" class="icon-size-5" /></span>
+                  <span class="flex size-10 shrink-0 items-center justify-center rounded-ui bg-primary-100 text-primary-700"><mat-icon svgIcon="school" class="icon-size-5" /></span>
                   <a class="min-w-0 flex-1 text-ink no-underline" [routerLink]="orgContext.path('classes', c.id)">
                     <span class="block truncate font-bold">{{ c.name }}</span>
                     <span class="text-sm text-muted">{{ t('dash.students', { count: c.studentCount }) }}{{ c.branchName ? ' · ' + c.branchName : '' }}</span>
@@ -87,7 +87,7 @@ const STATUS_BADGE: Record<string, string> = {
             <div class="card-header"><h2 class="section-title">{{ t('dash.courses') }}</h2></div>
             @for (course of courses(); track course.id) {
               <a class="list-row text-ink no-underline hover:bg-neutral-50" [routerLink]="orgContext.path('courses', course.id, 'curriculum')">
-                <span class="flex size-10 shrink-0 items-center justify-center rounded-[6px] bg-secondary-100 text-secondary-600"><mat-icon svgIcon="book-open" class="icon-size-5" /></span>
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-ui bg-secondary-100 text-secondary-600"><mat-icon svgIcon="book-open" class="icon-size-5" /></span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate font-bold">{{ course.title || '—' }}</span>
                   <span class="text-sm text-muted">{{ t('dash.lessons', { count: course.lessonCount }) }}</span>
