@@ -6,6 +6,7 @@ import { formatOrgDate, todayIn } from '@/app/core/organizations/org-date';
 import { OrganizationSettings, SchoolService } from '@/app/core/school/school.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
+import { AqOrgMark } from '@/app/shared/ui/org-mark';
 import { WEEK_DAYS } from '../classes/class-form';
 
 const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 'Asia/Qatar', 'Asia/Bahrain', 'Asia/Amman', 'UTC'];
@@ -13,10 +14,10 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
 /** Organization profile and locale: name, branding, time zone, Hijri/Gregorian dates, first day of the week. */
 @Component({
   selector: 'app-org-settings',
-  imports: [TranslocoDirective],
+  imports: [TranslocoDirective, AqOrgMark],
   template: `
     <ng-container *transloco="let t">
-      <div class="page-narrow">
+      <div class="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <header class="page-header">
           <div>
             <h1 class="page-title">{{ t('settings.title') }}</h1>
@@ -27,56 +28,112 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
         </header>
 
         @if (settings(); as s) {
-          <section class="card card-body flex flex-col gap-5">
-            <label class="field">
-              <span class="field-label">{{ t('settings.name') }}</span>
-              <input class="input" maxlength="150" [value]="s.name" (input)="patch({ name: $any($event.target).value })" />
-            </label>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="field">
-                <span class="field-label">{{ t('settings.timeZone') }}</span>
-                <select class="select" dir="ltr" [value]="s.timeZone" (change)="patch({ timeZone: $any($event.target).value })">
-                  @for (tz of timeZones(); track tz) { <option [value]="tz">{{ tz }}</option> }
-                </select>
-              </label>
-              <label class="field">
-                <span class="field-label">{{ t('settings.weekStart') }}</span>
-                <select class="select" [value]="s.weekStartDay" (change)="patch({ weekStartDay: $any($event.target).value })">
-                  @for (d of days; track d) { <option [value]="d">{{ t('day.' + d) }}</option> }
-                </select>
-              </label>
-            </div>
-            <fieldset>
-              <legend class="field-label mb-2">{{ t('settings.dates') }}</legend>
-              <div class="segmented" role="radiogroup">
-                @for (c of calendars; track c) {
-                  <button type="button" role="radio" class="segment" [attr.aria-checked]="s.calendar === c" [class.is-active]="s.calendar === c" (click)="patch({ calendar: c })">{{ t('settings.' + c) }}</button>
-                }
+          <div class="flex flex-col gap-6">
+            <!-- Identity -->
+            <section class="grid gap-3 lg:grid-cols-[16rem_1fr] lg:gap-8" aria-labelledby="set-identity">
+              <div>
+                <h2 id="set-identity" class="section-title">{{ t('settingsSec.identity') }}</h2>
+                <p class="field-hint mt-1">{{ t('settingsSec.identityHint') }}</p>
               </div>
-              <p class="field-hint mt-2">{{ t('settings.preview', { date: preview() }) }}</p>
-            </fieldset>
-            <label class="field">
-              <span class="field-label">{{ t('scale.title') }}</span>
-              <select class="select" (change)="patch({ gradingScale: $any($event.target).value })">
-                @for (scale of scales; track scale) { <option [value]="scale" [selected]="scale === s.gradingScale">{{ t('scale.' + scale) }}</option> }
-              </select>
-              <span class="field-hint">{{ t('scale.hint') }}</span>
-            </label>
-            <div class="grid gap-4 sm:grid-cols-[1fr_9rem]">
-              <label class="field">
-                <span class="field-label">{{ t('settings.logo') }}</span>
-                <input class="input" dir="ltr" inputmode="url" [value]="s.logoUrl ?? ''" (input)="patch({ logoUrl: $any($event.target).value || null })" />
-              </label>
-              <label class="field">
-                <span class="field-label">{{ t('settings.color') }}</span>
-                <input type="color" class="input p-1" [value]="s.primaryColor ?? '#146C43'" (input)="patch({ primaryColor: $any($event.target).value })" />
-              </label>
-            </div>
+              <div class="card card-body flex flex-col gap-4">
+                <label class="field">
+                  <span class="field-label">{{ t('settings.name') }}</span>
+                  <input class="input" maxlength="150" [value]="s.name" (input)="patch({ name: $any($event.target).value })" />
+                </label>
+                <div class="flex flex-wrap items-end gap-4">
+                  <aq-org-mark [name]="s.name" [logoUrl]="s.logoUrl" [size]="64" />
+                  <label class="field min-w-56 flex-1">
+                    <span class="field-label">{{ t('settings.logo') }}</span>
+                    <input class="input" dir="ltr" inputmode="url" placeholder="https://" [value]="s.logoUrl ?? ''" (input)="patch({ logoUrl: $any($event.target).value || null })" />
+                  </label>
+                  <label class="field w-28">
+                    <span class="field-label">{{ t('settings.color') }}</span>
+                    <input type="color" class="input p-1" [value]="s.primaryColor ?? '#146C43'" (input)="patch({ primaryColor: $any($event.target).value })" />
+                  </label>
+                </div>
+              </div>
+            </section>
 
-            <fieldset>
-              <legend class="field-label">{{ t('settings.contact') }}</legend>
-              <p class="field-hint mb-2">{{ t('settings.contactHint') }}</p>
-              <div class="grid gap-4 sm:grid-cols-2">
+            <!-- Time and calendar -->
+            <section class="grid gap-3 lg:grid-cols-[16rem_1fr] lg:gap-8" aria-labelledby="set-time">
+              <div>
+                <h2 id="set-time" class="section-title">{{ t('settingsSec.time') }}</h2>
+                <p class="field-hint mt-1">{{ t('settingsSec.timeHint') }}</p>
+              </div>
+              <div class="card card-body flex flex-col gap-4">
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="field">
+                    <span class="field-label">{{ t('settings.timeZone') }}</span>
+                    <select class="select" dir="ltr" [value]="s.timeZone" (change)="patch({ timeZone: $any($event.target).value })">
+                      @for (tz of timeZones(); track tz) { <option [value]="tz">{{ tz }}</option> }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">{{ t('settings.weekStart') }}</span>
+                    <select class="select" [value]="s.weekStartDay" (change)="patch({ weekStartDay: $any($event.target).value })">
+                      @for (d of days; track d) { <option [value]="d">{{ t('day.' + d) }}</option> }
+                    </select>
+                  </label>
+                </div>
+                <fieldset>
+                  <legend class="field-label mb-2">{{ t('settings.dates') }}</legend>
+                  <div class="segmented" role="radiogroup">
+                    @for (c of calendars; track c) {
+                      <button type="button" role="radio" class="segment" [attr.aria-checked]="s.calendar === c" [class.is-active]="s.calendar === c" (click)="patch({ calendar: c })">{{ t('settings.' + c) }}</button>
+                    }
+                  </div>
+                  <p class="field-hint mt-2">{{ t('settings.preview', { date: preview() }) }}</p>
+                </fieldset>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="field">
+                    <span class="field-label">{{ t('settingsSec.dueBy') }}</span>
+                    <input class="input" type="time" dir="ltr" min="05:00" max="23:00" step="300" [value]="s.attendanceDueBy.slice(0, 5)" (change)="patchDueBy($any($event.target).value)" />
+                    <span class="field-hint">{{ t('settingsSec.dueByHint') }}</span>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">{{ t('settingsSec.grace') }}</span>
+                    <input class="input" type="number" dir="ltr" inputmode="numeric" min="0" max="240" [value]="s.groupAttendanceGraceMinutes" (input)="patch({ groupAttendanceGraceMinutes: +$any($event.target).value })" />
+                    <span class="field-hint">{{ t('settingsSec.graceHint') }}</span>
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <!-- Grades and follow-up limits -->
+            <section class="grid gap-3 lg:grid-cols-[16rem_1fr] lg:gap-8" aria-labelledby="set-grades">
+              <div>
+                <h2 id="set-grades" class="section-title">{{ t('settingsSec.grades') }}</h2>
+                <p class="field-hint mt-1">{{ t('settings.limitsHint') }}</p>
+              </div>
+              <div class="card card-body flex flex-col gap-4">
+                <label class="field">
+                  <span class="field-label">{{ t('scale.title') }}</span>
+                  <select class="select" (change)="patch({ gradingScale: $any($event.target).value })">
+                    @for (scale of scales; track scale) { <option [value]="scale" [selected]="scale === s.gradingScale">{{ t('scale.' + scale) }}</option> }
+                  </select>
+                  <span class="field-hint">{{ t('scale.hint') }}</span>
+                </label>
+                <fieldset>
+                  <legend class="field-label mb-2">{{ t('settings.limits') }}</legend>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    @for (limit of limits; track limit.field) {
+                      <label class="field">
+                        <span class="field-label font-semibold">{{ t('settings.' + limit.field) }}</span>
+                        <input class="input" dir="ltr" type="number" inputmode="numeric" [min]="limit.min" [max]="limit.max" [value]="s[limit.field]" (input)="patchLimit(limit.field, $any($event.target).value)" />
+                      </label>
+                    }
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+
+            <!-- Contact for families -->
+            <section class="grid gap-3 lg:grid-cols-[16rem_1fr] lg:gap-8" aria-labelledby="set-contact">
+              <div>
+                <h2 id="set-contact" class="section-title">{{ t('settings.contact') }}</h2>
+                <p class="field-hint mt-1">{{ t('settings.contactHint') }}</p>
+              </div>
+              <div class="card card-body grid gap-4 sm:grid-cols-2">
                 <label class="field">
                   <span class="field-label">{{ t('settings.contactPhone') }}</span>
                   <input class="input" dir="ltr" type="tel" inputmode="tel" maxlength="32" [value]="s.contactPhone ?? ''" (input)="patch({ contactPhone: $any($event.target).value || null })" />
@@ -86,25 +143,21 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
                   <input class="input" dir="ltr" type="email" inputmode="email" maxlength="256" [value]="s.contactEmail ?? ''" (input)="patch({ contactEmail: $any($event.target).value || null })" />
                 </label>
               </div>
-            </fieldset>
+            </section>
+          </div>
 
-            <fieldset>
-              <legend class="field-label">{{ t('settings.limits') }}</legend>
-              <p class="field-hint mb-2">{{ t('settings.limitsHint') }}</p>
-              <div class="grid gap-4 sm:grid-cols-2">
-                @for (limit of limits; track limit.field) {
-                  <label class="field">
-                    <span class="field-label">{{ t('settings.' + limit.field) }}</span>
-                    <input class="input" dir="ltr" type="number" inputmode="numeric" [min]="limit.min" [max]="limit.max" [value]="s[limit.field]" (input)="patchLimit(limit.field, $any($event.target).value)" />
-                  </label>
-                }
+          <!-- Save bar stays in reach on long forms -->
+          <div class="sticky bottom-14 z-10 -mx-4 mt-6 border-t border-line bg-page/95 px-4 py-3 backdrop-blur sm:bottom-0 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-card lg:border lg:bg-white/95">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div class="flex-1" role="status">
+                @if (errors().length) { <p class="text-sm text-danger-700">{{ errors().join(' ') }}</p> }
+                @else if (saved()) { <p class="text-sm font-bold text-primary-700">{{ t('settings.saved') }}</p> }
               </div>
-            </fieldset>
-
-            @if (errors().length) { <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div> }
-            @if (saved()) { <div class="alert alert-success" role="status">{{ t('settings.saved') }}</div> }
-            <button type="button" class="btn btn-primary self-stretch sm:self-end" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>
-          </section>
+              <button type="button" class="btn btn-primary min-h-12 sm:min-w-40" [disabled]="saving()" (click)="save()">{{ t('action.save') }}</button>
+            </div>
+          </div>
+        } @else {
+          <div aria-hidden="true" class="flex flex-col gap-4">@for (i of [1, 2, 3]; track i) { <div class="skeleton h-40 !rounded-card"></div> }</div>
         }
       </div>
     </ng-container>
@@ -147,6 +200,10 @@ export default class SettingsComponent {
   protected patch(changes: Partial<OrganizationSettings>): void {
     this.settings.update(s => (s ? { ...s, ...changes } : s));
     this.saved.set(false);
+  }
+
+  protected patchDueBy(value: string): void {
+    if (/^\d{2}:\d{2}$/.test(value)) this.patch({ attendanceDueBy: value + ':00' });
   }
 
   protected patchLimit(field: (typeof this.limits)[number]['field'], value: string): void {

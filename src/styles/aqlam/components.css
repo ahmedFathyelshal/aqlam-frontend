@@ -16,6 +16,10 @@
   .page-title {
     @apply font-display text-[2.25rem] leading-[1.1] font-bold text-ink sm:text-[2.75rem];
   }
+  /* Work pages (attendance, gradebook, forms): Plex, since Markazi is for 28px and up only. */
+  .page-title-tool {
+    @apply text-[1.5rem] leading-tight font-bold text-ink;
+  }
   .page-subtitle {
     @apply mt-1 text-[0.95rem] text-muted;
   }
@@ -44,6 +48,10 @@
   }
   .btn-danger {
     @apply border-danger-300 bg-white text-danger-700 hover:bg-danger-50;
+  }
+  /* The final step of a deletion only. */
+  .btn-danger-solid {
+    @apply bg-danger-600 text-white hover:bg-danger-700;
   }
   .btn-sm {
     @apply min-h-9 px-3 text-sm;
@@ -152,12 +160,12 @@
     @apply flex flex-wrap gap-2;
   }
   .segment {
-    @apply inline-flex min-h-10 cursor-pointer items-center rounded-ui border border-line bg-white px-4 text-sm font-bold text-ink;
+    @apply inline-flex min-h-11 cursor-pointer items-center rounded-ui border border-line bg-white px-4 text-sm font-bold text-ink;
   }
   .segment[aria-selected='true'],
   .segment[aria-pressed='true'],
   .segment.is-active {
-    @apply border-primary-600 bg-primary-600 text-white;
+    @apply border-deep bg-deep text-white; /* green fill is for primary actions only */
   }
 
   /* Tables: scroll sideways on phones -------------------------------------- */
@@ -185,6 +193,19 @@
   /* Empty states ----------------------------------------------------------- */
   .empty {
     @apply flex flex-col items-center gap-2 rounded-card border border-dashed border-line bg-white px-6 py-10 text-center text-muted;
+  }
+
+  /* Loading: the page's real layout drawn in placeholders. */
+  .skeleton {
+    @apply animate-pulse rounded-ui bg-neutral-100 motion-reduce:animate-none;
+  }
+
+  /* Designed empty state pieces */
+  .empty-icon {
+    @apply flex size-12 items-center justify-center rounded-full bg-page text-deep;
+  }
+  .empty-title {
+    @apply font-bold text-ink;
   }
 
   .sr-only-text {

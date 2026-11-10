@@ -45,6 +45,8 @@ export const ApiEndpoints = {
     Parent: (org: string, studentId: string, parentId: string) => orgUrl(org, `/members/${studentId}/parents/${parentId}`),
     ParentInvite: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parent-invites`),
     Settings: (org: string) => orgUrl(org, '/settings'),
+    Overview: (org: string) => orgUrl(org, '/overview'),
+    MyDay: (org: string) => orgUrl(org, '/my-day'),
     Child: (org: string, childId: string) => orgUrl(org, `/children/${childId}`),
   },
   Academics: {

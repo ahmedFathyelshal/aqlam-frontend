@@ -14,12 +14,15 @@ import { WEEK_DAYS } from '../classes/class-form';
 
 type Row = AttendanceLine & { status: AttendanceStatus };
 
-const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
-  { value: 'Present', on: 'border-primary-600 bg-primary-600 text-white', count: 'text-primary-700' },
-  { value: 'Absent', on: 'border-danger-700 bg-danger-700 text-white', count: 'text-danger-700' },
-  { value: 'Late', on: 'border-warning-700 bg-warning-700 text-white', count: 'text-warning-700' },
-  { value: 'Excused', on: 'border-secondary-600 bg-secondary-600 text-white', count: 'text-secondary-600' },
+/** Present is the default and stays quiet; the exceptions are tinted so they can be scanned. */
+const STATUSES: { value: AttendanceStatus; on: string; tile: string; row: string }[] = [
+  { value: 'Present', on: 'border-primary-600 bg-primary-600 text-white', tile: 'bg-primary-100 text-primary-700', row: '' },
+  { value: 'Absent', on: 'border-danger-600 bg-danger-50 text-danger-700 ring-1 ring-danger-600', tile: 'bg-danger-50 text-danger-700', row: 'bg-danger-50/50 before:bg-danger-600' },
+  { value: 'Late', on: 'border-warning-500 bg-warning-50 text-warning-700 ring-1 ring-warning-500', tile: 'bg-warning-50 text-warning-700', row: 'bg-warning-50/60 before:bg-warning-500' },
+  { value: 'Excused', on: 'border-secondary-600 bg-secondary-100 text-secondary-700 ring-1 ring-secondary-600', tile: 'bg-secondary-100 text-secondary-700', row: 'bg-secondary-50 before:bg-secondary-600' },
 ];
+/** A 3px stroke on the start edge of an exception row. */
+const ROW_STROKE = 'before:absolute before:inset-y-0 before:start-0 before:w-[3px]';
 
 /**
  * Phone-first attendance: everyone starts as present, the teacher taps the exceptions and saves.
@@ -30,10 +33,10 @@ const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
   imports: [MatIconModule, RouterLink, TranslocoDirective, OrgDatePipe],
   template: `
     <ng-container *transloco="let t">
-      <div class="page-narrow pb-36">
+      <div class="page-narrow pb-40">
         <a class="back-link" [routerLink]="orgContext.path('classes', classId)"><mat-icon svgIcon="chevron-right" class="icon-size-4 ltr:rotate-180" />{{ className() }}</a>
         <header class="mb-4">
-          <h1 class="page-title">{{ t('att.title') }} · {{ className() }}</h1>
+          <h1 class="page-title-tool">{{ t('att.title') }} · {{ className() }}</h1>
           <p class="page-subtitle">{{ date() | orgDate }}</p>
         </header>
 
@@ -45,81 +48,99 @@ const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
           </div>
         }
 
-        <div class="mb-4 flex flex-wrap items-end gap-3">
-          <label class="field">
-            <span class="field-label">{{ t('att.day') }}</span>
-            <input type="date" class="input w-auto" [max]="today" [value]="date()" (change)="setDate($any($event.target).value)" />
-          </label>
-          @if (isGroup()) {
+        <div class="segmented mb-4" role="tablist">
+          <button type="button" role="tab" class="segment" [attr.aria-selected]="tab() === 'mark'" (click)="tab.set('mark')">{{ t('att.tabMark') }}</button>
+          <button type="button" role="tab" class="segment" [attr.aria-selected]="tab() === 'history'" (click)="openHistory()">{{ t('att.tabHistory') }}</button>
+        </div>
+
+        @if (tab() === 'mark') {
+          <div class="mb-3 flex flex-wrap items-end gap-3">
             <label class="field">
-              <span class="field-label">{{ t('att.meeting') }}</span>
-              <select class="select w-auto" [value]="startTime() ?? ''" (change)="setTime($any($event.target).value || null)">
-                <option value="">{{ t('att.wholeDay') }}</option>
-                @for (time of meetingTimes(); track time) { <option [value]="time">{{ time }}</option> }
-              </select>
+              <span class="field-label">{{ t('att.day') }}</span>
+              <input type="date" class="input w-auto" [max]="today" [value]="date()" (change)="setDate($any($event.target).value)" />
             </label>
-          }
-          <button type="button" class="btn btn-ghost ms-auto" (click)="markAll('Present')">{{ t('att.allPresent') }}</button>
-        </div>
+            @if (isGroup()) {
+              <label class="field">
+                <span class="field-label">{{ t('att.meeting') }}</span>
+                <select class="select w-auto" [value]="startTime() ?? ''" (change)="setTime($any($event.target).value || null)">
+                  <option value="">{{ t('att.wholeDay') }}</option>
+                  @for (time of meetingTimes(); track time) { <option [value]="time">{{ time }}</option> }
+                </select>
+              </label>
+            }
+            <button type="button" class="btn btn-ghost ms-auto" (click)="markAll('Present')">{{ t('att.allPresent') }}</button>
+          </div>
+          <p class="mb-3 text-sm text-muted">{{ takenInfo() }}</p>
 
-        <div class="card mb-3 grid grid-cols-4 divide-x divide-line-soft text-center rtl:divide-x-reverse">
-          @for (s of statuses; track s.value) {
-            <div class="py-3">
-              <div class="text-2xl font-extrabold" [class]="s.count">{{ counts()[s.value] }}</div>
-              <div class="text-sm text-muted">{{ t('attendance.' + s.value) }}</div>
-            </div>
-          }
-        </div>
-        <p class="mb-3 text-sm text-muted">{{ takenInfo() }}</p>
-
-        <ul class="card">
-          @for (row of rows(); track row.userId; let i = $index) {
-            <li class="border-b border-line-soft px-3 py-2.5 last:border-b-0 sm:px-4">
-              <div class="flex items-center gap-2">
-                <span class="min-w-0 flex-1 truncate text-[1.02rem] font-bold">{{ row.fullName }}</span>
-                <div class="flex gap-1" role="radiogroup" [attr.aria-label]="row.fullName">
-                  @for (s of statuses; track s.value) {
-                    <button type="button" role="radio" class="size-11 rounded-ui border text-base font-extrabold"
-                            [class]="row.status === s.value ? s.on : 'border-line bg-white text-muted'"
-                            [attr.aria-checked]="row.status === s.value" [attr.aria-label]="t('attendance.' + s.value)" [title]="t('attendance.' + s.value)"
-                            (click)="setStatus(i, s.value)">{{ t('attendanceShort.' + s.value) }}</button>
-                  }
-                </div>
-              </div>
-              @if (row.status !== 'Present') {
-                <input class="input mt-2 min-h-10 text-sm" maxlength="500" [placeholder]="t('att.note')" [attr.aria-label]="t('att.note')"
-                       [value]="row.note ?? ''" (input)="setNote(i, $any($event.target).value)" />
+          <!-- Counts stay in view while scrolling; tapping one shows only those students. -->
+          <div class="sticky top-16 z-10 -mx-4 mb-3 bg-page/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+            <div class="grid grid-cols-4 gap-2 text-center">
+              @for (s of statuses; track s.value) {
+                <button type="button" class="cursor-pointer rounded-ui border-2 px-1 py-2" [class]="s.tile + (filter() === s.value ? ' border-current' : ' border-transparent')"
+                        [attr.aria-pressed]="filter() === s.value" (click)="toggleFilter(s.value)">
+                  <span class="block text-xl leading-tight font-bold tabular-nums">{{ counts()[s.value] }}</span>
+                  <span class="block text-sm">{{ t('attendance.' + s.value) }}</span>
+                </button>
               }
-            </li>
-          } @empty {
-            <li class="px-4 py-10 text-center text-muted">{{ t('att.noStudents') }}</li>
-          }
-        </ul>
-
-        @if (summary(); as list) {
-          <section class="mt-6">
-            <h2 class="section-title mb-2">{{ t('att.summary') }}</h2>
-            <div class="table-wrap">
-              <table class="table">
-                <thead><tr><th>{{ t('att.student') }}</th>@for (s of statuses; track s.value) { <th class="text-center">{{ t('attendanceShort.' + s.value) }}</th> }</tr></thead>
-                <tbody>
-                  @for (r of list; track r.userId) {
-                    <tr>
-                      <td class="font-bold">{{ r.fullName }}</td>
-                      <td class="text-center">{{ r.present }}</td>
-                      <td class="text-center font-extrabold text-danger-700">{{ r.absent || '' }}</td>
-                      <td class="text-center text-warning-700">{{ r.late || '' }}</td>
-                      <td class="text-center text-secondary-600">{{ r.excused || '' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
             </div>
+            @if (filter()) {
+              <button type="button" class="mt-1.5 inline-flex min-h-9 cursor-pointer items-center gap-1 text-sm font-bold text-secondary-600" (click)="filter.set(null)">
+                <mat-icon svgIcon="x" class="icon-size-4" />{{ t('att.showAll') }}
+              </button>
+            }
+          </div>
+
+          <ul class="card overflow-hidden">
+            @for (row of visibleRows(); track row.userId) {
+              <li class="relative border-b border-line-soft px-3 py-2.5 last:border-b-0 sm:px-4" [class]="rowTone(row.status)">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
+                  <span class="min-w-[7rem] flex-1 text-[1.05rem] leading-snug font-bold">{{ row.fullName }}</span>
+                  <div class="flex gap-1.5" role="radiogroup" [attr.aria-label]="row.fullName">
+                    @for (s of statuses; track s.value) {
+                      <button type="button" role="radio" class="size-11 cursor-pointer rounded-ui border text-base font-bold sm:size-12"
+                              [class]="row.status === s.value ? s.on : 'border-line bg-white text-muted hover:border-line-strong'"
+                              [attr.aria-checked]="row.status === s.value" [attr.aria-label]="t('attendance.' + s.value)" [title]="t('attendance.' + s.value)"
+                              (click)="setStatus(row.userId, s.value)">{{ t('attendanceShort.' + s.value) }}</button>
+                    }
+                  </div>
+                </div>
+                @if (row.status !== 'Present') {
+                  <input class="input mt-2 min-h-11 bg-white text-sm" maxlength="500" [placeholder]="t('att.note')" [attr.aria-label]="t('att.note') + ' · ' + row.fullName"
+                         [value]="row.note ?? ''" (input)="setNote(row.userId, $any($event.target).value)" />
+                }
+              </li>
+            } @empty {
+              <li class="flex flex-col items-center gap-2 px-6 py-10 text-center text-muted">
+                <span class="empty-icon"><mat-icon svgIcon="users" class="icon-size-6" /></span>
+                <span>{{ filter() ? t('att.allPresentNow') : t('att.noStudents') }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <section aria-labelledby="att-history">
+            <h2 id="att-history" class="section-title mb-2">{{ t('att.summary') }}</h2>
+            @if (summary(); as list) {
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th scope="col">{{ t('att.student') }}</th>@for (s of statuses; track s.value) { <th scope="col" class="text-center">{{ t('attendance.' + s.value) }}</th> }</tr></thead>
+                  <tbody>
+                    @for (r of list; track r.userId) {
+                      <tr>
+                        <td class="font-bold">{{ r.fullName }}</td>
+                        <td class="text-center tabular-nums">{{ r.present }}</td>
+                        <td class="text-center font-bold tabular-nums text-danger-700">{{ r.absent || '' }}</td>
+                        <td class="text-center tabular-nums text-warning-700">{{ r.late || '' }}</td>
+                        <td class="text-center tabular-nums text-secondary-600">{{ r.excused || '' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div aria-hidden="true" class="flex flex-col gap-2">@for (i of [1, 2, 3, 4]; track i) { <div class="skeleton h-12"></div> }</div>
+            }
           </section>
-        }
-        <button type="button" class="btn btn-ghost mt-4" (click)="toggleSummary()">{{ summary() ? t('att.hideSummary') : t('att.summary') }}</button>
-        @if (summary()) {
-          <section class="card card-body mt-4">
+          <section class="card card-body mt-5">
             <h2 class="section-title mb-3">{{ t('attExport.title') }}</h2>
             <div class="flex flex-wrap items-end gap-3">
               <label class="field min-w-36 flex-1">
@@ -138,14 +159,23 @@ const STATUSES: { value: AttendanceStatus; on: string; count: string }[] = [
       </div>
 
       <!-- Save bar: above the phone tab bar, at the bottom on larger screens -->
-      <div class="fixed inset-x-0 bottom-14 z-20 border-t border-line bg-white/95 backdrop-blur sm:bottom-0 lg:start-64">
-        <div class="mx-auto flex max-w-3xl flex-col gap-1.5 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
-          <p class="flex-1 text-sm" [class]="errors().length ? 'text-danger-700' : message() ? 'font-bold text-primary-700' : 'text-muted'" role="status">
-            {{ errors().length ? errors().join(' ') : message() ?? t('att.parentsNotified') }}
-          </p>
-          <button type="button" class="btn btn-primary min-h-12 text-base sm:min-w-48" [disabled]="saving() || !rows().length" (click)="save()">{{ t('att.save') }}</button>
+      @if (tab() === 'mark') {
+        <div class="fixed inset-x-0 bottom-14 z-20 border-t border-line bg-white/95 shadow-[0_-8px_24px_rgba(11,59,46,0.06)] backdrop-blur sm:bottom-0 lg:start-64">
+          <div class="mx-auto flex max-w-3xl flex-col gap-1.5 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
+            <div class="flex-1" role="status">
+              @if (errors().length) {
+                <p class="text-sm text-danger-700">{{ errors().join(' ') }}</p>
+              } @else if (message()) {
+                <p class="text-sm font-bold text-primary-700">{{ message() }}</p>
+              } @else {
+                <p class="font-bold tabular-nums">{{ exceptionsLine() }}</p>
+                <p class="text-sm text-muted">{{ t('att.parentsNotified') }}</p>
+              }
+            </div>
+            <button type="button" class="btn min-h-12 text-base sm:min-w-48" [class]="message() ? 'btn-outline' : 'btn-primary'" [disabled]="saving() || !rows().length" (click)="save()">{{ t('att.save') }}</button>
+          </div>
         </div>
-      </div>
+      }
     </ng-container>
   `,
 })
@@ -175,6 +205,20 @@ export default class AttendanceComponent {
   protected exportFrom = signal('');
   protected exportTo = signal('');
   protected exportError = signal<string | null>(null);
+  protected tab = signal<'mark' | 'history'>('mark');
+  protected filter = signal<AttendanceStatus | null>(null);
+
+  protected visibleRows = computed(() => {
+    const only = this.filter();
+    return only ? this.rows().filter(r => r.status === only) : this.rows();
+  });
+  protected exceptionsLine = computed(() => {
+    const c = this.counts();
+    this.i18n.lang();
+    return c.Absent + c.Late + c.Excused
+      ? this.transloco.translate('att.exceptions', { absent: c.Absent, late: c.Late, excused: c.Excused })
+      : this.transloco.translate('att.allPresentNow');
+  });
 
   protected counts = computed(() => {
     const result: Record<AttendanceStatus, number> = { Present: 0, Absent: 0, Late: 0, Excused: 0 };
@@ -209,13 +253,27 @@ export default class AttendanceComponent {
     this.load();
   }
 
-  protected setStatus(index: number, status: AttendanceStatus): void {
+  protected setStatus(userId: string, status: AttendanceStatus): void {
     this.message.set(null);
-    this.rows.update(rows => rows.map((r, i) => (i === index ? { ...r, status, note: status === 'Present' ? null : r.note } : r)));
+    this.rows.update(rows => rows.map(r => (r.userId === userId ? { ...r, status, note: status === 'Present' ? null : r.note } : r)));
   }
 
-  protected setNote(index: number, note: string): void {
-    this.rows.update(rows => rows.map((r, i) => (i === index ? { ...r, note: note || null } : r)));
+  protected setNote(userId: string, note: string): void {
+    this.rows.update(rows => rows.map(r => (r.userId === userId ? { ...r, note: note || null } : r)));
+  }
+
+  protected toggleFilter(status: AttendanceStatus): void {
+    this.filter.update(current => (current === status ? null : status));
+  }
+
+  protected rowTone(status: AttendanceStatus): string {
+    const row = STATUSES.find(s => s.value === status)?.row;
+    return row ? ROW_STROKE + ' ' + row : '';
+  }
+
+  protected openHistory(): void {
+    this.tab.set('history');
+    if (!this.summary()) this.loadSummary();
   }
 
   protected markAll(status: AttendanceStatus): void {
@@ -253,11 +311,7 @@ export default class AttendanceComponent {
     this.outbox.flush().subscribe(() => this.load());
   }
 
-  protected toggleSummary(): void {
-    if (this.summary()) {
-      this.summary.set(null);
-      return;
-    }
+  private loadSummary(): void {
     const from = new Date(`${this.today}T12:00:00Z`);
     from.setUTCDate(from.getUTCDate() - 30);
     this.exportFrom.set(from.toISOString().slice(0, 10));

@@ -9,14 +9,14 @@ html {
   --mat-sys-on-secondary: #ffffff;
   --mat-sys-surface: #ffffff;
   --mat-sys-surface-container: #ffffff;
-  --mat-sys-on-surface: #1b2733;
-  --mat-sys-on-surface-variant: #4b5865;
-  --mat-sys-outline: #aeb8c2;
-  --mat-sys-outline-variant: #d5dbe1;
+  --mat-sys-on-surface: #17231e;
+  --mat-sys-on-surface-variant: #4d564e;
+  --mat-sys-outline: #d5cfc1;
+  --mat-sys-outline-variant: #e4dfd3;
   --mat-sys-error: #b42318;
-  --mat-sys-corner-extra-small: 6px;
-  --mat-sys-corner-small: 6px;
-  --mat-sys-corner-medium: 6px;
+  --mat-sys-corner-extra-small: 10px;
+  --mat-sys-corner-small: 10px;
+  --mat-sys-corner-medium: 16px;
 
   --mat-sys-body-large-font: var(--font-sans);
   --mat-sys-body-medium-font: var(--font-sans);
@@ -30,7 +30,7 @@ html {
 
 .mat-mdc-menu-panel {
   border: 1px solid var(--color-line);
-  box-shadow: 0 8px 24px rgb(27 39 51 / 0.12) !important;
+  box-shadow: 0 8px 24px rgb(11 59 46 / 0.12) !important;
 }
 
 .mat-mdc-menu-item {
@@ -40,11 +40,16 @@ html {
 
 .mat-mdc-snack-bar-container .mdc-snackbar__surface {
   font-family: var(--font-sans);
-  border-radius: 6px !important;
+  border-radius: 10px !important;
 }
 .error-toast .mdc-snackbar__surface {
   background: #a3261b !important;
 }
 .warning-toast .mdc-snackbar__surface {
   background: #6e4700 !important;
+}
+
+/* CDK dialogs (confirm): ink-tinted backdrop. */
+.aq-dialog-backdrop {
+  background: rgb(11 59 46 / 0.45);
 }
