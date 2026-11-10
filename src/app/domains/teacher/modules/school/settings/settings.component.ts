@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
@@ -14,7 +15,7 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
 /** Organization profile and locale: name, branding, time zone, Hijri/Gregorian dates, first day of the week. */
 @Component({
   selector: 'app-org-settings',
-  imports: [TranslocoDirective, AqOrgMark],
+  imports: [TranslocoDirective, MatIconModule, AqOrgMark],
   template: `
     <ng-container *transloco="let t">
       <div class="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -40,12 +41,22 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
                   <span class="field-label">{{ t('settings.name') }}</span>
                   <input class="input" maxlength="150" [value]="s.name" (input)="patch({ name: $any($event.target).value })" />
                 </label>
-                <div class="flex flex-wrap items-end gap-4">
+                <div class="flex flex-wrap items-center gap-4">
                   <aq-org-mark [name]="s.name" [logoUrl]="s.logoUrl" [size]="64" />
-                  <label class="field min-w-56 flex-1">
-                    <span class="field-label">{{ t('settings.logo') }}</span>
-                    <input class="input" dir="ltr" inputmode="url" placeholder="https://" [value]="s.logoUrl ?? ''" (input)="patch({ logoUrl: $any($event.target).value || null })" />
-                  </label>
+                  <div class="flex min-w-56 flex-1 flex-col gap-1.5">
+                    <span class="field-label">{{ t('settingsSec.logo') }}</span>
+                    <div class="flex flex-wrap gap-2">
+                      <label class="btn btn-outline cursor-pointer" [class.opacity-50]="uploading()">
+                        <mat-icon svgIcon="upload" class="icon-size-5" />{{ uploading() ? t('settingsSec.uploading') : t('settingsSec.upload') }}
+                        <input type="file" class="sr-only" accept="image/png,image/jpeg,image/webp" [disabled]="uploading()" (change)="uploadLogo($any($event.target))" />
+                      </label>
+                      @if (s.logoUrl) {
+                        <button type="button" class="btn btn-ghost" [disabled]="uploading()" (click)="removeLogo()">{{ t('settingsSec.removeLogo') }}</button>
+                      }
+                    </div>
+                    <span class="field-hint">{{ t('settingsSec.logoHint') }}</span>
+                    @if (logoError()) { <span class="field-error" role="alert">{{ logoError() }}</span> }
+                  </div>
                   <label class="field w-28">
                     <span class="field-label">{{ t('settings.color') }}</span>
                     <input type="color" class="input p-1" [value]="s.primaryColor ?? '#146C43'" (input)="patch({ primaryColor: $any($event.target).value })" />
@@ -84,6 +95,15 @@ const TIME_ZONES = ['Asia/Riyadh', 'Africa/Cairo', 'Asia/Dubai', 'Asia/Kuwait', 
                   </div>
                   <p class="field-hint mt-2">{{ t('settings.preview', { date: preview() }) }}</p>
                 </fieldset>
+                @if (s.type === 'Center') {
+                  <label class="check items-start rounded-ui border border-line bg-page p-3">
+                    <input type="checkbox" class="mt-0.5" [checked]="s.teachersCreateCourses" (change)="patch({ teachersCreateCourses: $any($event.target).checked })" />
+                    <span>
+                      <span class="block font-bold">{{ t('settingsSec.teachersCreate') }}</span>
+                      <span class="field-hint block">{{ t('settingsSec.teachersCreateHint') }}</span>
+                    </span>
+                  </label>
+                }
                 <div class="grid gap-4 sm:grid-cols-2">
                   <label class="field">
                     <span class="field-label">{{ t('settingsSec.dueBy') }}</span>
@@ -183,6 +203,8 @@ export default class SettingsComponent {
   protected saving = signal(false);
   protected saved = signal(false);
   protected errors = signal<string[]>([]);
+  protected uploading = signal(false);
+  protected logoError = signal<string | null>(null);
 
   protected timeZones = computed(() => {
     const current = this.settings()?.timeZone;
@@ -200,6 +222,43 @@ export default class SettingsComponent {
   protected patch(changes: Partial<OrganizationSettings>): void {
     this.settings.update(s => (s ? { ...s, ...changes } : s));
     this.saved.set(false);
+  }
+
+  protected uploadLogo(input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    input.value = ''; // the same file can be chosen again after an error
+    if (!file) return;
+    this.logoError.set(null);
+    if (file.size > 256 * 1024) {
+      this.logoError.set(this.transloco.translate('settingsSec.logoTooBig'));
+      return;
+    }
+    this.uploading.set(true);
+    this.school.uploadLogo(this.org, file).subscribe({
+      next: result => this.logoSaved(result.logoUrl),
+      error: (err: unknown) => {
+        this.uploading.set(false);
+        this.logoError.set(errorMessages(err, this.transloco.translate('error.generic')).join(' '));
+      },
+    });
+  }
+
+  protected removeLogo(): void {
+    this.uploading.set(true);
+    this.school.removeLogo(this.org).subscribe({
+      next: () => this.logoSaved(null),
+      error: (err: unknown) => {
+        this.uploading.set(false);
+        this.logoError.set(errorMessages(err, this.transloco.translate('error.generic')).join(' '));
+      },
+    });
+  }
+
+  /** The logo saves on its own; other unsaved changes on the page stay as they are. */
+  private logoSaved(logoUrl: string | null): void {
+    this.uploading.set(false);
+    this.settings.update(s => (s ? { ...s, logoUrl } : s));
+    this.orgContext.load().subscribe(); // the menu and portals show the new logo
   }
 
   protected patchDueBy(value: string): void {

@@ -1,4 +1,5 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { I18nService } from '../transloco/i18n.service';
 import { CalendarDisplay, OrgContextService } from './org-context.service';
 
@@ -102,4 +103,28 @@ export function todayIn(timeZone?: string, now: Date = new Date()): string {
 /** The current hour (0-23) in a time zone, for greetings. */
 export function hourIn(timeZone?: string, now: Date = new Date()): number {
   return Number(new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', hourCycle: 'h23' }).format(now));
+}
+
+/**
+ * List rows: "today", a weekday, or day and month, in one calendar; with `withTime` the time follows.
+ * The full Gregorian + Hijri date belongs in page headers, not repeated on every row.
+ */
+@Pipe({ name: 'orgShortDay' })
+export class OrgShortDayPipe implements PipeTransform {
+  private orgContext = inject(OrgContextService);
+  private i18n = inject(I18nService);
+  private transloco = inject(TranslocoService);
+
+  transform(value: string | null | undefined, withTime = false): string {
+    if (!value) return '';
+    const org = this.orgContext.activeOrg();
+    const lang = this.i18n.lang();
+    const day = formatShortDay(value, org?.calendar ?? 'Gregorian', lang, org?.timeZone, {
+      today: this.transloco.translate('day.today'),
+      tomorrow: this.transloco.translate('day.tomorrow'),
+    });
+    if (!withTime) return day;
+    const time = new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA-u-nu-latn' : 'en-GB', { hour: '2-digit', minute: '2-digit', timeZone: org?.timeZone }).format(new Date(value));
+    return `${day} · ${time}`;
+  }
 }

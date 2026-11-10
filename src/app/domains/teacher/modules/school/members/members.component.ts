@@ -3,7 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
-import { OrgDatePipe } from '@/app/core/organizations/org-date';
+import { OrgShortDayPipe } from '@/app/core/organizations/org-date';
 import { Gender, Member, MemberImportReport, ParentInvite, ParentLink, SchoolService } from '@/app/core/school/school.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 
@@ -12,7 +12,7 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
 /** Member directory: add people, bulk import from Excel, approvals, gender (for boys'/girls' classes) and parents. */
 @Component({
   selector: 'app-members',
-  imports: [MatIconModule, TranslocoDirective, OrgDatePipe],
+  imports: [MatIconModule, TranslocoDirective, OrgShortDayPipe],
   template: `
     <ng-container *transloco="let t">
       <div class="page">
@@ -21,10 +21,16 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
             <h1 class="page-title">{{ t('members.title') }}</h1>
             <p class="page-subtitle">{{ t('members.count', { count: members().length }) }}</p>
           </div>
+          @if (canManage()) {
+            <!-- Phones show the list first; adding people opens on demand. -->
+            <button type="button" class="btn btn-secondary w-full sm:w-auto lg:hidden" [attr.aria-expanded]="adding()" aria-controls="add-members" (click)="adding.set(!adding())">
+              <mat-icon [svgIcon]="adding() ? 'x' : 'user-plus'" class="icon-size-5" />{{ adding() ? t('action.close') : t('members.addMembers') }}
+            </button>
+          }
         </header>
 
         @if (canManage()) {
-          <section class="mb-5 grid gap-4 print:hidden lg:grid-cols-2">
+          <section id="add-members" class="mb-5 gap-4 print:hidden lg:!grid lg:grid-cols-2" [class.grid]="adding()" [class.hidden]="!adding()">
             <div class="card card-body flex flex-col gap-3">
               <h2 class="section-title">{{ t('members.addExisting') }}</h2>
               <div class="flex flex-wrap gap-2">
@@ -99,7 +105,7 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
                 <div class="min-w-0 flex-1">
                   <p class="truncate font-bold">{{ m.fullName || m.userName }}</p>
                   <p class="text-sm text-muted">
-                    <span dir="ltr">{{ m.userName }}</span> · {{ roleNames(m, t) }} · {{ t('members.joined', { date: (m.joinedAtUtc | orgDate) }) }}
+                    <span dir="ltr">{{ m.userName }}</span> · {{ roleNames(m, t) }} · {{ t('members.joined', { date: (m.joinedAtUtc | orgShortDay) }) }}
                   </p>
                 </div>
                 @if (m.status !== 'Active') {
@@ -147,7 +153,7 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
                     <div class="rounded-ui border border-dashed border-secondary-300 bg-white p-3">
                       <p class="text-sm">{{ t('members.codeFor', { name: code.childName }) }}</p>
                       <p class="mt-1 font-mono text-2xl font-bold tracking-[0.3em]" dir="ltr">{{ code.code }}</p>
-                      <p class="text-xs text-muted">{{ t('members.codeValid', { date: (code.expiresAtUtc | orgDate) }) }}</p>
+                      <p class="text-xs text-muted">{{ t('members.codeValid', { date: (code.expiresAtUtc | orgShortDay) }) }}</p>
                     </div>
                   }
                   @if (parentError()) { <p class="field-error">{{ parentError() }}</p> }
@@ -169,6 +175,7 @@ export default class MembersComponent {
 
   protected readonly roles = ROLES;
   protected canManage = computed(() => this.orgContext.can('members.manage'));
+  protected adding = signal(false);
   protected members = signal<Member[]>([]);
   protected search = signal('');
   protected roleFilter = signal('');

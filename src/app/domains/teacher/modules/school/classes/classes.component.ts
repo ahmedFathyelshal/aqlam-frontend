@@ -106,7 +106,7 @@ import { ClassForm } from './class-form';
               </a>
               @if (orgContext.can('attendance.take')) {
                 <div class="p-4 pt-3">
-                  <a class="btn btn-primary btn-block" [routerLink]="orgContext.path('classes', c.id, 'attendance')"><mat-icon svgIcon="calendar-check" class="icon-size-5" />{{ t('classes.detail.attendance') }}</a>
+                  <a class="btn btn-outline btn-block" [routerLink]="orgContext.path('classes', c.id, 'attendance')"><mat-icon svgIcon="calendar-check" class="icon-size-5" />{{ t('classes.detail.attendance') }}</a>
                 </div>
               }
             </article>

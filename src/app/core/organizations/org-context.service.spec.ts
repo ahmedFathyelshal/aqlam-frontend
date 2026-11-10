@@ -54,6 +54,20 @@ describe('OrgContextService', () => {
     expect(service.homePath(personal)).toEqual(['/teacher', 'my-academy', 'dashboard']);
   });
 
+  it('lets only the school create courses, a center choose, and a personal academy teacher create', () => {
+    const center: MembershipSummary = { ...studentOnly, slug: 'center-t', roles: ['Teacher'] };
+    loadMemberships([personal, school, center, { ...studentOnly, slug: 'center-open', roles: ['Teacher'], teachersCreateCourses: true }]);
+
+    service.select('nile-school');
+    expect(service.canCreateCourses()).toBe(false); // a school teacher works on assigned subjects
+    service.select('center-t');
+    expect(service.canCreateCourses()).toBe(false);
+    service.select('center-open');
+    expect(service.canCreateCourses()).toBe(true);
+    service.select('my-academy');
+    expect(service.canCreateCourses()).toBe(true);
+  });
+
   it('returns to the organization last chosen on this device', () => {
     loadMemberships([personal, school]);
     service.select('my-academy');

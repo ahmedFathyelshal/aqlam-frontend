@@ -1,22 +1,41 @@
 <ng-container *transloco="let tr">
   <div class="page-narrow max-w-4xl">
-    <nav class="mb-5 grid grid-cols-4 gap-1.5" [attr.aria-label]="tr('cb.step', { n: 1 })">
-      @for (step of steps; track step.path; let i = $index) {
-        <a class="flex flex-col gap-1 rounded-ui border border-line bg-white px-2 py-2 text-ink no-underline sm:flex-row sm:items-center sm:gap-2.5 sm:px-3"
-           [routerLink]="step.path" routerLinkActive="!border-primary-600 !bg-primary-50" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'step' : null">
-          <span class="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
-                [class]="rla.isActive ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-muted'">{{ i + 1 }}</span>
-          <span class="flex min-w-0 flex-col leading-tight">
-            <span class="truncate text-sm font-bold">{{ tr('cb.steps.' + step.key) }}</span>
-            <span class="hidden truncate text-xs text-muted md:block">{{ tr('cb.steps.' + step.key + 'Hint') }}</span>
-          </span>
-        </a>
-      }
+    <a class="back-link" [routerLink]="orgContext.path('dashboard')"><mat-icon svgIcon="chevron-right" class="icon-size-4 ltr:rotate-180" />{{ tr('myDay.courses') }}</a>
+    <h1 class="page-title-tool mb-4">{{ state().title || tr('dash.newCourse') }}</h1>
+
+    <!-- Phone: one line and the ink bar -->
+    <div class="mb-4 sm:hidden">
+      <p class="mb-1.5 font-bold">{{ tr('cb.stepOf', { n: current() + 1, total: steps.length, name: tr('cb.steps.' + steps[current()].key) }) }}</p>
+      <aq-ink-bar [percent]="progress()" color="var(--color-primary-600)" [height]="10" />
+    </div>
+
+    <!-- Tablet and laptop: numbered steps joined by the ink bar -->
+    <nav class="relative mb-6 hidden sm:block" [attr.aria-label]="tr('cb.stepsLabel')">
+      <aq-ink-bar class="absolute inset-x-[12.5%] top-[14px]" [percent]="progress()" color="var(--color-primary-600)" [height]="10" />
+      <ol class="relative grid grid-cols-4">
+        @for (step of steps; track step.path; let i = $index) {
+          <li>
+            <a class="flex flex-col items-center gap-1.5 rounded-ui px-1 pb-1 text-center text-ink no-underline focus-visible:outline-2"
+               [routerLink]="step.path" [attr.aria-current]="i === current() ? 'step' : null">
+              <span class="flex size-9 items-center justify-center rounded-full text-sm font-bold"
+                    [class]="i < current() ? 'bg-primary-600 text-white' : i === current() ? 'bg-deep text-white ring-4 ring-primary-100' : 'border border-line-strong bg-white text-muted'">
+                @if (i < current()) { <mat-icon svgIcon="check" class="icon-size-4" /> } @else { {{ i + 1 }} }
+              </span>
+              <span class="text-sm font-bold" [class.text-muted]="i > current()">{{ tr('cb.steps.' + step.key) }}</span>
+              <span class="hidden text-xs text-muted md:block">{{ tr('cb.steps.' + step.key + 'Hint') }}</span>
+            </a>
+          </li>
+        }
+      </ol>
     </nav>
 
     <section class="card card-body">
       @if (isLoading()) {
-        <div class="flex justify-center p-10"><mat-spinner diameter="40" /></div>
+        <div aria-hidden="true" class="flex flex-col gap-4">
+          <div class="skeleton h-8 w-1/3"></div>
+          @for (i of [1, 2, 3]; track i) { <div class="skeleton h-12"></div> }
+        </div>
+        <p class="sr-only" role="status">{{ tr('loading') }}</p>
       } @else {
         <router-outlet />
       }

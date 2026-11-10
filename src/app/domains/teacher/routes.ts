@@ -48,6 +48,7 @@ const routes: Routes = [
           },
           {
             path: 'courses/new',
+            canActivate: [() => inject(OrgContextService).canCreateCourses() || inject(Router).createUrlTree(inject(OrgContextService).path('dashboard'))],
             loadComponent: () => import('./modules/courses/builder/builder-layout/builder-layout.component'),
             children: builderSteps(false),
           },

@@ -21,6 +21,8 @@ export type MembershipSummary = {
   calendar?: CalendarDisplay;
   weekStartDay?: string;
   logoUrl?: string | null;
+  /** Centers only: whether teachers may create their own courses. */
+  teachersCreateCourses?: boolean;
 }
 
 const STAFF_ROLES = ['Owner', 'Admin', 'AcademicCoordinator', 'Teacher', 'Assistant', 'Finance'];
@@ -81,6 +83,18 @@ export class OrgContextService {
   can(permission: Permission): boolean {
     const org = this.activeOrg();
     return !!org && grants(org.roles, permission);
+  }
+
+  /**
+   * Mirror of the API's course rule (UI only): in a school the school creates courses through its classes' subjects;
+   * a center decides whether teachers may too; in a personal academy the teacher does.
+   */
+  canCreateCourses(): boolean {
+    const org = this.activeOrg();
+    if (!org) return false;
+    if (org.type === 'Personal') return grants(org.roles, 'courses.edit');
+    if (grants(org.roles, 'classes.manage')) return true;
+    return org.type === 'Center' && !!org.teachersCreateCourses && grants(org.roles, 'courses.edit');
   }
 
   /** Organizations where the user is a parent (parent portal). */
