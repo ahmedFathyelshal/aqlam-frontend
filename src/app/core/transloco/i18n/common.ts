@@ -3,6 +3,8 @@ export const common = {
   ar: {
     app: { name: 'أقلام', tagline: 'منصة تعليمية للمدارس والمراكز' },
     nav: {
+      subjects: 'موادي',
+      results: 'نتائجي',
       dashboard: 'لوحة التحكم',
       classes: 'الفصول',
       academicYears: 'الأعوام الدراسية',
@@ -56,6 +58,8 @@ export const common = {
     attendanceShort: { Present: 'ح', Absent: 'غ', Late: 'ت', Excused: 'ع' },
     courseStatus: { Draft: 'مسودة', Scheduled: 'مجدول', Published: 'منشور', Archived: 'مؤرشف', Suspended: 'موقوف' },
     day: {
+      today: 'اليوم',
+      tomorrow: 'غدًا',
       Sunday: 'الأحد', Monday: 'الاثنين', Tuesday: 'الثلاثاء', Wednesday: 'الأربعاء',
       Thursday: 'الخميس', Friday: 'الجمعة', Saturday: 'السبت',
     },
@@ -73,6 +77,8 @@ export const common = {
   en: {
     app: { name: 'Aqlam', tagline: 'Learning platform for schools and centers' },
     nav: {
+      subjects: 'Subjects',
+      results: 'Results',
       dashboard: 'Dashboard',
       academicYears: 'Academic years',
       classes: 'Classes',
@@ -126,6 +132,8 @@ export const common = {
     attendanceShort: { Present: 'P', Absent: 'A', Late: 'L', Excused: 'E' },
     courseStatus: { Draft: 'Draft', Scheduled: 'Scheduled', Published: 'Published', Archived: 'Archived', Suspended: 'Suspended' },
     day: {
+      today: 'Today',
+      tomorrow: 'Tomorrow',
       Sunday: 'Sunday', Monday: 'Monday', Tuesday: 'Tuesday', Wednesday: 'Wednesday',
       Thursday: 'Thursday', Friday: 'Friday', Saturday: 'Saturday',
     },

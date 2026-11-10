@@ -125,7 +125,7 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
               </div>
 
               @if (openStudent() === m.userId) {
-                <div class="mt-3 flex flex-col gap-2 rounded-[6px] bg-page p-3 sm:ms-13">
+                <div class="mt-3 flex flex-col gap-2 rounded-ui bg-page p-3 sm:ms-13">
                   @for (p of parents(); track p.userId) {
                     <div class="flex items-center justify-between gap-2">
                       <span><span class="font-bold">{{ p.fullName || p.userName }}</span> <span class="text-sm text-muted" dir="ltr">{{ p.userName }}{{ p.phoneNumber ? ' · ' + p.phoneNumber : '' }}</span></span>
@@ -144,7 +144,7 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
                     </div>
                   }
                   @if (inviteCode(); as code) {
-                    <div class="rounded-[6px] border border-dashed border-secondary-300 bg-white p-3">
+                    <div class="rounded-ui border border-dashed border-secondary-300 bg-white p-3">
                       <p class="text-sm">{{ t('members.codeFor', { name: code.childName }) }}</p>
                       <p class="mt-1 font-mono text-2xl font-bold tracking-[0.3em]" dir="ltr">{{ code.code }}</p>
                       <p class="text-xs text-muted">{{ t('members.codeValid', { date: (code.expiresAtUtc | orgDate) }) }}</p>

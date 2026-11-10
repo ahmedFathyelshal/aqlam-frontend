@@ -14,7 +14,7 @@
     @apply mb-5 flex flex-wrap items-end justify-between gap-3;
   }
   .page-title {
-    @apply text-2xl font-extrabold text-ink sm:text-[1.75rem];
+    @apply font-display text-[2.25rem] leading-[1.1] font-bold text-ink sm:text-[2.75rem];
   }
   .page-subtitle {
     @apply mt-1 text-[0.95rem] text-muted;
@@ -28,13 +28,16 @@
 
   /* Buttons ---------------------------------------------------------------- */
   .btn {
-    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-transparent px-4 text-[0.95rem] font-bold whitespace-nowrap no-underline transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-ui border border-transparent px-4 text-[0.95rem] font-bold whitespace-nowrap no-underline transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
     @apply bg-primary-600 text-white hover:bg-primary-700;
   }
   .btn-secondary {
     @apply border-secondary-600 bg-white text-secondary-600 hover:bg-secondary-50;
+  }
+  .btn-outline {
+    @apply border-line-strong bg-white text-ink hover:bg-neutral-50;
   }
   .btn-ghost {
     @apply bg-transparent text-ink hover:bg-neutral-100;
@@ -49,12 +52,12 @@
     @apply w-full;
   }
   .btn-icon {
-    @apply inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border border-line bg-white text-ink hover:bg-neutral-50;
+    @apply inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-ui border border-line bg-white text-ink hover:bg-neutral-50;
   }
 
   /* Cards and lists -------------------------------------------------------- */
   .card {
-    @apply rounded-[6px] border border-line bg-white;
+    @apply rounded-card border border-line bg-white;
   }
   .card-body {
     @apply p-4 sm:p-5;
@@ -66,7 +69,7 @@
     @apply flex items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0 sm:px-5;
   }
   .stat {
-    @apply rounded-[6px] border border-line bg-white p-4;
+    @apply rounded-card border border-line bg-white p-4;
   }
   .stat-label {
     @apply text-sm text-muted;
@@ -91,7 +94,7 @@
   .input,
   .select,
   .textarea {
-    @apply w-full rounded-[6px] border border-field bg-white px-3.5 text-base text-ink placeholder:text-neutral-500 focus:border-secondary-600 focus:outline-none focus-visible:outline-3 focus-visible:outline-secondary-200 disabled:bg-neutral-100;
+    @apply w-full rounded-ui border border-field bg-white px-3.5 text-base text-ink placeholder:text-neutral-500 focus:border-secondary-600 focus:outline-none focus-visible:outline-3 focus-visible:outline-secondary-200 disabled:bg-neutral-100;
   }
   .input,
   .select {
@@ -109,7 +112,7 @@
 
   /* Badges (status chips): tinted background + border + dark text ---------- */
   .badge {
-    @apply inline-flex items-center gap-1 rounded-[4px] border px-2 py-0.5 text-[0.8rem] font-bold whitespace-nowrap;
+    @apply inline-flex items-center gap-1 rounded-chip border px-2 py-0.5 text-[0.8rem] font-bold whitespace-nowrap;
   }
   .badge-success {
     @apply border-primary-300 bg-primary-100 text-primary-700;
@@ -129,7 +132,7 @@
 
   /* Alerts ----------------------------------------------------------------- */
   .alert {
-    @apply flex items-start gap-2.5 rounded-[6px] border px-4 py-3 text-[0.95rem];
+    @apply flex items-start gap-2.5 rounded-ui border px-4 py-3 text-[0.95rem];
   }
   .alert-danger {
     @apply border-danger-300 bg-danger-50 text-danger-700;
@@ -149,7 +152,7 @@
     @apply flex flex-wrap gap-2;
   }
   .segment {
-    @apply inline-flex min-h-10 cursor-pointer items-center rounded-[6px] border border-line bg-white px-4 text-sm font-bold text-ink;
+    @apply inline-flex min-h-10 cursor-pointer items-center rounded-ui border border-line bg-white px-4 text-sm font-bold text-ink;
   }
   .segment[aria-selected='true'],
   .segment[aria-pressed='true'],
@@ -159,7 +162,7 @@
 
   /* Tables: scroll sideways on phones -------------------------------------- */
   .table-wrap {
-    @apply overflow-x-auto rounded-[6px] border border-line bg-white;
+    @apply overflow-x-auto rounded-card border border-line bg-white;
   }
   .table {
     @apply w-full border-collapse text-[0.95rem];
@@ -181,7 +184,7 @@
 
   /* Empty states ----------------------------------------------------------- */
   .empty {
-    @apply flex flex-col items-center gap-2 rounded-[6px] border border-dashed border-line bg-white px-6 py-10 text-center text-muted;
+    @apply flex flex-col items-center gap-2 rounded-card border border-dashed border-line bg-white px-6 py-10 text-center text-muted;
   }
 
   .sr-only-text {
@@ -212,7 +215,7 @@
   }
   .prose-aqlam img,
   .prose-aqlam video {
-    @apply h-auto max-w-full rounded-[6px];
+    @apply h-auto max-w-full rounded-ui;
   }
   .prose-aqlam blockquote {
     @apply border-s-4 border-secondary-300 ps-4 text-muted;
@@ -230,7 +233,7 @@
 .aq-select.ng-select .ng-select-container {
   min-height: 3rem;
   border: 1px solid var(--color-field);
-  border-radius: 6px;
+  border-radius: var(--radius-ui);
   font-family: var(--font-sans);
   font-size: 1rem;
   color: var(--color-ink);

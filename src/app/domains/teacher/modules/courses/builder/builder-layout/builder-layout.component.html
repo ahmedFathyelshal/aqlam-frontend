@@ -2,7 +2,7 @@
   <div class="page-narrow max-w-4xl">
     <nav class="mb-5 grid grid-cols-4 gap-1.5" [attr.aria-label]="tr('cb.step', { n: 1 })">
       @for (step of steps; track step.path; let i = $index) {
-        <a class="flex flex-col gap-1 rounded-[6px] border border-line bg-white px-2 py-2 text-ink no-underline sm:flex-row sm:items-center sm:gap-2.5 sm:px-3"
+        <a class="flex flex-col gap-1 rounded-ui border border-line bg-white px-2 py-2 text-ink no-underline sm:flex-row sm:items-center sm:gap-2.5 sm:px-3"
            [routerLink]="step.path" routerLinkActive="!border-primary-600 !bg-primary-50" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'step' : null">
           <span class="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
                 [class]="rla.isActive ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-muted'">{{ i + 1 }}</span>

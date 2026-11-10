@@ -35,7 +35,7 @@ import { Component, computed, input } from '@angular/core';
     </span>
     @if (wordmark()) {
       <span class="flex flex-col leading-tight">
-        <span class="font-extrabold" [style.font-size.px]="wordSize()" [class.text-primary-600]="!inverse()" [class.text-white]="inverse()">أقلام</span>
+        <span class="font-display leading-none font-bold" [style.font-size.px]="wordSize()" [class.text-deep]="!inverse()" [class.text-white]="inverse()">أقلام</span>
         @if (subtitle()) {
           <span class="text-sm" [class.text-muted]="!inverse()" [class.text-primary-100]="inverse()">{{ subtitle() }}</span>
         }
@@ -51,5 +51,5 @@ export class AqLogo {
   readonly inverse = input(false);
   readonly subtitle = input<string | null>(null);
 
-  protected wordSize = computed(() => Math.round(this.size() * 0.5));
+  protected wordSize = computed(() => Math.round(this.size() * 0.78));
 }

@@ -60,7 +60,7 @@ const ITEMS: NavItem[] = [
           <nav class="flex flex-col gap-0.5" [attr.aria-label]="t('nav.menu')">
             @for (item of items(); track item.path) {
               <a
-                class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 text-[0.95rem] font-medium text-ink no-underline hover:bg-neutral-100"
+                class="flex min-h-11 items-center gap-3 rounded-ui px-3 text-[0.95rem] font-medium text-ink no-underline hover:bg-neutral-100"
                 routerLinkActive="!bg-primary-100 !font-extrabold !text-primary-700"
                 [routerLink]="orgContext.path(item.path)"
                 (click)="drawer.set(false)"

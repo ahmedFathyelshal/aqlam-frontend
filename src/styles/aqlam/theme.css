@@ -1,10 +1,15 @@
 /* -------------------------------------------------------------------------- */
-/* Aqlam design tokens — direction "رسمي" (clear, institutional)              */
-/* Green #146C43 and blue #1D5C96 on white; Tajawal; radius 6; borders.       */
+/* Aqlam design tokens — direction "مداد" (ink on paper, institutional)       */
+/* Warm paper, ink green, action green #146C43, blue #1D5C96, corners 10-18.  */
 /* -------------------------------------------------------------------------- */
 @theme {
-  --font-sans: 'Tajawal', 'Segoe UI', system-ui, sans-serif;
-  --font-logo: 'Reem Kufi', 'Tajawal', sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
+  /* Display only, 28px and up: Markazi is too delicate for text sizes. */
+  --font-display: 'Markazi Text', 'IBM Plex Sans Arabic', serif;
+  --font-logo: 'Reem Kufi', 'IBM Plex Sans Arabic', sans-serif;
+
+  /* Plex Arabic stops at 700; older screens ask for extrabold. */
+  --font-weight-extrabold: 700;
 
   /* Primary: green (actions, success, brand) */
   --color-primary-50: #f1f8f4;
@@ -30,37 +35,52 @@
   --color-secondary-800: #12395e;
 
   /* Status */
-  --color-danger-50: #fdecea;
+  --color-danger-50: #fbe9e6;
   --color-danger-300: #f0b4ae;
   --color-danger-600: #b42318;
-  --color-danger-700: #a3261b;
-  --color-warning-50: #fff4db;
+  --color-danger-700: #8f1f15;
+  --color-warning-50: #fbf1dc;
   --color-warning-300: #ebc77a;
+  --color-warning-500: #c98a1b;
   --color-warning-700: #6e4700;
 
+  /* Gold is for achievements only, never for status or decoration. */
+  --color-gold-100: #fff3cc;
+  --color-gold-500: #d4a017;
+  --color-gold-800: #5f4a00;
+
+  /* Subject colors on student screens; white text passes on all three. */
+  --color-subject-blue: #1d5c96;
+  --color-subject-green: #146c43;
+  --color-subject-earth: #9a5412;
+
   /* Surfaces and text */
-  --color-page: #f4f6f8;
+  --color-page: #faf8f3;
   --color-surface: #ffffff;
-  --color-line: #d5dbe1;
-  --color-line-soft: #e6eaee;
-  --color-field: #aeb8c2;
-  --color-ink: #1b2733;
-  --color-muted: #4b5865;
+  --color-deep: #0b3b2e;
+  --color-line: #e4dfd3;
+  --color-line-strong: #d5cfc1;
+  --color-line-soft: #eee9de;
+  --color-field: #8f8a7c;
+  --color-ink: #17231e;
+  --color-muted: #4d564e;
 
-  --radius-ui: 6px;
-  --radius-chip: 4px;
+  --radius-chip: 8px;
+  --radius-ui: 10px;
+  --radius-card: 16px;
+  --radius-hero: 18px;
 
-  /* Neutral scale used by older utilities, aligned to the ink colors */
-  --color-neutral-50: #f8fafb;
-  --color-neutral-100: #eef1f4;
-  --color-neutral-200: #e6eaee;
-  --color-neutral-300: #d5dbe1;
-  --color-neutral-400: #aeb8c2;
-  --color-neutral-500: #6b7783;
-  --color-neutral-600: #4b5865;
-  --color-neutral-700: #34404c;
-  --color-neutral-800: #24303b;
-  --color-neutral-900: #1b2733;
+  /* Neutral scale used by older utilities, aligned to the warm paper */
+  --color-neutral-50: #f7f5ef;
+  --color-neutral-100: #f0ede4;
+  --color-neutral-200: #e4dfd3;
+  --color-neutral-300: #d5cfc1;
+  --color-neutral-400: #a9a596;
+  --color-neutral-500: #6f7568;
+  --color-neutral-600: #4d564e;
+  --color-neutral-700: #364038;
+  --color-neutral-800: #252f29;
+  --color-neutral-900: #17231e;
 }
 
 /* Lucide icons through <mat-icon svgIcon>: square sizes. */

@@ -17,11 +17,11 @@
 
     <div class="field">
       <span class="field-label">{{ tr('cb.s3.thumbnail') }} <span class="text-danger-700" aria-hidden="true">*</span></span>
-      <label class="relative flex aspect-video max-w-md cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-[6px] border-2 border-dashed border-field bg-page text-center text-muted hover:border-primary-600">
+      <label class="relative flex aspect-video max-w-md cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-ui border-2 border-dashed border-field bg-page text-center text-muted hover:border-primary-600">
         <input type="file" accept="image/jpeg, image/png" class="sr-only" (change)="onFileSelected($event)" />
         @if (previewUrl()) {
           <img [src]="previewUrl()" alt="" class="absolute inset-0 size-full object-cover" />
-          <span class="absolute bottom-2 start-2 inline-flex items-center gap-1 rounded-[6px] bg-white/95 px-2.5 py-1 text-sm font-bold text-ink"><mat-icon svgIcon="pencil" class="icon-size-4" />{{ tr('cb.s3.change') }}</span>
+          <span class="absolute bottom-2 start-2 inline-flex items-center gap-1 rounded-ui bg-white/95 px-2.5 py-1 text-sm font-bold text-ink"><mat-icon svgIcon="pencil" class="icon-size-4" />{{ tr('cb.s3.change') }}</span>
         } @else {
           <mat-icon svgIcon="cloud-upload" class="icon-size-8" />
           <span class="font-bold text-ink">{{ tr('cb.s3.upload') }}</span>

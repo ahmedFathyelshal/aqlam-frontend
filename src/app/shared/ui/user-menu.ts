@@ -13,7 +13,7 @@ import { I18nService } from '@/app/core/transloco/i18n.service';
   imports: [MatIconModule, MatMenuModule, TranslocoDirective],
   template: `
     <ng-container *transloco="let t">
-      <button type="button" class="flex min-h-11 cursor-pointer items-center gap-2 rounded-[6px] px-1.5 hover:bg-neutral-100" [matMenuTriggerFor]="menu" [attr.aria-label]="t('nav.account')">
+      <button type="button" class="flex min-h-11 cursor-pointer items-center gap-2 rounded-ui px-1.5 hover:bg-neutral-100" [matMenuTriggerFor]="menu" [attr.aria-label]="t('nav.account')">
         <span class="flex size-9 items-center justify-center rounded-full bg-secondary-100 text-base font-extrabold text-secondary-600">{{ initial() }}</span>
         <span class="hidden max-w-36 truncate text-[0.95rem] font-bold md:inline">{{ displayName() }}</span>
       </button>

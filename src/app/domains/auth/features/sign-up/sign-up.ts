@@ -20,7 +20,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
         <fieldset class="flex flex-col gap-2">
           <legend class="field-label mb-2">{{ t('auth.iAm') }}</legend>
           @for (option of types; track option.value) {
-            <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-[6px] border px-4 py-2.5"
+            <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-ui border px-4 py-2.5"
                    [class]="userType() === option.value ? 'border-primary-600 bg-primary-50' : 'border-line bg-white'">
               <input type="radio" name="userType" class="size-5 accent-primary-600" [checked]="userType() === option.value" (change)="userType.set(option.value)" />
               <mat-icon [svgIcon]="option.icon" class="icon-size-6 text-primary-600" />

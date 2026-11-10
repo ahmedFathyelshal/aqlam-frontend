@@ -72,6 +72,11 @@ export type MyCourse = {
   progressPercent: number;
 };
 
+export type NextLesson = { courseId: string; lessonId: string; title: string; chapterTitle: string; type: LearnerLesson['type']; durationInMinutes: number | null };
+export type DueItem = { courseId: string; courseTitle: string; lessonId: string; title: string; dueAtUtc: string; isOverdue: boolean };
+export type LatestResult = { kind: 'Quiz' | 'Assignment'; courseId: string; courseTitle: string; lessonId: string; title: string; percent: number; atUtc: string };
+export type LearnerHome = { nextLessons: NextLesson[]; due: DueItem[]; latestResult: LatestResult | null; achievementPercent: number };
+
 export type JoinResult = { membershipStatus: 'Active' | 'Pending'; name: string; slug: string; type: string };
 
 /** Student-side learning API (player, progress, enrollment). */
@@ -81,6 +86,10 @@ export class LearningService {
 
   myCourses(): Observable<MyCourse[]> {
     return this.http.get<ApiResponse<MyCourse[]>>(ApiEndpoints.Me.Courses).pipe(map(r => r.data ?? []));
+  }
+
+  home(org: string): Observable<LearnerHome> {
+    return this.http.get<ApiResponse<LearnerHome>>(ApiEndpoints.Learn.Home(org)).pipe(map(r => r.data));
   }
 
   joinWithCode(code: string): Observable<JoinResult> {
