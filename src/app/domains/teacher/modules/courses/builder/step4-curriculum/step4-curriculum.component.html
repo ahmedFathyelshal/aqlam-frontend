@@ -1,6 +1,5 @@
 <ng-container *transloco="let tr">
   <header class="mb-5">
-    <p class="text-sm font-bold text-primary-600">{{ tr('cb.step', { n: 4 }) }}</p>
     <h1 class="page-title">{{ tr('cb.s4.title') }}</h1>
     <p class="page-subtitle">{{ tr('cb.s4.intro') }}</p>
   </header>
@@ -41,7 +40,7 @@
       <textarea class="textarea" rows="4" [value]="syllabusReqs()" (input)="syllabusReqs.set($any($event.target).value)" [placeholder]="tr('cb.s4.syllabusPlaceholder')"></textarea>
     </label>
 
-    <div class="mt-2 flex flex-col-reverse gap-2 border-t border-line-soft pt-4 sm:flex-row sm:justify-between">
+    <div class="sticky bottom-14 z-10 -mx-4 -mb-4 mt-2 flex flex-col-reverse gap-2 rounded-b-card border-t border-line bg-white/95 px-4 py-3 backdrop-blur sm:bottom-0 sm:-mx-5 sm:-mb-5 sm:flex-row sm:justify-between sm:px-5">
       <button type="button" class="btn btn-ghost" (click)="goBack()" [disabled]="isPublishing() || isSaving()">{{ tr('cb.back') }}</button>
       <div class="flex flex-col gap-2 sm:flex-row">
         <button type="button" class="btn btn-secondary" (click)="onSaveDraft()" [disabled]="isPublishing() || isSaving()">{{ tr('cb.s4.saveDraft') }}</button>

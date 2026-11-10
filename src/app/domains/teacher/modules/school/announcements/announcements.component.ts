@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
-import { OrgDatePipe } from '@/app/core/organizations/org-date';
+import { OrgShortDayPipe } from '@/app/core/organizations/org-date';
 import { Announcement, AnnouncementAudience, ClassSummary, NewAnnouncement, SchoolService } from '@/app/core/school/school.service';
 import { LookupDto, LookupsService } from '@/app/core/services/lookups.service';
 import { I18nService } from '@/app/core/transloco/i18n.service';
@@ -15,7 +15,7 @@ const AUDIENCES: AnnouncementAudience[] = ['Students', 'Parents', 'Staff'];
 /** Write an announcement to a class, a grade or the whole organization; delivered in-app (and by email). */
 @Component({
   selector: 'app-announcements',
-  imports: [MatIconModule, TranslocoDirective, OrgDatePipe],
+  imports: [MatIconModule, TranslocoDirective, OrgShortDayPipe],
   template: `
     <ng-container *transloco="let t">
       <div class="page">
@@ -92,7 +92,7 @@ const AUDIENCES: AnnouncementAudience[] = ['Students', 'Parents', 'Staff'];
               <article class="card card-body">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 class="text-base font-extrabold">{{ a.title }}</h3>
-                  <span class="text-xs text-muted">{{ a.publishedAtUtc | orgDate: 'datetime' }}</span>
+                  <span class="text-xs text-muted">{{ a.publishedAtUtc | orgShortDay: true }}</span>
                 </div>
                 <p class="mt-1 line-clamp-4 text-[0.95rem] whitespace-pre-line">{{ a.body }}</p>
                 <div class="mt-3 flex flex-wrap gap-1.5">

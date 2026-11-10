@@ -64,8 +64,9 @@
                 <button type="button" class="btn-icon" [attr.aria-label]="t('cw.removeChapter')" (click)="removeChapter(c)"><mat-icon svgIcon="trash-2" class="icon-size-5 text-danger-700" /></button>
               </div>
               @for (lesson of chapter.lessons; track lesson.id || lesson.title + $index; let l = $index) {
-                <button type="button" class="flex min-h-12 w-full items-center gap-3 border-b border-line-soft px-3 py-2 text-start last:border-b-0 hover:bg-neutral-50"
-                        [class.!bg-primary-50]="ci === c && li === l" (click)="openLesson(c, l)">
+                <button type="button" class="relative flex min-h-12 w-full items-center gap-3 border-b border-line-soft px-3 py-2 text-start last:border-b-0 hover:bg-neutral-50"
+                        [class]="ci === c && li === l ? '!bg-primary-50 before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-primary-600' : ''"
+                        [attr.aria-current]="ci === c && li === l ? 'true' : null" (click)="openLesson(c, l)">
                   <span class="w-5 text-center text-sm text-muted">{{ l + 1 }}</span>
                   <mat-icon class="icon-size-5 shrink-0 text-secondary-600" [svgIcon]="lessonIcon(lesson.type)" />
                   <span class="min-w-0 flex-1">

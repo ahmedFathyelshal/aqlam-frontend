@@ -148,6 +148,8 @@ export type OrganizationSettings = {
   /** "HH:mm:ss" in the organization's time zone. */
   attendanceDueBy: string;
   groupAttendanceGraceMinutes: number;
+  /** Centers only. */
+  teachersCreateCourses: boolean;
 };
 
 /** Classes, rosters, attendance, announcements, members and settings of an organization. */
@@ -284,6 +286,17 @@ export class SchoolService {
 
   saveSettings(org: string, settings: Omit<OrganizationSettings, 'slug' | 'type' | 'countryCode' | 'currency'>): Observable<OrganizationSettings> {
     return this.put(ApiEndpoints.School.Settings(org), settings);
+  }
+
+  /** PNG, JPEG or WebP, at most 256 KB; the server checks the file itself. */
+  uploadLogo(org: string, file: File): Observable<OrganizationSettings> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.put(ApiEndpoints.School.SettingsLogo(org), body);
+  }
+
+  removeLogo(org: string): Observable<OrganizationSettings> {
+    return this.http.delete<ApiResponse<OrganizationSettings>>(ApiEndpoints.School.SettingsLogo(org)).pipe(map(r => r.data));
   }
 
   private get<T>(url: string): Observable<T> {

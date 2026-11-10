@@ -20,6 +20,7 @@ import {
   LessonType,
   ResourceType
 } from '../builder/course-builder.models';
+import { ConfirmService } from '@/app/shared/ui/confirm.service';
 
 type DrawerTarget =
   | { mode: 'chapter'; chapterIndex: number }
@@ -45,6 +46,7 @@ export default class CurriculumWorkspaceComponent {
   private builderState = inject(CourseBuilderStateService);
   private snackBar = inject(MatSnackBar);
   private transloco = inject(TranslocoService);
+  private confirmer = inject(ConfirmService);
 
   isPublishing = signal(false);
   /** What still blocks publishing (from the server's checklist). */
@@ -247,7 +249,15 @@ export default class CurriculumWorkspaceComponent {
     this.openChapter((this.course().chapters?.length ?? 1) - 1);
   }
 
-  removeChapter(index: number) {
+  async removeChapter(index: number) {
+    const chapter = this.course().chapters?.[index];
+    if (chapter?.lessons.length && !(await this.confirmer.confirm({
+      title: this.transloco.translate('cw.confirmRemoveChapter', { title: chapter.title || this.transloco.translate('cw.untitledChapter'), count: chapter.lessons.length }),
+      body: this.transloco.translate('cw.confirmRemoveHint'),
+      confirmText: this.transloco.translate('action.delete'),
+      cancelText: this.transloco.translate('action.cancel'),
+      tone: 'danger',
+    }))) return;
     this.course.update((c) => ({
       ...c,
       chapters: (c.chapters ?? []).filter((_, i) => i !== index),

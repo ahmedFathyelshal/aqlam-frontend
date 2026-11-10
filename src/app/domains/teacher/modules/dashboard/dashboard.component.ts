@@ -47,7 +47,7 @@ type CourseFilter = 'all' | 'published' | 'drafts';
               <h1 class="page-title">{{ t(greetingKey(), { name: firstName() }) }}</h1>
             }
           </div>
-          @if (orgContext.can('courses.edit')) {
+          @if (orgContext.canCreateCourses()) {
             <a class="btn btn-secondary w-full sm:w-auto" [routerLink]="orgContext.path('courses', 'new')"><mat-icon svgIcon="plus" class="icon-size-5" />{{ t('dash.newCourse') }}</a>
           }
         </header>
