@@ -5,6 +5,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { AssessmentService, Question, QuestionInput, QuestionType } from '@/app/core/learning/assessment.service';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { ApiValidationError } from '@/app/core/utils/api-error.utils';
+import { ConfirmService } from '@/app/shared/ui/confirm.service';
 
 type Draft = QuestionInput & { id: string | null };
 
@@ -29,6 +30,7 @@ export function blankQuestion(type: QuestionType, trueFalse: [string, string] = 
   templateUrl: './question-bank.component.html',
 })
 export default class QuestionBankComponent {
+  private confirmer = inject(ConfirmService);
   protected orgContext = inject(OrgContextService);
   private assessments = inject(AssessmentService);
   private transloco = inject(TranslocoService);
@@ -123,8 +125,8 @@ export default class QuestionBankComponent {
     });
   }
 
-  protected remove(question: Question): void {
-    if (!confirm(this.transloco.translate('qb.confirmDelete'))) return;
+  protected async remove(question: Question): Promise<void> {
+    if (!(await this.confirmer.confirm({ title: this.transloco.translate('qb.confirmDelete'), confirmText: this.transloco.translate('action.delete'), cancelText: this.transloco.translate('action.cancel'), tone: 'danger' }))) return;
     this.assessments.deleteQuestion(this.org, question.id).subscribe(() => this.load());
   }
 

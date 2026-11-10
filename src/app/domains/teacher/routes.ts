@@ -1,6 +1,16 @@
-import { Routes } from '@angular/router';
-import { orgGuard, redirectToDefaultOrg, staffGuard } from '@/app/core/organizations/org.guard';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
+import { orgGuard, redirectToDefaultOrg, redirectToOrgHome, staffGuard } from '@/app/core/organizations/org.guard';
+import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { TeacherLayout } from './layout/layout';
+
+/** The overview is for people who run a school or center; everyone else goes to their own home. */
+const overviewGuard: CanActivateFn = () => {
+  const orgContext = inject(OrgContextService);
+  const org = orgContext.activeOrg();
+  if (!org || orgContext.homePath(org).at(-1) === 'overview') return true;
+  return inject(Router).createUrlTree(orgContext.homePath(org));
+};
 
 const builderSteps = (includeLaterSteps: boolean): Routes => [
   { path: 'step-1', loadComponent: () => import('./modules/courses/builder/step1-identity/step1-identity.component') },
@@ -26,7 +36,12 @@ const routes: Routes = [
         path: ':org',
         canActivate: [orgGuard],
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+          { path: '', pathMatch: 'full', redirectTo: redirectToOrgHome },
+          {
+            path: 'overview',
+            canActivate: [overviewGuard],
+            loadComponent: () => import('./modules/overview/overview.component'),
+          },
           {
             path: 'dashboard',
             loadComponent: () => import('./modules/dashboard/dashboard.component'),

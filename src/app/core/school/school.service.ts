@@ -145,6 +145,9 @@ export type OrganizationSettings = {
   goodGradePercent: number;
   lowGradePercent: number;
   achievementPercent: number;
+  /** "HH:mm:ss" in the organization's time zone. */
+  attendanceDueBy: string;
+  groupAttendanceGraceMinutes: number;
 };
 
 /** Classes, rosters, attendance, announcements, members and settings of an organization. */

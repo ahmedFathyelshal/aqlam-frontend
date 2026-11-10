@@ -7,6 +7,7 @@ import { OrgContextService } from '@/app/core/organizations/org-context.service'
 import { todayIn } from '@/app/core/organizations/org-date';
 import { AcademicsService, AcademicYear, defaultTerm, Gradebook, GradeCategory, GradeItem, GradeRow, saveBlob } from '@/app/core/school/academics.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
+import { ConfirmService } from '@/app/shared/ui/confirm.service';
 
 type CategoryDraft = { id: string | null; name: string; weight: number | null };
 type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoints: number | null; lessonId: string | null };
@@ -66,15 +67,15 @@ type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoin
             <div class="empty mb-5">{{ t('gradebook.noStudents') }}</div>
           } @else {
             <!-- Grid: tablet and laptop -->
-            <div class="table-wrap mb-2 hidden sm:block">
+            <div class="table-wrap mb-2 hidden max-h-[calc(100dvh-14rem)] overflow-auto sm:block">
               <table class="table [&_td]:px-2 [&_th]:px-2">
-                <thead>
+                <thead class="sticky top-0 z-20 [&_th]:bg-page">
                   <tr>
-                    <th rowspan="2" class="sticky start-0 z-10 min-w-36 bg-white">{{ t('gradebook.student') }}</th>
+                    <th rowspan="2" class="sticky start-0 z-30 min-w-40 border-e border-line">{{ t('gradebook.student') }}</th>
                     @for (c of b.categories; track c.id) {
                       <th class="border-s border-line-soft text-center" [attr.colspan]="c.items.length + 1">{{ c.name }} <span class="font-normal text-muted" dir="ltr">{{ c.weightPercent }}%</span></th>
                     }
-                    <th rowspan="2" class="border-s border-line-soft text-center">{{ t('gradebook.final') }}</th>
+                    <th rowspan="2" class="border-s border-line text-center">{{ t('gradebook.final') }}</th>
                     @if (b.scale !== 'Percent') { <th rowspan="2" class="text-center">{{ t('gradebook.label') }}</th> }
                   </tr>
                   <tr>
@@ -90,17 +91,19 @@ type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoin
                   </tr>
                 </thead>
                 <tbody>
-                  @for (s of b.students; track s.userId) {
-                    <tr>
-                      <th scope="row" class="sticky start-0 z-10 bg-white font-bold">
+                  @for (s of b.students; track s.userId; let row = $index) {
+                    <tr class="hover:[&_td]:bg-neutral-50">
+                      <th scope="row" class="sticky start-0 z-10 border-e border-line bg-white font-bold">
                         <a [routerLink]="orgContext.path('report-cards', s.userId, termId()!)" [attr.title]="t('gradebook.reportCard')">{{ s.fullName || s.userName }}</a>
                       </th>
                       @for (c of b.categories; track c.id) {
                         @for (i of c.items; track i.id; let first = $first) {
                           <td class="text-center" [class.border-s]="first" [class.border-line-soft]="first">
                             <input
-                              class="input mx-auto min-h-9 w-16 px-1 text-center"
+                              class="input mx-auto min-h-11 w-16 border-transparent bg-transparent px-1 text-center tabular-nums hover:border-line focus:border-secondary-600 focus:bg-white"
                               [class.bg-secondary-100]="isLinked(s, i)"
+                              [attr.data-grade-col]="i.id" [attr.data-grade-row]="row"
+                              (keydown.enter)="$event.preventDefault(); moveDown(i.id, row)"
                               type="number" inputmode="decimal" min="0" dir="ltr" step="any"
                               [max]="i.maxPoints"
                               [attr.aria-label]="(s.fullName || s.userName) + ': ' + i.title"
@@ -111,7 +114,7 @@ type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoin
                         }
                         <td class="text-center text-muted" [class.border-s]="!c.items.length" [class.border-line-soft]="!c.items.length" dir="ltr">{{ s.categoryPercents[c.id] ?? '–' }}</td>
                       }
-                      <td class="border-s border-line-soft text-center font-extrabold text-primary-700" dir="ltr">{{ s.finalPercent ?? '–' }}</td>
+                      <td class="border-s border-line bg-page text-center font-bold tabular-nums text-ink" dir="ltr">{{ s.finalPercent ?? '–' }}</td>
                       @if (b.scale !== 'Percent') { <td class="text-center">{{ s.label ? t('grade.' + s.label) : '–' }}</td> }
                     </tr>
                   }
@@ -251,6 +254,7 @@ type ItemDraft = { categoryId: string; id: string | null; title: string; maxPoin
   `,
 })
 export default class GradebookComponent {
+  private confirmer = inject(ConfirmService);
   protected orgContext = inject(OrgContextService);
   private academics = inject(AcademicsService);
   private transloco = inject(TranslocoService);
@@ -407,8 +411,19 @@ export default class GradebookComponent {
       });
   }
 
-  protected deleteItem(item: GradeItem): void {
-    if (!confirm(this.transloco.translate('gradebook.confirmDeleteItem', { title: item.title }))) return;
+  /** Enter moves down the column, the way spreadsheets work; the change event saves the score. */
+  protected moveDown(itemId: string, row: number): void {
+    const next = document.querySelector<HTMLInputElement>(`input[data-grade-col="${itemId}"][data-grade-row="${row + 1}"]`);
+    if (next) {
+      next.focus(); // leaving the field fires its change event, which saves
+      next.select();
+    } else {
+      (document.activeElement as HTMLElement | null)?.blur();
+    }
+  }
+
+  protected async deleteItem(item: GradeItem): Promise<void> {
+    if (!(await this.confirmer.confirm({ title: this.transloco.translate('gradebook.confirmDeleteItem', { title: item.title }), confirmText: this.transloco.translate('action.delete'), cancelText: this.transloco.translate('action.cancel'), tone: 'danger' }))) return;
     this.academics.deleteItem(this.org, this.classId, this.assignmentId, item.id).subscribe({ next: () => this.load(), error: err => this.fail(err) });
   }
 

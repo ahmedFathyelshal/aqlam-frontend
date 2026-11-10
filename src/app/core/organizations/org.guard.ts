@@ -20,14 +20,22 @@ export const orgGuard: CanActivateFn = (route) => {
     return true;
   }
 
-  const fallback = orgContext.staffMemberships()[0];
-  return router.createUrlTree(fallback ? ['/teacher', fallback.slug, 'dashboard'] : ['/auth/sign-in']);
+  const fallback = orgContext.defaultOrg();
+  return router.createUrlTree(fallback ? orgContext.homePath(fallback) : ['/auth/sign-in']);
 };
 
-/** /teacher → /teacher/{default organization}/dashboard */
+/** /teacher → the default organization's home (the overview for owners, the teacher home otherwise). */
 export const redirectToDefaultOrg: RedirectFunction = () => {
-  const fallback = inject(OrgContextService).staffMemberships()[0];
-  return fallback ? `/teacher/${fallback.slug}/dashboard` : '/auth/sign-in';
+  const orgContext = inject(OrgContextService);
+  const fallback = orgContext.defaultOrg();
+  return fallback ? orgContext.homePath(fallback).join('/') : '/auth/sign-in';
+};
+
+/** /teacher/:org → that organization's home page. */
+export const redirectToOrgHome: RedirectFunction = route => {
+  const orgContext = inject(OrgContextService);
+  const org = orgContext.staffMemberships().find(m => m.slug === route.params['org']);
+  return org ? orgContext.homePath(org).join('/') : '/teacher';
 };
 
 /** The staff area is for anyone with a staff membership (owner, admin, teacher, assistant…). */

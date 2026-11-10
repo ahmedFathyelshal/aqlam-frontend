@@ -7,6 +7,7 @@ import { OrgContextService } from '@/app/core/organizations/org-context.service'
 import { OrgDatePipe } from '@/app/core/organizations/org-date';
 import { AcademicsService, AcademicTerm, AcademicTermInput, AcademicYear, AcademicYearInput } from '@/app/core/school/academics.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
+import { ConfirmService } from '@/app/shared/ui/confirm.service';
 
 /** Academic years and their terms; publishing a term's report cards shows them to students and parents. */
 @Component({
@@ -128,6 +129,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
   `,
 })
 export default class AcademicYearsComponent {
+  private confirmer = inject(ConfirmService);
   protected orgContext = inject(OrgContextService);
   private academics = inject(AcademicsService);
   private transloco = inject(TranslocoService);
@@ -211,14 +213,18 @@ export default class AcademicYearsComponent {
     this.academics.setCurrent(this.org, year.id).subscribe({ next: () => this.load(), error: err => this.fail(err) });
   }
 
-  protected togglePublish(term: AcademicTerm): void {
+  protected async togglePublish(term: AcademicTerm): Promise<void> {
     const publish = !term.reportCardsPublished;
-    if (publish && !confirm(this.transloco.translate('years.confirmPublish', { term: term.name }))) return;
+    if (publish && !(await this.confirmer.confirm({
+      title: this.transloco.translate('years.confirmPublish', { term: term.name }),
+      confirmText: this.transloco.translate('action.continue'),
+      cancelText: this.transloco.translate('action.cancel'),
+    }))) return;
     this.academics.setPublished(this.org, term.id, publish).subscribe({ next: () => this.load(), error: err => this.fail(err) });
   }
 
-  protected remove(year: AcademicYear): void {
-    if (!confirm(this.transloco.translate('years.confirmDelete', { name: year.name }))) return;
+  protected async remove(year: AcademicYear): Promise<void> {
+    if (!(await this.confirmer.confirm({ title: this.transloco.translate('years.confirmDelete', { name: year.name }), confirmText: this.transloco.translate('action.delete'), cancelText: this.transloco.translate('action.cancel'), tone: 'danger' }))) return;
     this.academics.deleteYear(this.org, year.id).subscribe({ next: () => this.load(), error: err => this.fail(err) });
   }
 

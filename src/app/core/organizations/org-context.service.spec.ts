@@ -19,6 +19,7 @@ describe('OrgContextService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.clear(); // the last chosen organization is remembered per device
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     service = TestBed.inject(OrgContextService);
     http = TestBed.inject(HttpTestingController);
@@ -31,10 +32,35 @@ describe('OrgContextService', () => {
     http.expectOne(req => req.url.endsWith('/me/memberships')).flush({ succeeded: true, errors: [], data: memberships });
   }
 
-  it('picks the first staff organization and ignores student-only memberships', () => {
+  it('lands a teacher in the school, not the personal academy, and ignores student-only memberships', () => {
     loadMemberships([studentOnly, personal, school]);
 
     expect(service.staffMemberships().map(m => m.slug)).toEqual(['my-academy', 'nile-school']);
+    expect(service.activeOrg()?.slug).toBe('nile-school');
+    expect(service.homePath(service.activeOrg()!)).toEqual(['/teacher', 'nile-school', 'dashboard']);
+  });
+
+  it('lands an owner where they own, on the overview', () => {
+    const ownedCenter: MembershipSummary = { ...studentOnly, slug: 'own-center', roles: ['Owner'] };
+    loadMemberships([personal, school, ownedCenter]);
+
+    expect(service.activeOrg()?.slug).toBe('own-center');
+    expect(service.homePath(service.activeOrg()!)).toEqual(['/teacher', 'own-center', 'overview']);
+  });
+
+  it('keeps a personal academy on the teacher home', () => {
+    loadMemberships([personal]);
+
+    expect(service.homePath(personal)).toEqual(['/teacher', 'my-academy', 'dashboard']);
+  });
+
+  it('returns to the organization last chosen on this device', () => {
+    loadMemberships([personal, school]);
+    service.select('my-academy');
+    service.clear();
+
+    loadMemberships([personal, school]);
+
     expect(service.activeOrg()?.slug).toBe('my-academy');
   });
 

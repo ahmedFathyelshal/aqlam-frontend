@@ -5,6 +5,7 @@ import { builder } from './builder';
 import { common } from './common';
 import { landing } from './landing';
 import { learn } from './learn';
+import { overview } from './overview';
 import { portal } from './portal';
 import { staff } from './staff';
 import { workspace } from './workspace';
@@ -13,7 +14,7 @@ type Lang = 'ar' | 'en';
 type Section = Record<Lang, Record<string, unknown>>;
 
 /** Every feature's texts merged per language (feature keys are top-level, so they never collide). */
-const sections: Section[] = [common, auth, staff, portal, learn, assess, builder, workspace, academics, landing];
+const sections: Section[] = [common, auth, staff, portal, learn, assess, builder, workspace, academics, landing, overview];
 
 export const translations = {
   ar: Object.assign({}, ...sections.map(s => s.ar)),
