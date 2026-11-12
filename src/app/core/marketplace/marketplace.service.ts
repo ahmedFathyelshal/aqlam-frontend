@@ -55,7 +55,17 @@ export type TeacherPage = { teacher: TeacherCard; bio: string | null; courses: C
 
 export type OutlineLesson = { id: string; title: string; type: 'Video' | 'Article' | 'Quiz' | 'Assignment'; durationInMinutes: number | null; isFreePreview: boolean };
 export type OutlineChapter = { title: string; lessons: OutlineLesson[] };
-export type CourseViewer = { signedIn: boolean; enrolled: boolean; isStaff: boolean; hasPendingPayment: boolean };
+export type ViewerChild = { userId: string; name: string; enrolled: boolean; hasPendingPayment: boolean };
+export type CourseViewer = {
+  signedIn: boolean;
+  enrolled: boolean;
+  isStaff: boolean;
+  hasPendingPayment: boolean;
+  /** A student under 18 (or with no birth year): a linked parent pays. */
+  mustAskParent?: boolean;
+  /** A parent's linked children, who can be joined, bought for or given a code. */
+  children?: ViewerChild[] | null;
+};
 
 export type CoursePage = {
   course: CourseCard;
@@ -104,6 +114,8 @@ export type PaymentStatus = {
   courseId: string;
   coursePublicSlug: string | null;
   failureReason: string | null;
+  /** When a parent paid for a child. */
+  forStudentName?: string | null;
 };
 export type Redeemed = { organizationSlug: string; courseId: string; courseTitle: string };
 
@@ -156,12 +168,16 @@ export class MarketplaceService {
     return this.http.get<ApiResponse<PreviewLesson>>(api(`/marketplace/courses/${encodeURIComponent(slug)}/lessons/${lessonId}`)).pipe(map(r => r.data));
   }
 
-  enroll(org: string, courseId: string): Observable<unknown> {
-    return this.http.post(orgApi(org, `/learn/courses/${courseId}/enroll`), null);
+  /** Joins a free course; a parent passes a linked child's id. */
+  enroll(org: string, courseId: string, forUserId?: string | null): Observable<unknown> {
+    return this.http.post(orgApi(org, `/learn/courses/${courseId}/enroll`), null, { params: forUserId ? { forUserId } : {} });
   }
 
-  checkout(org: string, courseId: string): Observable<Checkout> {
-    return this.http.post<ApiResponse<Checkout>>(orgApi(org, `/learn/courses/${courseId}/checkout`), null).pipe(map(r => r.data));
+  /** Starts paying; a parent passes a linked child's id. */
+  checkout(org: string, courseId: string, forUserId?: string | null): Observable<Checkout> {
+    return this.http
+      .post<ApiResponse<Checkout>>(orgApi(org, `/learn/courses/${courseId}/checkout`), null, { params: forUserId ? { forUserId } : {} })
+      .pipe(map(r => r.data));
   }
 
   payment(id: string): Observable<PaymentStatus> {
@@ -172,8 +188,8 @@ export class MarketplaceService {
     return this.http.post<ApiResponse<PaymentStatus>>(api(`/payments/${id}/test-complete`), { succeed }).pipe(map(r => r.data));
   }
 
-  redeem(code: string, courseId?: string | null): Observable<Redeemed> {
-    return this.http.post<ApiResponse<Redeemed>>(api('/codes/redeem'), { code, courseId: courseId ?? null }).pipe(map(r => r.data));
+  redeem(code: string, courseId?: string | null, forUserId?: string | null): Observable<Redeemed> {
+    return this.http.post<ApiResponse<Redeemed>>(api('/codes/redeem'), { code, courseId: courseId ?? null, forUserId: forUserId ?? null }).pipe(map(r => r.data));
   }
 }
 

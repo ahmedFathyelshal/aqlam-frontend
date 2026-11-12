@@ -30,6 +30,19 @@ describe('course call to action', () => {
     expect(ctaState(page())).toBe('paid');
   });
 
+  it('sends students under 18 to a parent for paid courses, but keeps free and code courses open', () => {
+    expect(ctaState(page({}, { signedIn: true, mustAskParent: true }))).toBe('askParent');
+    expect(ctaState(page({ isFree: true, price: null }, { signedIn: true, mustAskParent: true }))).toBe('free');
+    expect(ctaState(page({ codeActivationOnly: true }, { signedIn: true, mustAskParent: true }))).toBe('code');
+  });
+
+  it("follows the chosen child for a parent, not the parent's own enrolment", () => {
+    const child = { userId: 'c1', name: 'Lina', enrolled: false, hasPendingPayment: false };
+    expect(ctaState(page({}, { signedIn: true, enrolled: true }), child)).toBe('paid');
+    expect(ctaState(page({}, { signedIn: true }), { ...child, enrolled: true })).toBe('enrolled');
+    expect(ctaState(page({}, { signedIn: true, isStaff: true }), child)).toBe('paid');
+  });
+
   it('offers codes instead of a broken Buy button when online payment is off', () => {
     expect(ctaState(page({}, {}, false))).toBe('paidOff');
     // A pending payment cannot be continued without a provider either.

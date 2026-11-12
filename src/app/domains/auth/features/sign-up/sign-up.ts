@@ -32,6 +32,23 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
           }
         </fieldset>
 
+        @if (userType() === student) {
+          <label class="field">
+            <span class="field-label">{{ t('age.birthYear') }}</span>
+            <input class="input w-40" type="number" inputmode="numeric" dir="ltr" min="1900" [max]="thisYear" [placeholder]="thisYear - 15"
+                   [value]="birthYear() ?? ''" (input)="birthYear.set($any($event.target).value ? +$any($event.target).value : null)" />
+            <span class="field-hint">{{ t('age.birthYearHint') }}</span>
+            @if (touched() && !birthYearValid()) { <span class="field-error">{{ t('age.birthYearRequired') }}</span> }
+          </label>
+          @if (underThirteen()) {
+            <div class="alert alert-info flex-col items-start gap-1" role="status">
+              <p class="font-bold">{{ t('age.under13Title') }}</p>
+              <p class="text-sm">{{ t('age.under13Body') }}</p>
+              <button type="button" class="btn btn-outline btn-sm mt-2" (click)="userType.set(parent)">{{ t('age.under13Action') }}</button>
+            </div>
+          }
+        }
+
         <label class="field">
           <span class="field-label">{{ t('auth.userName') }}</span>
           <input class="input" dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="userName()" (input)="userName.set($any($event.target).value)" />
@@ -77,6 +94,16 @@ export default class AuthSignUp {
   ];
 
   protected userType = signal<UserType>(UserType.Student);
+  protected readonly student = UserType.Student;
+  protected readonly parent = UserType.Parent;
+  protected readonly thisYear = new Date().getFullYear();
+  /** Students only; under 13 a parent creates the account (agreed 2026-11-12). */
+  protected birthYear = signal<number | null>(null);
+  protected birthYearValid = computed(() => {
+    const y = this.birthYear();
+    return y !== null && y >= 1900 && y <= this.thisYear;
+  });
+  protected underThirteen = computed(() => this.birthYearValid() && this.thisYear - this.birthYear()! < 13);
   protected userName = signal('');
   protected email = signal('');
   protected password = signal('');
@@ -92,6 +119,8 @@ export default class AuthSignUp {
     this.touched.set(true);
     this.errors.set([]);
     if (!this.userName().trim() || this.emailInvalid() || this.password().length < 8 || this.confirm() !== this.password()) return;
+    const isStudent = this.userType() === UserType.Student;
+    if (isStudent && (!this.birthYearValid() || this.underThirteen())) return;
 
     this.busy.set(true);
     this.auth
@@ -101,6 +130,7 @@ export default class AuthSignUp {
         password: this.password(),
         confirmPassword: this.confirm(),
         userType: this.userType(),
+        birthYear: isStudent ? this.birthYear() : null,
       })
       .subscribe({
         next: () => {

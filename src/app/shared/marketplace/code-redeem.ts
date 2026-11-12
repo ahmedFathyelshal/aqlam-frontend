@@ -57,6 +57,8 @@ export class AqCodeRedeem {
   protected inputId = `code-${AqCodeRedeem.next++}`;
 
   readonly courseId = input<string | null>(null);
+  /** A parent's linked child who gets the course. */
+  readonly forUserId = input<string | null>(null);
   readonly redeemed = output<Redeemed>();
 
   protected code = signal('');
@@ -76,7 +78,7 @@ export class AqCodeRedeem {
     if (!this.complete() || this.busy()) return;
     this.busy.set(true);
     this.error.set(null);
-    this.api.redeem(this.code(), this.courseId()).subscribe({
+    this.api.redeem(this.code(), this.courseId(), this.forUserId()).subscribe({
       next: result => {
         this.busy.set(false);
         this.redeemed.emit(result);

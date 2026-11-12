@@ -50,6 +50,17 @@ export class FamilyService {
     return this.http.get<ApiResponse<Child[]>>(ApiEndpoints.Me.Children).pipe(map(r => r.data));
   }
 
+  /** A parent creates a child's account (required under 13) and is linked to it. */
+  createChild(input: { userName: string; password: string; fullName: string | null; birthYear: number }): Observable<Child> {
+    return this.http.post<ApiResponse<Child>>(`${ApiEndpoints.Me.Children}/new`, input).pipe(map(r => r.data));
+  }
+
+  /** A student's family code for a parent (the open one is returned again). */
+  familyInvite(): Observable<{ code: string; childName: string; expiresAtUtc: string }> {
+    return this.http.post<ApiResponse<{ code: string; childName: string; expiresAtUtc: string }>>(ApiEndpoints.Me.Children.replace('/children', '/family-invite'), null)
+      .pipe(map(r => r.data));
+  }
+
   linkChild(code: string): Observable<Child> {
     return this.http.post<ApiResponse<Child>>(ApiEndpoints.Me.Children, { code }).pipe(map(r => r.data));
   }

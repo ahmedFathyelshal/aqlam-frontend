@@ -9,22 +9,29 @@ import { map, switchMap } from 'rxjs';
 
 import { parseVideoSource } from '@/app/core/learning/video-source';
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
-import { CoursePage, formatPrice, MarketplaceService, OutlineLesson, PreviewLesson, Redeemed } from '@/app/core/marketplace/marketplace.service';
+import { CoursePage, formatPrice, MarketplaceService, OutlineLesson, PreviewLesson, Redeemed, ViewerChild } from '@/app/core/marketplace/marketplace.service';
+import { FamilyService } from '@/app/core/school/family.service';
 import { AqCodeRedeem } from '@/app/shared/marketplace/code-redeem';
 import { AqCourseThumb, AqMonogram, durationText } from '@/app/shared/marketplace/market-ui';
 import { NotFoundBlock } from './not-found-block';
 
 /** Which call to action the box shows. First match wins: staff, enrolled, soon, pending, code only, free, paid on, paid off. */
-export type CtaState = 'staff' | 'enrolled' | 'soon' | 'pending' | 'code' | 'free' | 'paid' | 'paidOff';
+export type CtaState = 'staff' | 'enrolled' | 'soon' | 'pending' | 'code' | 'free' | 'askParent' | 'paid' | 'paidOff';
 
-export function ctaState(page: CoursePage): CtaState {
-  const { viewer, course } = page;
-  if (viewer.isStaff) return 'staff';
+/**
+ * The call to action, for the viewer or (a parent) for the chosen child. Students under 18 ask a parent instead of
+ * paying (age rules of 2026-11-12); codes and free courses stay open to them.
+ */
+export function ctaState(page: CoursePage, child: ViewerChild | null = null): CtaState {
+  const { course } = page;
+  const viewer = child ? { ...page.viewer, enrolled: child.enrolled, hasPendingPayment: child.hasPendingPayment, mustAskParent: false } : page.viewer;
+  if (viewer.isStaff && !child) return 'staff';
   if (viewer.enrolled) return 'enrolled';
   if (course.isComingSoon) return 'soon';
   if (viewer.hasPendingPayment && page.onlinePaymentAvailable) return 'pending';
   if (course.codeActivationOnly) return 'code';
   if (course.isFree) return 'free';
+  if (viewer.mustAskParent) return 'askParent';
   return page.onlinePaymentAvailable ? 'paid' : 'paidOff';
 }
 
@@ -243,6 +250,15 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
 
       <ng-template #cta>
         @let page = data()!;
+        @if (children().length) {
+          <label class="field">
+            <span class="field-label">{{ t('age.whoFor') }}</span>
+            <select class="select min-h-11" (change)="chooseChild($any($event.target).value)">
+              @for (c of children(); track c.userId) { <option [value]="c.userId" [selected]="child()?.userId === c.userId">{{ c.name }}</option> }
+            </select>
+          </label>
+        }
+        @if (done()) { <p class="alert alert-success" role="status">{{ done() }}</p> }
         @switch (state()) {
           @case ('staff') {
             <span class="badge badge-info w-fit">{{ t('market.cta.staff') }}</span>
@@ -250,8 +266,29 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
             <p class="text-sm text-muted">{{ t('market.cta.staffHint') }}</p>
           }
           @case ('enrolled') {
-            <span class="badge badge-success w-fit"><mat-icon svgIcon="check" class="icon-size-3.5" />{{ t('market.cta.enrolledHint') }}</span>
-            <a class="btn btn-primary btn-block min-h-12" [routerLink]="['/learn', page.organizationSlug, page.courseId]">{{ t('market.cta.continue') }}</a>
+            @if (child(); as c) {
+              <span class="badge badge-success w-fit"><mat-icon svgIcon="check" class="icon-size-3.5" />{{ t('age.childEnrolled', { name: c.name }) }}</span>
+            } @else {
+              <span class="badge badge-success w-fit"><mat-icon svgIcon="check" class="icon-size-3.5" />{{ t('market.cta.enrolledHint') }}</span>
+              <a class="btn btn-primary btn-block min-h-12" [routerLink]="['/learn', page.organizationSlug, page.courseId]">{{ t('market.cta.continue') }}</a>
+            }
+          }
+          @case ('askParent') {
+            <p class="text-[1.75rem] font-bold tabular-nums">{{ price() }}</p>
+            <div class="alert alert-info flex-col items-start gap-1">
+              <p class="font-bold">{{ t('age.askParentTitle') }}</p>
+              <p class="text-sm">{{ t('age.askParentBody') }}</p>
+            </div>
+            @if (familyCode(); as code) {
+              <div class="rounded-ui border border-line bg-page p-3 text-center">
+                <p class="text-sm text-muted">{{ t('age.familyCodeLabel') }}</p>
+                <p dir="ltr" class="font-mono text-2xl font-bold tracking-[0.2em]">{{ code }}</p>
+                <p class="text-sm text-muted">{{ t('age.familyCodeHint') }}</p>
+              </div>
+            } @else {
+              <button type="button" class="btn btn-primary btn-block min-h-12" [disabled]="busy()" (click)="makeFamilyCode()">{{ t('age.askParentButton') }}</button>
+            }
+            <ng-container *ngTemplateOutlet="codeArea" />
           }
           @case ('soon') {
             <span class="badge badge-warning w-fit">{{ t('market.cta.soon') }}</span>
@@ -282,12 +319,12 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
             <button type="button" class="btn btn-primary btn-block min-h-12" [disabled]="busy()" (click)="primary()">{{ primaryLabel(t) }}</button>
             <p class="text-sm text-muted">{{ t('market.cta.oneTime') }}</p>
             <p class="text-sm font-semibold text-warning-700">{{ t('market.cta.testMode') }}</p>
-            @if (page.viewer.signedIn) { <p class="text-sm text-muted">{{ t('market.cta.minor') }}</p> }
+            @if (!page.viewer.signedIn) { <p class="text-sm text-muted">{{ t('market.cta.minor') }}</p> }
             <ng-container *ngTemplateOutlet="codeArea" />
           }
           @case ('paidOff') {
             <p class="text-[1.75rem] font-bold tabular-nums">{{ price() }}</p>
-            <div class="alert alert-info">
+            <div class="alert alert-info flex-col items-start gap-1">
               <p class="font-bold">{{ t('market.cta.offTitle') }}</p>
               <p class="text-sm">{{ t('market.cta.offBody') }}</p>
             </div>
@@ -303,7 +340,7 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
           <a class="btn btn-outline btn-block min-h-12" routerLink="/auth/sign-in" [queryParams]="{ redirectURL: returnUrl('code') }">{{ state() === 'code' ? t('market.cta.enterCode') : t('market.cta.haveCode') }}</a>
         } @else if (codeOpen() || state() === 'code') {
           <div #codeBox>
-            <aq-code-redeem [courseId]="page.courseId" (redeemed)="onRedeemed($event)" />
+            <aq-code-redeem [courseId]="page.courseId" [forUserId]="child()?.userId ?? null" (redeemed)="onRedeemed($event)" />
           </div>
         } @else {
           <button type="button" class="btn btn-ghost text-secondary-600" (click)="codeOpen.set(true)">{{ t('market.cta.haveCode') }}</button>
@@ -339,7 +376,18 @@ export default class MarketCoursePage {
   protected preview = signal<PreviewLesson | null>(null);
   protected previewLoading = signal(false);
 
-  protected state = computed<CtaState | null>(() => (this.data() ? ctaState(this.data()!) : null));
+  /** A parent's linked children; the chosen one gets the course. */
+  protected children = computed<ViewerChild[]>(() => this.data()?.viewer.children ?? []);
+  private chosenChild = signal<string | null>(null);
+  protected child = computed<ViewerChild | null>(() => {
+    const list = this.children();
+    return list.find(c => c.userId === this.chosenChild()) ?? list[0] ?? null;
+  });
+  protected familyCode = signal<string | null>(null);
+  protected done = signal<string | null>(null);
+  private family = inject(FamilyService);
+
+  protected state = computed<CtaState | null>(() => (this.data() ? ctaState(this.data()!, this.child()) : null));
   protected showBar = computed(() => ['free', 'paid', 'pending', 'code'].includes(this.state() ?? ''));
   protected price = computed(() => {
     const c = this.data()?.course;
@@ -463,8 +511,34 @@ export default class MarketCoursePage {
     this.preview.set(null);
   }
 
+  protected chooseChild(userId: string): void {
+    this.chosenChild.set(userId);
+    this.done.set(null);
+    this.actionError.set(null);
+  }
+
+  /** A teenager's family code for a parent, who enters it in "My children" and can then buy the course. */
+  protected makeFamilyCode(): void {
+    this.busy.set(true);
+    this.family.familyInvite().subscribe({
+      next: invite => (this.busy.set(false), this.familyCode.set(invite.code)),
+      error: () => (this.busy.set(false), this.actionError.set('market.cta.enrollFailed')),
+    });
+  }
+
   protected onRedeemed(result: Redeemed): void {
-    this.router.navigate(['/learn', result.organizationSlug, result.courseId]);
+    if (this.child()) this.doneForChild();
+    else this.router.navigate(['/learn', result.organizationSlug, result.courseId]);
+  }
+
+  /** A parent stays on the page: the course is now the child's (the parent cannot open the child's lessons). */
+  private doneForChild(): void {
+    const name = this.child()?.name ?? '';
+    this.busy.set(false);
+    this.codeOpen.set(false);
+    this.done.set(this.transloco.translate('age.childEnrolled', { name }));
+    const slug = this.data()?.course.slug;
+    if (slug) this.api.course(slug).subscribe(page => this.data.set(page));
   }
 
   private codeInputId(): string {
@@ -474,8 +548,9 @@ export default class MarketCoursePage {
   private enrol(page: CoursePage): void {
     this.busy.set(true);
     this.actionError.set(null);
-    this.api.enroll(page.organizationSlug, page.courseId).subscribe({
-      next: () => this.router.navigate(['/learn', page.organizationSlug, page.courseId]),
+    const forChild = this.child();
+    this.api.enroll(page.organizationSlug, page.courseId, forChild?.userId).subscribe({
+      next: () => (forChild ? this.doneForChild() : this.router.navigate(['/learn', page.organizationSlug, page.courseId])),
       error: err => {
         this.busy.set(false);
         // Already enrolled (e.g. in another tab): just open the course.
@@ -488,7 +563,7 @@ export default class MarketCoursePage {
   private buy(page: CoursePage): void {
     this.busy.set(true);
     this.actionError.set(null);
-    this.api.checkout(page.organizationSlug, page.courseId).subscribe({
+    this.api.checkout(page.organizationSlug, page.courseId, this.child()?.userId).subscribe({
       next: checkout => this.router.navigateByUrl(checkout.redirectUrl),
       error: err => {
         this.busy.set(false);
@@ -504,7 +579,7 @@ export default class MarketCoursePage {
     const intent = this.route.snapshot.queryParamMap.get('intent') as Intent | null;
     if (!intent || !page.viewer.signedIn) return;
     this.router.navigate([], { relativeTo: this.route, queryParams: { intent: null }, queryParamsHandling: 'merge', replaceUrl: true });
-    const state = ctaState(page);
+    const state = ctaState(page, page.viewer.children?.[0] ?? null);
     if (intent === 'enrol' && state === 'free') this.enrol(page);
     else if (intent === 'code' || (intent === 'buy' && state === 'paidOff')) this.codeOpen.set(true);
     // "buy" stops on the page: the student presses Buy themselves.

@@ -38,6 +38,7 @@ export class TestBanner {}
             <section class="card card-body flex flex-col gap-4 md:order-2">
               <h2 class="section-title">{{ t('checkout.summary') }}</h2>
               <p class="font-semibold">{{ p.courseTitle }}</p>
+              @if (p.forStudentName) { <p class="text-sm text-muted">{{ t('age.forStudent', { name: p.forStudentName }) }}</p> }
               <dl class="flex items-baseline justify-between border-t border-line-soft pt-3">
                 <dt class="text-muted">{{ t('checkout.total') }}</dt>
                 <dd class="text-xl font-bold tabular-nums">{{ amount() }}</dd>
@@ -127,9 +128,11 @@ export class TestCheckoutPage {
               @case ('Succeeded') {
                 <span class="flex size-16 items-center justify-center rounded-full bg-primary-100 text-primary-700"><mat-icon svgIcon="check" class="icon-size-8" /></span>
                 <h1 class="font-display text-[2rem] font-bold">{{ t('checkout.successTitle') }}</h1>
-                <p>{{ t('checkout.successBody', { course: p.courseTitle }) }}</p>
+                <p>{{ p.forStudentName ? t('age.boughtFor', { course: p.courseTitle, name: p.forStudentName }) : t('checkout.successBody', { course: p.courseTitle }) }}</p>
                 <p class="text-sm text-muted">{{ t('checkout.amount', { amount: amount() }) }}</p>
-                <a class="btn btn-primary mt-2 min-h-12" [routerLink]="['/learn', p.organizationSlug, p.courseId]">{{ t('checkout.startLearning') }}</a>
+                @if (!p.forStudentName) {
+                  <a class="btn btn-primary mt-2 min-h-12" [routerLink]="['/learn', p.organizationSlug, p.courseId]">{{ t('checkout.startLearning') }}</a>
+                }
               }
               @case ('Failed') {
                 <span class="flex size-16 items-center justify-center rounded-full bg-danger-50 text-danger-700"><mat-icon svgIcon="x" class="icon-size-8" /></span>
