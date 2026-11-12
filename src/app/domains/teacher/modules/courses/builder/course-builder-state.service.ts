@@ -12,7 +12,8 @@ import {
   UpdateCourseMediaRequest,
   CurriculumChapterInput,
   SyncCurriculumRequest,
-  CourseStatus
+  CourseStatus,
+  CourseVisibility
 } from './course-builder.models';
 
 @Injectable({
@@ -88,6 +89,14 @@ export class CourseBuilderStateService {
     return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.Status(this.orgContext.requireActiveSlug(), id), { status }).pipe(
       map(response => response.data),
       tap(draft => this.state.update(s => ({ ...s, status: draft.status })))
+    );
+  }
+
+  /** Private (members only), unlisted (anyone with the link) or public (listed in the marketplace). */
+  setVisibility(id: string, visibility: CourseVisibility): Observable<CourseDraft> {
+    return this.http.put<ApiResponse<CourseDraft>>(ApiEndpoints.TeacherCourses.Visibility(this.orgContext.requireActiveSlug(), id), { visibility }).pipe(
+      map(response => response.data),
+      tap(draft => this.state.update(s => ({ ...s, visibility: draft.visibility })))
     );
   }
 

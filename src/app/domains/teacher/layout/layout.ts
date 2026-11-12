@@ -193,6 +193,16 @@ export class TeacherLayout {
         { key: 'nav.questions', icon: 'library', path: 'questions', permission: 'courses.edit' as Permission },
       ].filter(allowed),
     });
+    // Marketplace: the independent teacher's public page; earnings for anyone who sells (not schools).
+    if (org.type !== 'School') {
+      groups.push({
+        key: 'staffNav.group',
+        items: ([
+          ...(org.type === 'Personal' ? [{ key: 'staffNav.publicPage', icon: 'user-round', path: 'public-page', permission: 'org.settings' as Permission }] : []),
+          { key: 'staffNav.earnings', icon: 'wallet', path: 'earnings', permission: 'finance.view' as Permission },
+        ] satisfies NavItem[] as NavItem[]).filter(allowed),
+      });
+    }
     return groups.filter(g => g.items.length);
   });
 

@@ -110,6 +110,7 @@ export class AuthService {
     if (user.mustChangePassword) return '/account/password';
     if (this.orgContext.staffMemberships().length) return '/teacher';
     if (user.roles?.includes('Student')) return '/student/dashboard';
+    if (user.roles?.includes('SuperAdmin')) return '/admin/marketplace';
     return '/parent';
   }
 

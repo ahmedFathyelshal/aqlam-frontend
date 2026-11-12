@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -50,6 +50,32 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
           @if (error()) { <p class="field-error mt-2" role="alert">{{ error() }}</p> }
           @if (linked()) { <div class="alert alert-success mt-3" role="status">{{ t('parent.linked', { name: linked() }) }}</div> }
         </section>
+
+        <!-- A child's own account, made by the parent (the way in under 13; also for families outside schools) -->
+        <section class="card card-body mt-6" aria-labelledby="new-child">
+          <h2 id="new-child" class="section-title">{{ t('age.newChildTitle') }}</h2>
+          <p class="field-hint mt-1">{{ t('age.newChildHint') }}</p>
+          <form class="mt-3 grid gap-3 sm:grid-cols-2" (submit)="$event.preventDefault(); createChild()">
+            <label class="field"><span class="field-label">{{ t('age.childName') }}</span>
+              <input class="input" maxlength="100" [value]="childName()" (input)="childName.set($any($event.target).value)" /></label>
+            <label class="field"><span class="field-label">{{ t('age.birthYear') }}</span>
+              <input class="input" type="number" inputmode="numeric" dir="ltr" [min]="thisYear - 17" [max]="thisYear" [value]="childYear() ?? ''"
+                     (input)="childYear.set($any($event.target).value ? +$any($event.target).value : null)" /></label>
+            <label class="field"><span class="field-label">{{ t('auth.userName') }}</span>
+              <input class="input" dir="ltr" autocapitalize="none" spellcheck="false" maxlength="64" [value]="childUser()" (input)="childUser.set($any($event.target).value)" />
+              <span class="field-hint">{{ t('age.childUserHint') }}</span></label>
+            <label class="field"><span class="field-label">{{ t('auth.password') }}</span>
+              <input class="input" type="password" autocomplete="new-password" [value]="childPassword()" (input)="childPassword.set($any($event.target).value)" />
+              <span class="field-hint">{{ t('auth.passwordRule') }}</span></label>
+            <div class="sm:col-span-2">
+              <button type="submit" class="btn btn-primary" [disabled]="creating() || !childFormValid()">{{ t('age.createChild') }}</button>
+            </div>
+          </form>
+          @if (createError()) { <p class="field-error mt-2" role="alert">{{ createError() }}</p> }
+          @if (created()) { <div class="alert alert-success mt-3" role="status">{{ t('age.childCreated', { name: created() }) }}</div> }
+        </section>
+
+        <a class="btn btn-ghost mt-4 text-secondary-600" routerLink="/search"><mat-icon svgIcon="search" class="icon-size-4" />{{ t('market.notFoundAction') }}</a>
       </div>
     </ng-container>
   `,
@@ -64,6 +90,38 @@ export default class ParentChildrenComponent {
   protected linking = signal(false);
   protected error = signal<string | null>(null);
   protected linked = signal<string | null>(null);
+
+  protected readonly thisYear = new Date().getFullYear();
+  protected childName = signal('');
+  protected childYear = signal<number | null>(null);
+  protected childUser = signal('');
+  protected childPassword = signal('');
+  protected creating = signal(false);
+  protected createError = signal<string | null>(null);
+  protected created = signal<string | null>(null);
+  protected childFormValid = computed(() => {
+    const y = this.childYear();
+    return !!this.childUser().trim() && this.childPassword().length >= 8 && y !== null && y <= this.thisYear && this.thisYear - y < 18;
+  });
+
+  protected createChild(): void {
+    this.creating.set(true);
+    this.createError.set(null);
+    this.created.set(null);
+    this.family.createChild({ userName: this.childUser().trim(), password: this.childPassword(), fullName: this.childName().trim() || null, birthYear: this.childYear()! })
+      .subscribe({
+        next: child => {
+          this.creating.set(false);
+          this.created.set(child.fullName);
+          this.childName.set('');
+          this.childUser.set('');
+          this.childPassword.set('');
+          this.childYear.set(null);
+          this.load();
+        },
+        error: (err: unknown) => (this.creating.set(false), this.createError.set(errorMessages(err, 'Error').join(' '))),
+      });
+  }
 
   constructor() {
     this.load();

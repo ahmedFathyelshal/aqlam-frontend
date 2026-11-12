@@ -77,6 +77,14 @@ const routes: Routes = [
             path: 'courses/:id/curriculum',
             loadComponent: () => import('./modules/courses/curriculum-workspace/curriculum-workspace.component'),
           },
+          {
+            path: 'courses/:id/codes',
+            canActivate: [() => inject(OrgContextService).can('courses.publish') || inject(Router).createUrlTree(inject(OrgContextService).path('dashboard'))],
+            loadComponent: () => import('./modules/market/course-codes.component'),
+          },
+          // Marketplace: public page (independent teachers) and earnings
+          { path: 'public-page', loadComponent: () => import('./modules/market/public-page.component') },
+          { path: 'earnings', loadComponent: () => import('./modules/market/earnings.component') },
           // School & center operations
           { path: 'classes', loadComponent: () => import('./modules/school/classes/classes.component') },
           { path: 'classes/:classId', loadComponent: () => import('./modules/school/classes/class-detail.component') },

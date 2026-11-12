@@ -8,7 +8,8 @@ import { filter } from 'rxjs';
 import { OrgContextService } from '@/app/core/organizations/org-context.service';
 import { AqInkBar } from '@/app/shared/ui/ink-bar';
 import { CourseBuilderStateService } from '../course-builder-state.service';
-import { CourseStatus } from '../course-builder.models';
+import { CourseStatus, CourseVisibility } from '../course-builder.models';
+import { errorMessages } from '@/app/core/utils/api-error.utils';
 
 /** Course builder frame: the step indicator (ink bar between numbered steps) and the current step. */
 @Component({
@@ -40,6 +41,22 @@ export default class BuilderLayoutComponent implements OnInit {
     return index < 0 ? 0 : index;
   });
   protected progress = computed(() => (this.current() * 100) / (this.steps.length - 1));
+
+  protected readonly visibilities = [CourseVisibility.Private, CourseVisibility.Unlisted, CourseVisibility.Public];
+  protected showVisibility = computed(() => this.orgContext.activeOrg()?.type !== 'School' && this.orgContext.can('courses.publish'));
+  protected savingVis = signal(false);
+  protected visError = signal<string | null>(null);
+
+  protected setVisibility(visibility: CourseVisibility): void {
+    const id = this.state().id;
+    if (!id) return;
+    this.savingVis.set(true);
+    this.visError.set(null);
+    this.builderState.setVisibility(id, visibility).subscribe({
+      next: () => this.savingVis.set(false),
+      error: err => (this.savingVis.set(false), this.visError.set(errorMessages(err, 'Error').join(' '))),
+    });
+  }
 
   ngOnInit(): void {
     this.router.events

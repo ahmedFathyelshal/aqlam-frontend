@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -18,7 +19,7 @@ type OrgItem<T> = T & { slug: string };
 /** Student home: what to study now, what is due, every subject, and the latest result. */
 @Component({
   selector: 'student-dashboard',
-  imports: [RouterLink, TranslocoDirective, AqInkBar],
+  imports: [RouterLink, MatIconModule, TranslocoDirective, AqInkBar],
   template: `
     <ng-container *transloco="let t">
       <div class="page">
@@ -155,6 +156,16 @@ type OrgItem<T> = T & { slug: string };
               } @else {
                 <button type="button" class="flex min-h-11 cursor-pointer items-center font-semibold text-secondary-600 underline" (click)="joinOpen.set(true)">{{ t('student.joinLink') }}</button>
               }
+            </section>
+
+            <!-- Activation cards (12 characters) open one course; the join code above joins a school or center. -->
+            <section class="rounded-card border border-line bg-white p-5">
+              <h2 class="section-title flex items-center gap-2"><mat-icon svgIcon="key-round" class="icon-size-5 text-primary-600" />{{ t('codes.homeTitle') }}</h2>
+              <p class="field-hint mt-1">{{ t('codes.homeBody') }}</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <a class="btn btn-outline min-h-11" routerLink="/redeem">{{ t('codes.activate') }}</a>
+                <a class="btn btn-ghost min-h-11 text-secondary-600" routerLink="/search"><mat-icon svgIcon="search" class="icon-size-4" />{{ t('market.notFoundAction') }}</a>
+              </div>
             </section>
           </aside>
         </div>

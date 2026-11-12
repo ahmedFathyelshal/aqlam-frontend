@@ -45,5 +45,8 @@ export const routes: Route[] = [
       return inject(AuthService).homeRoute();
     },
   },
+  // Public marketplace: search, teacher and course pages, test prep; checkout and codes (signed in).
+  { path: '', loadChildren: () => import('./domains/public/routes') },
+
   { path: '**', redirectTo: '' },
 ];

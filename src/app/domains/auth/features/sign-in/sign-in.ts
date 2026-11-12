@@ -53,7 +53,7 @@ import { ApiValidationError } from '@/app/core/utils/api-error.utils';
 
       <div class="my-6 flex items-center gap-3 text-sm text-muted"><span class="h-px flex-1 bg-line"></span>{{ t('auth.or') }}<span class="h-px flex-1 bg-line"></span></div>
       <p class="text-center text-[0.95rem]">
-        {{ t('auth.noAccount') }} <a routerLink="/auth/sign-up" class="font-bold">{{ t('auth.createAccount') }}</a>
+        {{ t('auth.noAccount') }} <a routerLink="/auth/sign-up" queryParamsHandling="preserve" class="font-bold">{{ t('auth.createAccount') }}</a>
       </p>
     </ng-container>
   `,
