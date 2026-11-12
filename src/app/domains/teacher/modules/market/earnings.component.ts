@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { formatPrice } from '@/app/core/marketplace/marketplace.service';
 import { Earnings, TeacherBusinessService } from '@/app/core/marketplace/teacher-business.service';
@@ -97,7 +98,7 @@ export function shortName(name: string): string {
                   </dl>
                   @if (f.ratePerStudent === null) { <p class="text-sm text-muted">{{ t('earnings.rateNotSet') }}</p> }
                   @if (!f.countedStudents) { <p class="text-sm text-muted">{{ t('earnings.zero') }}</p> }
-                  @if (f.excludedBuyers) { <p class="text-sm">{{ t('earnings.excluded', { count: f.excludedBuyers }) }}</p> }
+                  @if (f.excludedBuyers) { <p class="text-sm">{{ t(plural('earnings.excluded', f.excludedBuyers), { count: f.excludedBuyers }) }}</p> }
                   <div class="border-t border-line-soft pt-3">
                     <h3 class="text-sm font-bold">{{ t('earnings.whoCounts') }}</h3>
                     <ul class="mt-2 flex flex-col gap-1.5 text-sm">
@@ -118,6 +119,8 @@ export function shortName(name: string): string {
   `,
 })
 export default class EarningsComponent {
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(TeacherBusinessService);
   private transloco = inject(TranslocoService);
   protected data = signal<Earnings | null>(null);

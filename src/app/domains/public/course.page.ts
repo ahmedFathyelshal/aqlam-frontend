@@ -6,6 +6,7 @@ import { DomSanitizer, Meta, SafeResourceUrl, Title } from '@angular/platform-br
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map, switchMap } from 'rxjs';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { parseVideoSource } from '@/app/core/learning/video-source';
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
@@ -81,10 +82,10 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
                   </p>
                 </div>
                 <ul class="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/85">
-                  @if (c.lessonCount) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t('market.card.lessons', { count: c.lessonCount }) }}</li> }
+                  @if (c.lessonCount) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t(plural('market.card.lessons', c.lessonCount), { count: c.lessonCount }) }}</li> }
                   @if (c.totalMinutes) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="clock" class="icon-size-4" />{{ duration(c.totalMinutes, t) }}</li> }
                   @if (c.gradeId) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="graduation-cap" class="icon-size-4" />{{ names.grade(c.gradeId) }}</li> }
-                  @if (c.freePreviewCount) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="play" class="icon-size-4" />{{ t('market.card.previews', { count: c.freePreviewCount }) }}</li> }
+                  @if (c.freePreviewCount) { <li class="inline-flex items-center gap-1.5"><mat-icon svgIcon="play" class="icon-size-4" />{{ t(plural('market.card.previews', c.freePreviewCount), { count: c.freePreviewCount }) }}</li> }
                 </ul>
                 <aq-course-thumb class="mt-5 block overflow-hidden rounded-card lg:hidden" [url]="c.thumbnailUrl" [title]="c.title" [subjectId]="c.subjectId" [subjectName]="names.subject(c.subjectId)" />
               </div>
@@ -120,9 +121,9 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
               <section aria-labelledby="outline-title">
                 <div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h2 id="outline-title" class="section-title">{{ t('market.course.outline') }}</h2>
-                  <span class="text-sm text-muted">{{ t('market.course.outlineSummary', { chapters: page.chapters.length, lessons: page.course.lessonCount }) }}</span>
+                  <span class="text-sm text-muted">{{ t(plural('market.course.chapters', page.chapters.length), { count: page.chapters.length }) }} · {{ t(plural('market.card.lessons', page.course.lessonCount), { count: page.course.lessonCount }) }}</span>
                 </div>
-                @if (page.course.freePreviewCount) { <p class="mb-3 text-sm text-muted">{{ t('market.course.previewCount', { count: page.course.freePreviewCount }) }}</p> }
+                @if (page.course.freePreviewCount) { <p class="mb-3 text-sm text-muted">{{ t(plural('market.course.previewCount', page.course.freePreviewCount), { count: page.course.freePreviewCount }) }}</p> }
                 @if (page.chapters.length) {
                   <div class="card divide-y divide-line-soft overflow-hidden">
                     @for (ch of page.chapters; track $index; let i = $index) {
@@ -130,7 +131,7 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
                         <button type="button" class="flex min-h-14 w-full cursor-pointer items-center gap-3 px-4 text-start hover:bg-page" [attr.aria-expanded]="isOpen(i)" (click)="toggle(i)">
                           <mat-icon svgIcon="chevron-down" class="icon-size-5 text-muted transition-transform motion-reduce:transition-none" [class.rotate-180]="isOpen(i)" />
                           <span class="grow font-bold">{{ ch.title }}</span>
-                          <span class="text-sm text-muted">{{ t('market.card.lessons', { count: ch.lessons.length }) }}</span>
+                          <span class="text-sm text-muted">{{ t(plural('market.card.lessons', ch.lessons.length), { count: ch.lessons.length }) }}</span>
                         </button>
                         @if (isOpen(i)) {
                           <ul class="pb-2">
@@ -350,6 +351,8 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
   `,
 })
 export default class MarketCoursePage {
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(MarketplaceService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);

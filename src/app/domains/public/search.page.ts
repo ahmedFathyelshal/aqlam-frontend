@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { catchError, combineLatest, debounceTime, distinctUntilChanged, forkJoin, map, of, switchMap } from 'rxjs';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
 import {
@@ -170,7 +171,7 @@ const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
           }
           @if (total() !== null && !error()) {
             <p class="mb-3 text-sm text-muted" aria-live="polite">
-              {{ filters().tab === 'teachers' ? t('market.teachersCount', { count: total() }) : t('market.coursesCount', { count: total() }) }}
+              {{ filters().tab === 'teachers' ? t(plural('market.teachersCount', total() ?? 0), { count: total() }) : t(plural('market.coursesCount', total() ?? 0), { count: total() }) }}
             </p>
           }
 
@@ -201,7 +202,7 @@ const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
                     @if (activeCount()) { <button type="button" class="btn btn-outline" (click)="clearFilters()">{{ t('market.clearFilters') }}</button> }
                     @if (otherTotal()) {
                       <button type="button" class="btn btn-ghost text-secondary-600" (click)="set({ tab: filters().tab === 'courses' ? 'teachers' : 'courses' })">
-                        {{ t('market.otherTabHits', { count: otherTotal(), tab: t(filters().tab === 'courses' ? 'market.tabTeachers' : 'market.tabCourses') }) }}
+                        {{ t(plural('market.otherTabHits', otherTotal()), { count: otherTotal(), tab: t(filters().tab === 'courses' ? 'market.tabTeachers' : 'market.tabCourses') }) }}
                       </button>
                     }
                   </div>
@@ -280,6 +281,8 @@ const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
   `,
 })
 export default class MarketSearchPage {
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(MarketplaceService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);

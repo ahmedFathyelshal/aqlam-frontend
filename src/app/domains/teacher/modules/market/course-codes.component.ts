@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map } from 'rxjs';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { ApiEndpoints } from '@/app/core/constants/api-endpoints';
 import { formatCode } from '@/app/core/marketplace/marketplace.service';
@@ -106,7 +107,7 @@ import { ConfirmService } from '@/app/shared/ui/confirm.service';
             @if (errors().length) { <p class="field-error" role="alert">{{ errors().join(' ') }}</p> }
             <div class="flex justify-end gap-2">
               <button type="button" class="btn btn-ghost" (click)="closeDialog()">{{ t('codesAdmin.cancel') }}</button>
-              <button type="submit" class="btn btn-primary" [disabled]="busy() || !name().trim() || quantity() < 1 || quantity() > 1000">{{ t('codesAdmin.createN', { count: quantity() }) }}</button>
+              <button type="submit" class="btn btn-primary" [disabled]="busy() || !name().trim() || quantity() < 1 || quantity() > 1000">{{ t(plural('codesAdmin.createN', quantity()), { count: quantity() }) }}</button>
             </div>
           </form>
         } @else {
@@ -149,6 +150,8 @@ import { ConfirmService } from '@/app/shared/ui/confirm.service';
   `,
 })
 export default class CourseCodesComponent {
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(TeacherBusinessService);
   private http = inject(HttpClient);
   private confirmService = inject(ConfirmService);

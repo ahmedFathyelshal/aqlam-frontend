@@ -3,8 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map, switchMap } from 'rxjs';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
 import { MarketplaceService, TeacherPage } from '@/app/core/marketplace/marketplace.service';
@@ -36,7 +37,7 @@ import { NotFoundBlock } from './not-found-block';
                 <p class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/80">
                   <span>{{ t('market.gender.' + page.teacher.gender) }} · {{ t('market.card.independent') }}</span>
                   @if (page.teacher.city) { <span class="inline-flex items-center gap-1"><mat-icon svgIcon="map-pin" class="icon-size-4" />{{ page.teacher.city }}</span> }
-                  <span class="inline-flex items-center gap-1"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t('market.card.courses', { count: page.courses.length }) }}</span>
+                  <span class="inline-flex items-center gap-1"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t(plural('market.card.courses', page.courses.length), { count: page.courses.length }) }}</span>
                 </p>
               </div>
               <button type="button" class="btn min-h-11 border-white/30 bg-transparent text-white hover:bg-white/10" (click)="share()">
@@ -93,6 +94,9 @@ import { NotFoundBlock } from './not-found-block';
   `,
 })
 export default class MarketTeacherPage {
+  private transloco = inject(TranslocoService);
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(MarketplaceService);
   private title = inject(Title);
   private meta = inject(Meta);

@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { pluralKey } from '@/app/core/transloco/plural';
 
 import { CourseCard, formatPrice, TeacherCard } from '@/app/core/marketplace/marketplace.service';
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
@@ -135,12 +136,12 @@ export class AqCourseThumb {
           }
           @if (c.lessonCount || c.totalMinutes) {
             <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-              @if (c.lessonCount) { <span class="inline-flex items-center gap-1"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t('market.card.lessons', { count: c.lessonCount }) }}</span> }
+              @if (c.lessonCount) { <span class="inline-flex items-center gap-1"><mat-icon svgIcon="book-open" class="icon-size-4" />{{ t(plural('market.card.lessons', c.lessonCount), { count: c.lessonCount }) }}</span> }
               @if (c.totalMinutes) { <span class="inline-flex items-center gap-1"><mat-icon svgIcon="clock" class="icon-size-4" />{{ duration(c.totalMinutes, t) }}</span> }
             </p>
           }
           @if (c.freePreviewCount && !c.isFree) {
-            <span class="badge badge-info w-fit"><mat-icon svgIcon="play" class="icon-size-3.5" />{{ t('market.card.previews', { count: c.freePreviewCount }) }}</span>
+            <span class="badge badge-info w-fit"><mat-icon svgIcon="play" class="icon-size-3.5" />{{ t(plural('market.card.previews', c.freePreviewCount), { count: c.freePreviewCount }) }}</span>
           }
         </div>
         <div class="mt-auto flex min-h-12 items-center gap-2 border-t border-line-soft px-4 py-3">
@@ -160,6 +161,8 @@ export class AqCourseThumb {
   host: { class: 'block h-full' },
 })
 export class AqCourseCard {
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   protected names = inject(LookupNames);
   private transloco = inject(TranslocoService);
   readonly course = input.required<CourseCard>();
@@ -195,7 +198,7 @@ export class AqCourseCard {
           </div>
         }
         <div class="mt-auto flex flex-wrap items-center gap-2 border-t border-line-soft pt-3 text-sm text-muted">
-          <span class="grow">{{ p.courseCount ? t('market.card.courses', { count: p.courseCount }) : t('market.card.noCourses') }}</span>
+          <span class="grow">{{ p.courseCount ? t(plural('market.card.courses', p.courseCount), { count: p.courseCount }) : t('market.card.noCourses') }}</span>
           @if (picked()) { <span class="badge badge-neutral"><mat-icon svgIcon="bookmark" class="icon-size-3.5" />{{ t('market.pick') }}</span> }
         </div>
       </a>
@@ -204,6 +207,9 @@ export class AqCourseCard {
   host: { class: 'block h-full' },
 })
 export class AqTeacherCard {
+  private transloco = inject(TranslocoService);
+  /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
+  protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   protected names = inject(LookupNames);
   readonly teacher = input.required<TeacherCard>();
   readonly picked = input(false);
