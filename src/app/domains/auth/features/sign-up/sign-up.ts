@@ -14,7 +14,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
   template: `
     <ng-container *transloco="let t">
       <h1 class="text-2xl font-extrabold sm:text-3xl">{{ t('auth.signUp') }}</h1>
-      <p class="mt-1 text-muted">{{ t('auth.haveAccount') }} <a routerLink="/auth/sign-in" class="font-bold">{{ t('auth.signIn') }}</a></p>
+      <p class="mt-1 text-muted">{{ t('auth.haveAccount') }} <a routerLink="/auth/sign-in" queryParamsHandling="preserve" class="font-bold">{{ t('auth.signIn') }}</a></p>
 
       <form class="mt-6 flex flex-col gap-4" (submit)="submit($event)" novalidate>
         <fieldset class="flex flex-col gap-2">
@@ -105,7 +105,10 @@ export default class AuthSignUp {
       .subscribe({
         next: () => {
           this.busy.set(false);
-          this.router.navigate(['/auth/sign-in'], { queryParams: { created: 1 } });
+          // Keep the way back (e.g. to the course the visitor wanted to join).
+          const redirectURL = this.router.parseUrl(this.router.url).queryParams['redirectURL'] as string | undefined;
+          const safe = redirectURL?.startsWith('/') && !redirectURL.startsWith('//') ? redirectURL : undefined;
+          this.router.navigate(['/auth/sign-in'], { queryParams: { created: 1, redirectURL: safe } });
         },
         error: (err: unknown) => {
           this.busy.set(false);

@@ -40,5 +40,27 @@
         <router-outlet />
       }
     </section>
+
+    <!-- Who sees the course (not for schools: their courses stay private) and its activation codes -->
+    @if (state().id && showVisibility()) {
+      <section class="card card-body mt-6 flex flex-col gap-3" aria-labelledby="vis-title">
+        <h2 id="vis-title" class="section-title">{{ tr('courseVis.title') }}</h2>
+        <div class="grid gap-2 sm:grid-cols-3" role="radiogroup" [attr.aria-labelledby]="'vis-title'">
+          @for (v of visibilities; track v) {
+            <label class="flex min-h-14 cursor-pointer items-start gap-3 rounded-ui border border-line p-3 has-[:checked]:border-deep has-[:checked]:bg-page">
+              <input type="radio" name="visibility" class="mt-1 size-5 accent-primary-600" [checked]="(state().visibility ?? 'Private') === v" [disabled]="savingVis()" (change)="setVisibility(v)" />
+              <span><span class="block font-bold">{{ tr('courseVis.' + v) }}</span><span class="text-sm text-muted">{{ tr('courseVis.' + v + 'Hint') }}</span></span>
+            </label>
+          }
+        </div>
+        @if (state().visibility === 'Public' && state().status !== 'Published' && state().status !== 'Scheduled') {
+          <p class="text-sm text-warning-700">{{ tr('courseVis.publishFirst') }}</p>
+        }
+        @if (visError()) { <p class="field-error" role="alert">{{ visError() }}</p> }
+        @if (orgContext.can('courses.publish')) {
+          <a class="btn btn-outline self-start" [routerLink]="orgContext.path('courses', state().id!, 'codes')"><mat-icon svgIcon="key-round" class="icon-size-4" />{{ tr('staffNav.codes') }}</a>
+        }
+      </section>
+    }
   </div>
 </ng-container>
