@@ -2,6 +2,7 @@
 export const market = {
   ar: {
     market: {
+      home: { searchLink: 'ابحث عن معلم', searchLabel: 'ابحث عن معلم أو دورة', searchPlaceholder: 'اسم معلم أو مادة أو دورة', browseTeachers: 'تصفح المعلمين', browseCourses: 'تصفح الدورات' },
       nav: { search: 'البحث', signIn: 'تسجيل الدخول', myHome: 'صفحتي' },
       title: 'ابحث عن دورة أو معلم',
       lead: 'دورات من معلمين مستقلين ومراكز تعليمية، ويمكنك البحث دون إنشاء حساب.',
@@ -428,6 +429,7 @@ export const market = {
   },
   en: {
     market: {
+      home: { searchLink: 'Find a teacher', searchLabel: 'Find a teacher or a course', searchPlaceholder: 'Teacher, subject or course', browseTeachers: 'Browse teachers', browseCourses: 'Browse courses' },
       nav: { search: 'Search', signIn: 'Sign in', myHome: 'My home' },
       title: 'Find a course or a teacher',
       lead: 'Courses from independent teachers and learning centers. No account needed to search.',

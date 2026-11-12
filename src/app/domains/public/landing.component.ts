@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { I18nService } from '@/app/core/transloco/i18n.service';
@@ -35,7 +36,7 @@ const AUDIENCES: Audience[] = [
  */
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink, TranslocoDirective, AqLogo, AqInkBar],
+  imports: [RouterLink, MatIconModule, TranslocoDirective, AqLogo, AqInkBar],
   template: `
     <ng-container *transloco="let t">
       <div class="bg-page text-[1.0625rem] leading-[1.7] text-ink">
@@ -48,6 +49,9 @@ const AUDIENCES: Audience[] = [
               }
             </nav>
             <div class="ms-auto flex items-center gap-2.5">
+              <a class="inline-flex min-h-11 items-center gap-1.5 px-2 font-medium text-[#E3ECE6] no-underline hover:text-white" routerLink="/search" [attr.aria-label]="t('market.home.searchLink')">
+                <mat-icon svgIcon="search" class="icon-size-5" /><span class="max-sm:sr-only">{{ t('market.home.searchLink') }}</span>
+              </a>
               <button type="button" class="inline-flex min-h-11 cursor-pointer items-center px-2 text-[0.9375rem] text-[#E3ECE6]" [attr.lang]="i18n.lang() === 'ar' ? 'en' : 'ar'" (click)="i18n.toggle()">{{ t('landing.otherLanguage') }}</button>
               <a class="inline-flex min-h-11 items-center rounded-ui border border-[#BFE3CE] px-4.5 font-semibold text-white no-underline hover:bg-white/10" routerLink="/auth/sign-in">{{ t('landing.signIn') }}</a>
             </div>
@@ -70,6 +74,29 @@ const AUDIENCES: Audience[] = [
                   <a class="inline-flex min-h-13.5 items-center rounded-ui bg-page px-7.5 text-lg font-bold text-deep no-underline" routerLink="/" fragment="demo">{{ t('landing.requestDemo') }}</a>
                   <a class="inline-flex min-h-13.5 items-center rounded-ui border border-[#BFE3CE] px-6.5 text-lg font-semibold text-white no-underline hover:bg-white/10" routerLink="/" fragment="school">{{ t('landing.seeHow') }}</a>
                 </div>
+
+                <!-- The marketplace is open before sign-in: search teachers and courses from the first screen. -->
+                <form role="search" class="mt-7 flex max-w-[34rem] gap-2" (submit)="$event.preventDefault(); search(homeQuery.value)">
+                  <label for="home-q" class="sr-only">{{ t('market.home.searchLabel') }}</label>
+                  <div class="relative grow">
+                    <mat-icon svgIcon="search" class="pointer-events-none absolute start-4 top-1/2 icon-size-5 -translate-y-1/2 text-muted" />
+                    <input #homeQuery id="home-q" type="search" enterkeyhint="search" autocomplete="off"
+                           class="min-h-13.5 w-full rounded-ui border-0 bg-white ps-12 pe-4 text-ink outline-none focus:outline-3 focus:outline-secondary-200"
+                           [placeholder]="t('market.home.searchPlaceholder')" />
+                  </div>
+                  <button type="submit" class="inline-flex min-h-13.5 items-center rounded-ui bg-deep px-5 font-bold text-white">{{ t('market.search') }}</button>
+                </form>
+                <p class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[0.95rem]">
+                  <a class="inline-flex min-h-11 items-center gap-1.5 font-semibold text-white underline underline-offset-4" routerLink="/search" [queryParams]="{ tab: 'teachers' }">
+                    <mat-icon svgIcon="users-round" class="icon-size-4.5" />{{ t('market.home.browseTeachers') }}
+                  </a>
+                  <a class="inline-flex min-h-11 items-center gap-1.5 font-semibold text-white underline underline-offset-4" routerLink="/search">
+                    <mat-icon svgIcon="book-open" class="icon-size-4.5" />{{ t('market.home.browseCourses') }}
+                  </a>
+                  <a class="inline-flex min-h-11 items-center gap-1.5 font-semibold text-white underline underline-offset-4" routerLink="/prep/qudrat">
+                    <mat-icon svgIcon="target" class="icon-size-4.5" />{{ t('market.prep.qudrat') }}
+                  </a>
+                </p>
               </div>
 
               <!-- Slot for a real photograph later (no children without consent). -->
@@ -241,6 +268,12 @@ const AUDIENCES: Audience[] = [
 })
 export default class LandingComponent {
   protected i18n = inject(I18nService);
+  private router = inject(Router);
+
+  /** Teacher names and course words both work: search shows the tab with results. */
+  protected search(query: string): void {
+    this.router.navigate(['/search'], { queryParams: { q: query.trim() || null } });
+  }
 
   protected readonly contactEmail = environment.contactEmail;
   protected readonly sectionLinks = ['school', 'student', 'teacher', 'parent'];
