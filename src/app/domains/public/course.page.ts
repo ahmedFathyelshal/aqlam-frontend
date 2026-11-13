@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { afterNextRender, Component, computed, DestroyRef, effect, ElementRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { DomSanitizer, Meta, SafeResourceUrl, Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map, switchMap } from 'rxjs';
@@ -15,6 +15,7 @@ import { FamilyService } from '@/app/core/school/family.service';
 import { AqCodeRedeem } from '@/app/shared/marketplace/code-redeem';
 import { AqCourseThumb, AqMonogram, durationText } from '@/app/shared/marketplace/market-ui';
 import { NotFoundBlock } from './not-found-block';
+import { SeoService } from '@/app/core/services/seo.service';
 
 /** Which call to action the box shows. First match wins: staff, enrolled, soon, pending, code only, free, paid on, paid off. */
 export type CtaState = 'staff' | 'enrolled' | 'soon' | 'pending' | 'code' | 'free' | 'askParent' | 'paid' | 'paidOff';
@@ -280,6 +281,17 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
               <p class="font-bold">{{ t('age.askParentTitle') }}</p>
               <p class="text-sm">{{ t('age.askParentBody') }}</p>
             </div>
+            @if (page.viewer.birthYearMissing) {
+              <form class="flex flex-col gap-2 rounded-ui border border-line p-3" (submit)="$event.preventDefault(); saveBirthYear(yearInput.value)">
+                <label class="field-label" for="adult-year">{{ t('age.adultTitle') }}</label>
+                <p class="text-sm text-muted">{{ t('age.adultBody') }}</p>
+                <div class="flex gap-2">
+                  <input #yearInput id="adult-year" class="input w-32" type="number" inputmode="numeric" dir="ltr" min="1900" [max]="thisYear" [placeholder]="thisYear - 30" />
+                  <button type="submit" class="btn btn-outline" [disabled]="busy()">{{ t('age.adultSave') }}</button>
+                </div>
+                @if (yearError()) { <p class="field-error" role="alert">{{ t(yearError()!) }}</p> }
+              </form>
+            }
             @if (familyCode(); as code) {
               <div class="rounded-ui border border-line bg-page p-3 text-center">
                 <p class="text-sm text-muted">{{ t('age.familyCodeLabel') }}</p>
@@ -358,8 +370,7 @@ export default class MarketCoursePage {
   private router = inject(Router);
   private transloco = inject(TranslocoService);
   private sanitizer = inject(DomSanitizer);
-  private title = inject(Title);
-  private meta = inject(Meta);
+  private seo = inject(SeoService);
   protected names = inject(LookupNames);
   private injector = inject(Injector);
   protected duration = durationText;
@@ -387,6 +398,8 @@ export default class MarketCoursePage {
     return list.find(c => c.userId === this.chosenChild()) ?? list[0] ?? null;
   });
   protected familyCode = signal<string | null>(null);
+  protected readonly thisYear = new Date().getFullYear();
+  protected yearError = signal<string | null>(null);
   protected done = signal<string | null>(null);
   private family = inject(FamilyService);
 
@@ -436,9 +449,13 @@ export default class MarketCoursePage {
           // Keep the current address after a rename (old links find the course by its short code).
           if (page.course.slug !== this.route.snapshot.paramMap.get('slug'))
             this.router.navigate(['/courses', page.course.slug], { replaceUrl: true, queryParamsHandling: 'preserve' });
-          this.title.setTitle(`${page.course.title} | أقلام`);
-          this.meta.updateTag({ name: 'description', content: page.course.subtitle ?? page.course.title });
-          this.meta.updateTag({ property: 'og:title', content: page.course.title });
+          this.seo.set({
+            title: page.course.title,
+            description: page.course.subtitle ?? `${page.course.title} — ${page.teacher?.name ?? page.course.organizationName}`,
+            path: `/courses/${page.course.slug}`,
+            image: page.course.thumbnailUrl ?? page.teacher?.photoUrl,
+            type: 'article',
+          });
           this.resumeIntent(page);
         },
         error: () => this.missing.set(true),
@@ -518,6 +535,25 @@ export default class MarketCoursePage {
     this.chosenChild.set(userId);
     this.done.set(null);
     this.actionError.set(null);
+  }
+
+  /** An account from before the age rules adds its birth year once; an adult can then buy. */
+  protected saveBirthYear(value: string): void {
+    const year = Number(value);
+    if (!year || year < 1900 || year > this.thisYear) {
+      this.yearError.set('age.birthYearRequired');
+      return;
+    }
+    this.busy.set(true);
+    this.yearError.set(null);
+    this.api.setBirthYear(year).subscribe({
+      next: () => {
+        this.busy.set(false);
+        const slug = this.data()?.course.slug;
+        if (slug) this.api.course(slug).subscribe(page => this.data.set(page));
+      },
+      error: err => (this.busy.set(false), this.yearError.set(err?.status === 409 ? 'age.adultAlreadySet' : 'age.birthYearRequired')),
+    });
   }
 
   /** A teenager's family code for a parent, who enters it in "My children" and can then buy the course. */

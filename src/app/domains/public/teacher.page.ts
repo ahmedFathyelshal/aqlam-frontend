@@ -1,7 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map, switchMap } from 'rxjs';
@@ -11,6 +10,7 @@ import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
 import { MarketplaceService, TeacherPage } from '@/app/core/marketplace/marketplace.service';
 import { AqCardSkeleton, AqCourseCard, AqMonogram, subjectColor } from '@/app/shared/marketplace/market-ui';
 import { NotFoundBlock } from './not-found-block';
+import { SeoService } from '@/app/core/services/seo.service';
 
 /** An independent teacher's public page /t/{slug}: who they are, then their courses. No contact details (minors read it). */
 @Component({
@@ -98,8 +98,7 @@ export default class MarketTeacherPage {
   /** The plural form of a counted text for the reader's language (Arabic: one, two, 3–10, 11+). */
   protected plural = (key: string, count: number) => pluralKey(key, count, this.transloco.getActiveLang());
   private api = inject(MarketplaceService);
-  private title = inject(Title);
-  private meta = inject(Meta);
+  private seo = inject(SeoService);
   protected names = inject(LookupNames);
   protected color = subjectColor;
 
@@ -123,9 +122,13 @@ export default class MarketTeacherPage {
       .subscribe({
         next: page => {
           this.data.set(page);
-          this.title.setTitle(`${page.teacher.name} | أقلام`);
-          this.meta.updateTag({ name: 'description', content: page.teacher.headline ?? page.teacher.name });
-          this.meta.updateTag({ property: 'og:title', content: page.teacher.name });
+          this.seo.set({
+            title: page.teacher.name,
+            description: [page.teacher.headline, page.teacher.city].filter(Boolean).join(' · ') || page.teacher.name,
+            path: `/t/${page.teacher.slug}`,
+            image: page.teacher.photoUrl,
+            type: 'profile',
+          });
         },
         error: () => this.missing.set(true),
       });

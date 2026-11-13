@@ -20,6 +20,7 @@ import {
   TestPrepKey,
 } from '@/app/core/marketplace/marketplace.service';
 import { AqCardSkeleton, AqCourseCard, AqTeacherCard, subjectColor } from '@/app/shared/marketplace/market-ui';
+import { SeoService } from '@/app/core/services/seo.service';
 
 type Tab = 'courses' | 'teachers';
 type Filters = { q: string; tab: Tab; country: string; subjectId: number | null; gradeId: number | null; gender: Gender | null; free: boolean };
@@ -364,8 +365,18 @@ export default class MarketSearchPage {
     return list;
   });
 
+  private seo = inject(SeoService);
+
   constructor() {
     this.names.load();
+    // Each page (search, Qudrat, Tahsili) has its own title and link preview.
+    effect(() => {
+      const prep = this.prep();
+      const t = (k: string) => this.transloco.translate(k);
+      this.seo.set(prep
+        ? { title: t(`market.prepPage.${prep}Title`), description: `${t(`market.prepPage.${prep}Lead`)} ${t('market.prepPage.disclaimer')}`, path: `/prep/${prep}` }
+        : { title: t('market.title'), description: t('market.lead'), path: '/search' });
+    });
     // The field follows the address (back/forward), and the address follows the field after a pause.
     effect(() => this.query.set(this.filters().q));
     toObservable(this.query)

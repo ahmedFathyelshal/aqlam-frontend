@@ -15,6 +15,12 @@ describe('translations', () => {
     expect(en.filter(k => !ar.includes(k))).toEqual([]);
   });
 
+  it('has no stray escape characters in any text', () => {
+    const value = (root: unknown, path: string) => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], root);
+    const broken = (['ar', 'en'] as const).flatMap(lang => keys(translations[lang]).filter(k => String(value(translations[lang], k)).includes('\\')).map(k => `${lang}:${k}`));
+    expect(broken).toEqual([]);
+  });
+
   it('keeps every interpolation placeholder in both languages', () => {
     const placeholders = (text: unknown) => (typeof text === 'string' ? (text.match(/{{\s*\w+\s*}}/g) ?? []).map(p => p.replace(/\s/g, '')).sort() : []);
     const value = (root: unknown, path: string) => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], root);
