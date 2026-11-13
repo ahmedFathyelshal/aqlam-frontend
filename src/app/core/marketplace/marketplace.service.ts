@@ -65,6 +65,8 @@ export type CourseViewer = {
   mustAskParent?: boolean;
   /** A parent's linked children, who can be joined, bought for or given a code. */
   children?: ViewerChild[] | null;
+  /** No birth year on the account (made before the age rules): an adult can add it once. */
+  birthYearMissing?: boolean;
 };
 
 export type CoursePage = {
@@ -186,6 +188,11 @@ export class MarketplaceService {
 
   completeTestPayment(id: string, succeed: boolean): Observable<PaymentStatus> {
     return this.http.post<ApiResponse<PaymentStatus>>(api(`/payments/${id}/test-complete`), { succeed }).pipe(map(r => r.data));
+  }
+
+  /** Adds a birth year to an account that has none; set once. */
+  setBirthYear(birthYear: number): Observable<unknown> {
+    return this.http.put(api('/me/birth-year'), { birthYear });
   }
 
   redeem(code: string, courseId?: string | null, forUserId?: string | null): Observable<Redeemed> {

@@ -281,6 +281,17 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
               <p class="font-bold">{{ t('age.askParentTitle') }}</p>
               <p class="text-sm">{{ t('age.askParentBody') }}</p>
             </div>
+            @if (page.viewer.birthYearMissing) {
+              <form class="flex flex-col gap-2 rounded-ui border border-line p-3" (submit)="$event.preventDefault(); saveBirthYear(yearInput.value)">
+                <label class="field-label" for="adult-year">{{ t('age.adultTitle') }}</label>
+                <p class="text-sm text-muted">{{ t('age.adultBody') }}</p>
+                <div class="flex gap-2">
+                  <input #yearInput id="adult-year" class="input w-32" type="number" inputmode="numeric" dir="ltr" min="1900" [max]="thisYear" [placeholder]="thisYear - 30" />
+                  <button type="submit" class="btn btn-outline" [disabled]="busy()">{{ t('age.adultSave') }}</button>
+                </div>
+                @if (yearError()) { <p class="field-error" role="alert">{{ t(yearError()!) }}</p> }
+              </form>
+            }
             @if (familyCode(); as code) {
               <div class="rounded-ui border border-line bg-page p-3 text-center">
                 <p class="text-sm text-muted">{{ t('age.familyCodeLabel') }}</p>
@@ -387,6 +398,8 @@ export default class MarketCoursePage {
     return list.find(c => c.userId === this.chosenChild()) ?? list[0] ?? null;
   });
   protected familyCode = signal<string | null>(null);
+  protected readonly thisYear = new Date().getFullYear();
+  protected yearError = signal<string | null>(null);
   protected done = signal<string | null>(null);
   private family = inject(FamilyService);
 
@@ -522,6 +535,25 @@ export default class MarketCoursePage {
     this.chosenChild.set(userId);
     this.done.set(null);
     this.actionError.set(null);
+  }
+
+  /** An account from before the age rules adds its birth year once; an adult can then buy. */
+  protected saveBirthYear(value: string): void {
+    const year = Number(value);
+    if (!year || year < 1900 || year > this.thisYear) {
+      this.yearError.set('age.birthYearRequired');
+      return;
+    }
+    this.busy.set(true);
+    this.yearError.set(null);
+    this.api.setBirthYear(year).subscribe({
+      next: () => {
+        this.busy.set(false);
+        const slug = this.data()?.course.slug;
+        if (slug) this.api.course(slug).subscribe(page => this.data.set(page));
+      },
+      error: err => (this.busy.set(false), this.yearError.set(err?.status === 409 ? 'age.adultAlreadySet' : 'age.birthYearRequired')),
+    });
   }
 
   /** A teenager's family code for a parent, who enters it in "My children" and can then buy the course. */
