@@ -13,5 +13,8 @@ export const serverApiInterceptor: HttpInterceptorFn = (req, next) => {
   const configured = typeof process !== 'undefined' ? process.env['API_ORIGIN'] : undefined;
   const request = inject(REQUEST, { optional: true });
   const origin = configured?.replace(/\/$/, '') ?? (request ? new URL(request.url).origin : null);
-  return origin ? next(req.clone({ url: origin + req.url })) : next(req);
+  if (!origin) return next(req);
+  // Pass on who the visitor is, so the API's per-visitor limits do not count every page render as one visitor.
+  const forwardedFor = request?.headers.get('x-forwarded-for');
+  return next(req.clone({ url: origin + req.url, setHeaders: forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {} }));
 };
