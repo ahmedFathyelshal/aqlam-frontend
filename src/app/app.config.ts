@@ -12,6 +12,7 @@ import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import {
   provideClientHydration,
+  withHttpTransferCacheOptions,
   withIncrementalHydration,
 } from '@angular/platform-browser';
 import {
@@ -23,6 +24,7 @@ import { provideIcons } from '@/app/core/icons/provider';
 import { provideTransloco } from '@jsverse/transloco';
 import { authInterceptor } from '@/app/core/auth/auth.interceptor';
 import { errorInterceptor } from '@/app/core/interceptors/error.interceptor';
+import { serverApiInterceptor } from '@/app/core/interceptors/server-api.interceptor';
 import { routes } from './app.routes';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@/app/core/auth/auth.service';
@@ -45,8 +47,13 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(initializeAuth),
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
-    provideClientHydration(withIncrementalHydration()),
+    provideHttpClient(withFetch(), withInterceptors([serverApiInterceptor, authInterceptor, errorInterceptor])),
+    // Responses fetched while rendering on the server are reused in the browser, except a course page's own data:
+    // its "viewer" part depends on who is signed in, which the server does not know.
+    provideClientHydration(
+      withIncrementalHydration(),
+      withHttpTransferCacheOptions({ filter: req => !/\/api\/marketplace\/courses\/[^?]/.test(req.url) && !req.url.includes('/api/Auth/') })
+    ),
     provideRouter(
       routes,
       withComponentInputBinding(),

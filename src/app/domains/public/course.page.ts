@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { afterNextRender, Component, computed, DestroyRef, effect, ElementRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
-import { DomSanitizer, Meta, SafeResourceUrl, Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { map, switchMap } from 'rxjs';
@@ -15,6 +15,7 @@ import { FamilyService } from '@/app/core/school/family.service';
 import { AqCodeRedeem } from '@/app/shared/marketplace/code-redeem';
 import { AqCourseThumb, AqMonogram, durationText } from '@/app/shared/marketplace/market-ui';
 import { NotFoundBlock } from './not-found-block';
+import { SeoService } from '@/app/core/services/seo.service';
 
 /** Which call to action the box shows. First match wins: staff, enrolled, soon, pending, code only, free, paid on, paid off. */
 export type CtaState = 'staff' | 'enrolled' | 'soon' | 'pending' | 'code' | 'free' | 'askParent' | 'paid' | 'paidOff';
@@ -358,8 +359,7 @@ export default class MarketCoursePage {
   private router = inject(Router);
   private transloco = inject(TranslocoService);
   private sanitizer = inject(DomSanitizer);
-  private title = inject(Title);
-  private meta = inject(Meta);
+  private seo = inject(SeoService);
   protected names = inject(LookupNames);
   private injector = inject(Injector);
   protected duration = durationText;
@@ -436,9 +436,13 @@ export default class MarketCoursePage {
           // Keep the current address after a rename (old links find the course by its short code).
           if (page.course.slug !== this.route.snapshot.paramMap.get('slug'))
             this.router.navigate(['/courses', page.course.slug], { replaceUrl: true, queryParamsHandling: 'preserve' });
-          this.title.setTitle(`${page.course.title} | أقلام`);
-          this.meta.updateTag({ name: 'description', content: page.course.subtitle ?? page.course.title });
-          this.meta.updateTag({ property: 'og:title', content: page.course.title });
+          this.seo.set({
+            title: page.course.title,
+            description: page.course.subtitle ?? `${page.course.title} — ${page.teacher?.name ?? page.course.organizationName}`,
+            path: `/courses/${page.course.slug}`,
+            image: page.course.thumbnailUrl ?? page.teacher?.photoUrl,
+            type: 'article',
+          });
           this.resumeIntent(page);
         },
         error: () => this.missing.set(true),
