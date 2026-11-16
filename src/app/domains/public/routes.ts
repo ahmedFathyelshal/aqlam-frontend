@@ -18,6 +18,11 @@ const routes: Routes = [
       { path: 'courses/:slug', loadComponent: () => import('./course.page') },
       { path: 'redeem', canActivate: [authenticatedGuard], loadComponent: () => import('./redeem.page') },
       {
+        path: 'admin/console',
+        canActivate: [authenticatedGuard, () => inject(AuthService).user()?.roles?.includes('SuperAdmin') || inject(Router).createUrlTree(['/search'])],
+        loadComponent: () => import('./admin-console.page'),
+      },
+      {
         path: 'admin/marketplace',
         canActivate: [authenticatedGuard, () => inject(AuthService).user()?.roles?.includes('SuperAdmin') || inject(Router).createUrlTree(['/search'])],
         loadComponent: () => import('./admin-marketplace.page'),
