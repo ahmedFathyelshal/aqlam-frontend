@@ -429,6 +429,24 @@ export const market = {
       adultSave: 'حفظ',
       adultAlreadySet: 'سنة ميلادك محفوظة من قبل. لتصحيحها تواصل مع الدعم.',
     },
+    home: {
+      nav: { prep: 'القدرات والتحصيلي', schools: 'للمدارس والمراكز' },
+      family: {
+        kicker: 'للطلاب وأولياء الأمور',
+        title: 'معلّم يناسبك، ودورة تبدأ بها اليوم',
+        lead: 'ابحث في دورات معلمين مستقلين ومراكز في السعودية ومصر، وجرّب دروسًا مجانية قبل أن تشترك. لا تحتاج حسابًا للبحث.',
+      },
+      school: {
+        title: 'مدرستك على منصة واحدة',
+        lead: 'الحضور، والدرجات، والشهادات، وأولياء الأمور، والدورات، بالعربية أولًا وبالتقويمين.',
+      },
+      newCourses: 'دورات جديدة',
+      cards: {
+        school: { kicker: 'للمدارس', title: 'الحضور والدرجات والشهادات في مكان واحد', text: 'بالتقويم الهجري والميلادي، وفصول البنين والبنات.' },
+        parent: { kicker: 'لأولياء الأمور', title: 'ما يحتاج متابعة هذا الأسبوع، بجملة واحدة', text: 'غياب، أو واجب متأخر، أو نتيجة تستحق التهنئة.' },
+        teacher: { kicker: 'للمعلمين المستقلين', title: 'صفحتك العامة ودوراتك وأكواد التفعيل', text: 'يجدك الطلاب في البحث، وتبيع بالدفع أو بالأكواد.' },
+      },
+    },
     staffNav: { group: 'الظهور والمبيعات', publicPage: 'صفحتي العامة', earnings: 'أرباحي', codes: 'أكواد التفعيل', marketplaceAdmin: 'اختيارات أقلام' },
   },
   en: {
@@ -859,6 +877,24 @@ export const market = {
       adultBody: 'Your account has no birth year. Add it to buy for yourself. It is saved once; contact support to correct it.',
       adultSave: 'Save',
       adultAlreadySet: 'Your birth year is already saved. Contact support to correct it.',
+    },
+    home: {
+      nav: { prep: 'Qudrat & Tahsili', schools: 'For schools & centers' },
+      family: {
+        kicker: 'For students and parents',
+        title: 'A teacher who fits, and a course to start today',
+        lead: 'Search courses from independent teachers and centers in Saudi Arabia and Egypt, and try free lessons before you join. No account needed to search.',
+      },
+      school: {
+        title: 'Your school on one platform',
+        lead: 'Attendance, grades, report cards, parents and courses: Arabic first, with both calendars.',
+      },
+      newCourses: 'New courses',
+      cards: {
+        school: { kicker: 'For schools', title: 'Attendance, grades and report cards in one place', text: 'Hijri and Gregorian dates, boys’ and girls’ sections.' },
+        parent: { kicker: 'For parents', title: 'What needs attention this week, in one sentence', text: 'An absence, late homework, or a result worth celebrating.' },
+        teacher: { kicker: 'For independent teachers', title: 'Your public page, courses and activation codes', text: 'Students find you in search; sell by payment or codes.' },
+      },
     },
     staffNav: { group: 'Marketplace', publicPage: 'My public page', earnings: 'My earnings', codes: 'Activation codes', marketplaceAdmin: 'Picks by أقلام' },
   },
