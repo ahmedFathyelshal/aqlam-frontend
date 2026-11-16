@@ -13,6 +13,8 @@ export const ApiEndpoints = {
     Logout: buildUrl('/Auth/logout'),
     Me: buildUrl('/Auth/me'),
     ChangePassword: buildUrl('/Auth/change-password'),
+    ForgotPassword: buildUrl('/Auth/forgot-password'),
+    ResetPassword: buildUrl('/Auth/reset-password'),
   },
   Me: {
     Memberships: buildUrl('/me/memberships'),
@@ -41,6 +43,7 @@ export const ApiEndpoints = {
     MemberImportTemplate: (org: string) => orgUrl(org, '/members/import/template'),
     MemberGender: (org: string, userId: string) => orgUrl(org, `/members/${userId}/gender`),
     MemberApprove: (org: string, userId: string) => orgUrl(org, `/members/${userId}/approve`),
+    MemberResetPassword: (org: string, userId: string) => orgUrl(org, `/members/${userId}/reset-password`),
     Parents: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parents`),
     Parent: (org: string, studentId: string, parentId: string) => orgUrl(org, `/members/${studentId}/parents/${parentId}`),
     ParentInvite: (org: string, studentId: string) => orgUrl(org, `/members/${studentId}/parent-invites`),

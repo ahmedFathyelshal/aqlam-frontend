@@ -61,6 +61,11 @@ export class FamilyService {
       .pipe(map(r => r.data));
   }
 
+  /** A linked parent sets a temporary password for their child; shown once. */
+  resetChildPassword(childId: string): Observable<{ userName: string; temporaryPassword: string }> {
+    return this.http.post<ApiResponse<{ userName: string; temporaryPassword: string }>>(`${ApiEndpoints.Me.Children}/${childId}/reset-password`, {}).pipe(map(r => r.data));
+  }
+
   linkChild(code: string): Observable<Child> {
     return this.http.post<ApiResponse<Child>>(ApiEndpoints.Me.Children, { code }).pipe(map(r => r.data));
   }

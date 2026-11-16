@@ -57,6 +57,14 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
           </section>
         }
 
+        @if (resetResult(); as r) {
+          <div class="alert alert-warning mb-5 flex flex-wrap items-center gap-3 print:hidden" role="status">
+            <span>{{ t('members.resetShown', { name: r.name }) }}</span>
+            <span class="font-mono text-lg font-bold" dir="ltr">{{ r.userName }} / {{ r.password }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="resetResult.set(null)">{{ t('action.close') }}</button>
+          </div>
+        }
+
         @if (report(); as r) {
           <section class="card mb-5">
             <div class="card-header print:hidden">
@@ -124,6 +132,9 @@ const ROLES = ['Student', 'Parent', 'Teacher', 'Assistant', 'AcademicCoordinator
                   } @else if (m.gender) {
                     <span class="badge badge-neutral">{{ t('gender.' + m.gender) }}</span>
                   }
+                  @if (canManage() && !m.roles.includes('Owner')) {
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="resetPassword(m)"><mat-icon svgIcon="key-round" class="icon-size-4" />{{ t('members.resetPassword') }}</button>
+                  }
                   @if (m.roles.includes('Student')) {
                     <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="openStudent() === m.userId" (click)="toggleParents(m)"><mat-icon svgIcon="users-round" class="icon-size-4" />{{ t('members.parents') }}</button>
                   }
@@ -190,6 +201,7 @@ export default class MembersComponent {
   protected addError = signal<string | null>(null);
   protected report = signal<MemberImportReport | null>(null);
   protected importError = signal<string | null>(null);
+  protected resetResult = signal<{ name: string; userName: string; password: string } | null>(null);
 
   protected openStudent = signal<string | null>(null);
   protected parents = signal<ParentLink[]>([]);
@@ -212,6 +224,15 @@ export default class MembersComponent {
         this.newUserName.set('');
         this.load();
       },
+      error: (err: unknown) => this.addError.set(this.message(err)),
+    });
+  }
+
+  protected resetPassword(member: Member): void {
+    const name = member.fullName || member.userName;
+    if (!confirm(this.transloco.translate('members.resetConfirm', { name }))) return;
+    this.school.resetMemberPassword(this.org, member.userId).subscribe({
+      next: r => this.resetResult.set({ name, userName: r.userName, password: r.temporaryPassword }),
       error: (err: unknown) => this.addError.set(this.message(err)),
     });
   }

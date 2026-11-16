@@ -255,6 +255,11 @@ export class SchoolService {
     return this.post(ApiEndpoints.School.MemberApprove(org, userId), {});
   }
 
+  /** Sets a temporary password for a member; shown once. */
+  resetMemberPassword(org: string, userId: string): Observable<{ userName: string; temporaryPassword: string }> {
+    return this.post(ApiEndpoints.School.MemberResetPassword(org, userId), {});
+  }
+
   setGender(org: string, userId: string, gender: Gender | null): Observable<Member> {
     return this.put(ApiEndpoints.School.MemberGender(org, userId), { gender });
   }

@@ -4,6 +4,9 @@ export const portal = {
     parent: {
       title: 'أبنائي',
       noChildren: 'لا يوجد أبناء مرتبطون بحسابك بعد. أدخل الرمز الذي وصلك من المدرسة.',
+      resetPassword: 'كلمة مرور مؤقتة للابن',
+      resetConfirm: 'سيتم إنهاء جلسات {{name}} وتوليد كلمة مرور مؤقتة تظهر مرة واحدة. متابعة؟',
+      resetShown: 'كلمة المرور المؤقتة لـ {{name}} (تظهر مرة واحدة، وسيُطلب منه تغييرها عند الدخول):',
       notEnrolled: 'غير مسجل في مدرسة أو مركز حالياً.',
       linkTitle: 'ربط ابن أو ابنة',
       linkHint: 'تعطي المدرسة أو المركز كل أسرة رمزاً يُستخدم مرة واحدة.',
@@ -94,6 +97,9 @@ export const portal = {
     parent: {
       title: 'My children',
       noChildren: 'No children linked to your account yet. Enter the code you received from the school.',
+      resetPassword: 'Temporary password for child',
+      resetConfirm: 'This signs {{name}} out everywhere and creates a temporary password, shown once. Continue?',
+      resetShown: 'Temporary password for {{name}} (shown once; they must change it at sign-in):',
       notEnrolled: 'Not enrolled in a school or center at the moment.',
       linkTitle: 'Link a child',
       linkHint: 'The school or center gives each family a one-time code.',

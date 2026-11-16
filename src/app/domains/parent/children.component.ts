@@ -21,7 +21,8 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
             <section class="card card-body">
               <div class="flex items-center gap-3">
                 <span class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xl font-extrabold text-primary-700">{{ child.fullName.charAt(0) }}</span>
-                <h2 class="text-lg font-extrabold">{{ child.fullName }}</h2>
+                <h2 class="min-w-0 flex-1 text-lg font-extrabold">{{ child.fullName }}</h2>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="resetPassword(child)"><mat-icon svgIcon="key-round" class="icon-size-4" />{{ t('parent.resetPassword') }}</button>
               </div>
               <div class="mt-3 flex flex-col gap-2">
                 @for (org of child.organizations; track org.organizationId) {
@@ -38,6 +39,14 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
             <div class="empty"><mat-icon svgIcon="users-round" class="icon-size-8" />{{ t('parent.noChildren') }}</div>
           }
         </div>
+
+        @if (resetResult(); as r) {
+          <div class="alert alert-warning mt-4" role="status">
+            <p>{{ t('parent.resetShown', { name: r.name }) }}</p>
+            <p class="mt-1 font-mono text-lg font-bold" dir="ltr">{{ r.userName }} / {{ r.password }}</p>
+            <button type="button" class="btn btn-ghost btn-sm mt-2" (click)="resetResult.set(null)">{{ t('action.close') }}</button>
+          </div>
+        }
 
         <section class="card card-body mt-6">
           <h2 class="section-title">{{ t('parent.linkTitle') }}</h2>
@@ -86,6 +95,15 @@ export default class ParentChildrenComponent {
   private transloco = inject(TranslocoService);
 
   protected children = signal<Child[]>([]);
+  protected resetResult = signal<{ name: string; userName: string; password: string } | null>(null);
+
+  protected resetPassword(child: Child): void {
+    if (!confirm(this.transloco.translate('parent.resetConfirm', { name: child.fullName }))) return;
+    this.family.resetChildPassword(child.userId).subscribe({
+      next: r => this.resetResult.set({ name: child.fullName, userName: r.userName, password: r.temporaryPassword }),
+      error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')),
+    });
+  }
   protected code = signal('');
   protected linking = signal(false);
   protected error = signal<string | null>(null);
