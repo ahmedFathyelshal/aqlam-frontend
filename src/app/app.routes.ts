@@ -28,6 +28,13 @@ export const routes: Route[] = [
     loadComponent: () => import('./domains/auth/features/change-password'),
   },
 
+  // Changed terms or privacy texts must be accepted before anything else
+  {
+    path: 'legal/accept',
+    canActivate: [authenticatedGuard],
+    loadComponent: () => import('./domains/auth/features/legal-accept'),
+  },
+
   // Visitors see the public home page once it is switched on; signed-in users go to their home below.
   {
     path: '',

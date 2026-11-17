@@ -82,7 +82,7 @@ export default class AuthSignIn {
       next: () => {
         this.busy.set(false);
         const redirect = safeRedirect(this.router);
-        this.router.navigateByUrl(this.auth.user()?.mustChangePassword ? '/account/password' : redirect ?? this.auth.homeRoute());
+        this.router.navigateByUrl(this.auth.user()?.mustChangePassword || this.auth.user()?.legalPending ? this.auth.homeRoute() : redirect ?? this.auth.homeRoute());
       },
       error: (err: unknown) => {
         this.busy.set(false);

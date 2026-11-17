@@ -5,6 +5,7 @@ import { builder } from './builder';
 import { common } from './common';
 import { platformConsole } from './console';
 import { landing } from './landing';
+import { legal } from './legal';
 import { learn } from './learn';
 import { market } from './market';
 import { overview } from './overview';
@@ -16,7 +17,7 @@ type Lang = 'ar' | 'en';
 type Section = Record<Lang, Record<string, unknown>>;
 
 /** Every feature's texts merged per language (feature keys are top-level, so they never collide). */
-const sections: Section[] = [common, auth, staff, portal, learn, assess, builder, workspace, academics, landing, overview, market, platformConsole];
+const sections: Section[] = [common, auth, staff, portal, learn, assess, builder, workspace, academics, landing, overview, market, platformConsole, legal];
 
 export const translations = {
   ar: Object.assign({}, ...sections.map(s => s.ar)),

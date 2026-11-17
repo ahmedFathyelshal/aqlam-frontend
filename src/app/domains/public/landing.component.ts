@@ -169,6 +169,7 @@ import { environment } from '@/environments/environment';
         <footer class="bg-primary-700 text-[0.9375rem] text-primary-100">
           <div class="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-2.5 px-4 py-5.5 lg:px-10">
             <span>{{ t('landing.brand') }}@if (contactEmail) { · <a class="text-primary-100" [href]="'mailto:' + contactEmail" dir="ltr">{{ contactEmail }}</a> }</span>
+            <span class="flex gap-4"><a class="text-primary-100" routerLink="/terms">{{ t('legal.terms') }}</a><a class="text-primary-100" routerLink="/privacy">{{ t('legal.privacy') }}</a></span>
           </div>
         </footer>
       </div>

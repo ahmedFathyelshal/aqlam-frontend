@@ -74,6 +74,12 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
           </label>
         </div>
 
+        <label class="flex items-start gap-3">
+          <input type="checkbox" class="mt-1 size-5 accent-primary-600" [checked]="accepted()" (change)="accepted.set($any($event.target).checked)" />
+          <span>{{ t('legal.acceptPrefix') }} <a routerLink="/terms" target="_blank" class="font-bold">{{ t('legal.terms') }}</a> {{ t('legal.and') }} <a routerLink="/privacy" target="_blank" class="font-bold">{{ t('legal.privacy') }}</a></span>
+        </label>
+        @if (touched() && !accepted()) { <span class="field-error">{{ t('legal.acceptRequired') }}</span> }
+
         @if (errors().length) {
           <div class="alert alert-danger" role="alert">{{ errors().join(' ') }}</div>
         }
@@ -109,6 +115,7 @@ export default class AuthSignUp {
   protected password = signal('');
   protected confirm = signal('');
   protected touched = signal(false);
+  protected accepted = signal(false);
   protected busy = signal(false);
   protected errors = signal<string[]>([]);
 
@@ -119,6 +126,7 @@ export default class AuthSignUp {
     this.touched.set(true);
     this.errors.set([]);
     if (!this.userName().trim() || this.emailInvalid() || this.password().length < 8 || this.confirm() !== this.password()) return;
+    if (!this.accepted()) return;
     const isStudent = this.userType() === UserType.Student;
     if (isStudent && (!this.birthYearValid() || this.underThirteen())) return;
 
@@ -131,6 +139,7 @@ export default class AuthSignUp {
         confirmPassword: this.confirm(),
         userType: this.userType(),
         birthYear: isStudent ? this.birthYear() : null,
+        acceptTerms: true,
       })
       .subscribe({
         next: () => {

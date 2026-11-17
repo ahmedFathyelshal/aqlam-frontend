@@ -15,6 +15,8 @@ export type AuthUser = {
   roles: string[];
   /** Set for accounts created by a school with a temporary password (bulk import). */
   mustChangePassword?: boolean;
+  /** The terms or privacy texts changed since the user last accepted them. */
+  legalPending?: boolean;
 }
 
 export type SignInRequest = {
@@ -103,11 +105,16 @@ export class AuthService {
     );
   }
 
+  markLegalAccepted(): void {
+    this.user.update(u => (u ? { ...u, legalPending: false } : u));
+  }
+
   /** Where a signed-in user starts: forced password change, then staff area, student area or parent portal. */
   homeRoute(): string {
     const user = this.user();
     if (!user) return '/auth/sign-in';
     if (user.mustChangePassword) return '/account/password';
+    if (user.legalPending) return '/legal/accept';
     if (this.orgContext.staffMemberships().length) return '/teacher';
     if (user.roles?.includes('Student')) return '/student/dashboard';
     if (user.roles?.includes('SuperAdmin')) return '/admin/console';

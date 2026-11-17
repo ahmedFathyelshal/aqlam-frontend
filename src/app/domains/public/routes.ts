@@ -11,6 +11,8 @@ const routes: Routes = [
     path: '',
     component: PublicShell,
     children: [
+      { path: 'terms', loadComponent: () => import('./legal.page'), data: { doc: 'terms' } },
+      { path: 'privacy', loadComponent: () => import('./legal.page'), data: { doc: 'privacy' } },
       { path: 'search', loadComponent: () => import('./search.page') },
       { path: 'prep/qudrat', loadComponent: () => import('./search.page'), data: { prep: 'qudrat' } },
       { path: 'prep/tahsili', loadComponent: () => import('./search.page'), data: { prep: 'tahsili' } },

@@ -76,6 +76,10 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
             <label class="field"><span class="field-label">{{ t('auth.password') }}</span>
               <input class="input" type="password" autocomplete="new-password" [value]="childPassword()" (input)="childPassword.set($any($event.target).value)" />
               <span class="field-hint">{{ t('auth.passwordRule') }}</span></label>
+            <label class="flex items-start gap-3 sm:col-span-2">
+              <input type="checkbox" class="mt-1 size-5 accent-primary-600" [checked]="childAccepted()" (change)="childAccepted.set($any($event.target).checked)" />
+              <span>{{ t('legal.acceptForChild') }} (<a routerLink="/terms" target="_blank" class="font-bold">{{ t('legal.terms') }}</a> / <a routerLink="/privacy" target="_blank" class="font-bold">{{ t('legal.privacy') }}</a>)</span>
+            </label>
             <div class="sm:col-span-2">
               <button type="submit" class="btn btn-primary" [disabled]="creating() || !childFormValid()">{{ t('age.createChild') }}</button>
             </div>
@@ -114,19 +118,20 @@ export default class ParentChildrenComponent {
   protected childYear = signal<number | null>(null);
   protected childUser = signal('');
   protected childPassword = signal('');
+  protected childAccepted = signal(false);
   protected creating = signal(false);
   protected createError = signal<string | null>(null);
   protected created = signal<string | null>(null);
   protected childFormValid = computed(() => {
     const y = this.childYear();
-    return !!this.childUser().trim() && this.childPassword().length >= 8 && y !== null && y <= this.thisYear && this.thisYear - y < 18;
+    return this.childAccepted() && !!this.childUser().trim() && this.childPassword().length >= 8 && y !== null && y <= this.thisYear && this.thisYear - y < 18;
   });
 
   protected createChild(): void {
     this.creating.set(true);
     this.createError.set(null);
     this.created.set(null);
-    this.family.createChild({ userName: this.childUser().trim(), password: this.childPassword(), fullName: this.childName().trim() || null, birthYear: this.childYear()! })
+    this.family.createChild({ userName: this.childUser().trim(), password: this.childPassword(), fullName: this.childName().trim() || null, birthYear: this.childYear()!, acceptTerms: true })
       .subscribe({
         next: child => {
           this.creating.set(false);
@@ -135,6 +140,7 @@ export default class ParentChildrenComponent {
           this.childUser.set('');
           this.childPassword.set('');
           this.childYear.set(null);
+          this.childAccepted.set(false);
           this.load();
         },
         error: (err: unknown) => (this.creating.set(false), this.createError.set(errorMessages(err, 'Error').join(' '))),

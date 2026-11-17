@@ -27,7 +27,7 @@ import { environment } from '@/environments/environment';
                 <mat-icon svgIcon="search" class="icon-size-4.5" /><span class="max-sm:sr-only">{{ t('market.nav.search') }}</span>
               </a>
               @if (auth.user()?.roles?.includes('SuperAdmin')) {
-                <a routerLink="/admin/marketplace" routerLinkActive="!text-white underline underline-offset-8" class="inline-flex min-h-11 items-center gap-1.5 px-2 font-medium text-[#E3ECE6] no-underline hover:text-white">
+                <a routerLink="/admin/console" routerLinkActive="!text-white underline underline-offset-8" class="inline-flex min-h-11 items-center gap-1.5 px-2 font-medium text-[#E3ECE6] no-underline hover:text-white">
                   <mat-icon svgIcon="bookmark" class="icon-size-4.5" /><span class="max-sm:sr-only">{{ t('staffNav.marketplaceAdmin') }}</span>
                 </a>
               }
@@ -44,6 +44,8 @@ import { environment } from '@/environments/environment';
         <footer class="border-t border-line bg-page">
           <div class="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-6 text-sm text-muted lg:px-10">
             <aq-logo [size]="28" />
+            <a class="text-secondary-600" routerLink="/terms">{{ t('legal.terms') }}</a>
+            <a class="text-secondary-600" routerLink="/privacy">{{ t('legal.privacy') }}</a>
             @if (contactEmail) {
               <a class="text-secondary-600" [href]="'mailto:' + contactEmail + '?subject=' + reportSubject">{{ t('market.report') }}</a>
             }

@@ -51,7 +51,7 @@ export class FamilyService {
   }
 
   /** A parent creates a child's account (required under 13) and is linked to it. */
-  createChild(input: { userName: string; password: string; fullName: string | null; birthYear: number }): Observable<Child> {
+  createChild(input: { userName: string; password: string; fullName: string | null; birthYear: number; acceptTerms: boolean }): Observable<Child> {
     return this.http.post<ApiResponse<Child>>(`${ApiEndpoints.Me.Children}/new`, input).pipe(map(r => r.data));
   }
 

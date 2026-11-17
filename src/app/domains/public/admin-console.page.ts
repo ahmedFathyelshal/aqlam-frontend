@@ -6,12 +6,13 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { DataRequest, LegalService } from '@/app/core/legal/legal.service';
 import { errorMessages } from '@/app/core/utils/api-error.utils';
 
 type PlatformUser = { id: string; userName: string; fullName: string; email: string | null; phone: string | null; locked: boolean; mustChangePassword: boolean; organizations: string[] };
 type PlatformOrg = { id: string; name: string; slug: string; type: string; status: 'Active' | 'Suspended' | 'Archived'; countryCode: string };
 type AuditRow = { id: string; atUtc: string; action: string; actor: string | null; target: string | null; organization: string | null; details: string | null };
-type Tab = 'users' | 'orgs' | 'audit';
+type Tab = 'users' | 'orgs' | 'requests' | 'audit';
 
 const PAGE = 50;
 
@@ -54,11 +55,11 @@ const PAGE = 50;
               @for (u of users(); track u.id) {
                 <div class="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
                   <div class="min-w-0 flex-1">
-                    <p class="truncate font-bold">{{ u.fullName || u.userName }} <span class="font-normal text-muted" dir="ltr">{{ u.userName }}</span></p>
-                    <p class="truncate text-sm text-muted" dir="ltr">{{ [u.email, u.phone, u.organizations.join(', ')].filter(x => x).join(' · ') }}</p>
+                    <p class="font-bold break-words">{{ u.fullName || u.userName }} <span class="font-normal text-muted" dir="ltr">{{ u.userName }}</span></p>
+                    <p class="text-sm text-muted break-all" dir="ltr">{{ [u.email, u.phone, u.organizations.join(', ')].filter(x => x).join(' · ') }}</p>
                   </div>
                   @if (u.locked) { <span class="badge badge-warning">{{ t('console.locked') }}</span> }
-                  <div class="flex flex-wrap gap-2">
+                  <div class="flex w-full flex-wrap gap-2 sm:w-auto">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="resetPassword(u)"><mat-icon svgIcon="key-round" class="icon-size-4" />{{ t('console.resetPassword') }}</button>
                     <button type="button" class="btn btn-ghost btn-sm" (click)="toggleLock(u)">{{ u.locked ? t('console.unlock') : t('console.lock') }}</button>
                   </div>
@@ -81,6 +82,27 @@ const PAGE = 50;
                     <button type="button" class="btn btn-ghost btn-sm" (click)="toggleOrg(o)">{{ o.status === 'Active' ? t('console.suspend') : t('console.reactivate') }}</button>
                   }
                 </div>
+              }
+            </section>
+          }
+          @case ('requests') {
+            <section class="card">
+              @for (r of requests(); track r.id) {
+                <div class="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold"><span dir="ltr">{{ r.userName }}</span> · {{ r.type === 'Export' ? t('legal.requestExportLabel') : t('legal.requestDeleteLabel') }}</p>
+                    <p class="text-sm text-muted"><span dir="ltr">{{ formatTime(r.createdAtUtc) }}</span>@if (r.note) { · {{ r.note }} }</p>
+                  </div>
+                  @if (r.status === 'Open') {
+                    <input class="input min-h-10 w-48 text-sm" [attr.aria-label]="t('legal.note')" [placeholder]="t('legal.note')" (input)="requestNote.set($any($event.target).value)" />
+                    <button type="button" class="btn btn-primary btn-sm" (click)="handleRequest(r, true)">{{ t('legal.markDone') }}</button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="handleRequest(r, false)">{{ t('legal.reject') }}</button>
+                  } @else {
+                    <span class="badge badge-neutral">{{ t('legal.request' + r.status) }}</span>
+                  }
+                </div>
+              } @empty {
+                <p class="px-5 py-8 text-center text-muted">{{ t('legal.noRequests') }}</p>
               }
             </section>
           }
@@ -117,12 +139,14 @@ const PAGE = 50;
 })
 export default class AdminConsolePage {
   private http = inject(HttpClient);
+  private legal = inject(LegalService);
   private transloco = inject(TranslocoService);
   private api = environment.apiUrl;
 
   protected readonly tabs: { id: Tab; label: string }[] = [
     { id: 'users', label: 'console.tabUsers' },
     { id: 'orgs', label: 'console.tabOrgs' },
+    { id: 'requests', label: 'legal.requestsTab' },
     { id: 'audit', label: 'console.tabAudit' },
   ];
   protected tab = signal<Tab>('users');
@@ -133,6 +157,8 @@ export default class AdminConsolePage {
   protected users = signal<PlatformUser[]>([]);
   protected orgs = signal<PlatformOrg[]>([]);
   protected audit = signal<AuditRow[]>([]);
+  protected requests = signal<DataRequest[]>([]);
+  protected requestNote = signal('');
   protected auditAction = signal('');
   protected auditUser = signal('');
   protected moreAudit = signal(false);
@@ -146,6 +172,7 @@ export default class AdminConsolePage {
     this.error.set(null);
     if (tab === 'orgs') this.loadOrgs();
     if (tab === 'audit') this.loadAudit(true);
+    if (tab === 'requests') this.loadRequests();
   }
 
   protected searchUsers(): void {
@@ -163,6 +190,16 @@ export default class AdminConsolePage {
       this.audit.set(reset ? rows : [...this.audit(), ...rows]);
       this.moreAudit.set(rows.length === PAGE);
     });
+  }
+
+  protected loadRequests(): void {
+    this.legal.allRequests('').subscribe({ next: r => this.requests.set(r), error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')) });
+  }
+
+  protected handleRequest(request: DataRequest, completed: boolean): void {
+    const note = this.requestNote().trim() || null;
+    this.requestNote.set('');
+    this.legal.handle(request.id, completed, note).subscribe({ next: () => this.loadRequests(), error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')) });
   }
 
   protected formatTime(iso: string): string {
