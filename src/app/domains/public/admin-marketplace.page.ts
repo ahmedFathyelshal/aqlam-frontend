@@ -71,6 +71,11 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
               <input class="input" type="number" min="0" step="0.01" dir="ltr" [value]="fees().monthlyStudentFeeSar ?? ''" (input)="setFee('monthlyStudentFeeSar', $any($event.target).value)" /></label>
             <label class="field"><span class="field-label">{{ t('picksAdmin.feeEgp') }}</span>
               <input class="input" type="number" min="0" step="0.01" dir="ltr" [value]="fees().monthlyStudentFeeEgp ?? ''" (input)="setFee('monthlyStudentFeeEgp', $any($event.target).value)" /></label>
+            <label class="field sm:col-span-3"><span class="field-label">{{ t('picksAdmin.payingAge') }}</span>
+              <select class="select w-auto" [value]="fees().minimumPayingAge" (change)="setFee('minimumPayingAge', $any($event.target).value)">
+                @for (a of payingAges; track a) { <option [value]="a" [selected]="a === fees().minimumPayingAge">{{ a }}</option> }
+              </select>
+              <span class="field-hint">{{ t('picksAdmin.payingAgeHint') }}</span></label>
             <div class="flex items-center gap-3 sm:col-span-3">
               <button type="submit" class="btn btn-primary">{{ t('picksAdmin.save') }}</button>
               @if (feesSaved()) { <span class="text-sm font-bold text-primary-700">{{ t('picksAdmin.saved') }}</span> }
@@ -91,7 +96,8 @@ export default class AdminMarketplacePage {
   protected subjectId = signal<number | null>(null);
   protected order = signal(1);
   protected pickError = signal<string | null>(null);
-  protected fees = signal<Fees>({ commissionPercent: null, monthlyStudentFeeSar: null, monthlyStudentFeeEgp: null });
+  protected fees = signal<Fees>({ commissionPercent: null, monthlyStudentFeeSar: null, monthlyStudentFeeEgp: null, minimumPayingAge: 18 });
+  protected readonly payingAges = [13, 14, 15, 16, 17, 18];
   protected feesSaved = signal(false);
 
   constructor() {
@@ -120,7 +126,7 @@ export default class AdminMarketplacePage {
 
   protected setFee(key: keyof Fees, value: string): void {
     this.feesSaved.set(false);
-    this.fees.update(f => ({ ...f, [key]: value === '' ? null : Number(value) }));
+    this.fees.update(f => ({ ...f, [key]: value === '' ? (key === 'minimumPayingAge' ? 18 : null) : Number(value) }));
   }
 
   protected saveFees(): void {

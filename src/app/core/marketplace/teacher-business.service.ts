@@ -57,7 +57,7 @@ export type CodeBatch = {
 export type CreatedBatch = { batch: CodeBatch; codes: string[] };
 export type CodeLookup = { status: 'Unused' | 'Used' | 'Cancelled' | 'Expired'; lastFour: string; batchId: string; batchName: string; redeemedByUserName: string | null; redeemedAtUtc: string | null };
 
-export type Fees = { commissionPercent: number | null; monthlyStudentFeeSar: number | null; monthlyStudentFeeEgp: number | null };
+export type Fees = { commissionPercent: number | null; monthlyStudentFeeSar: number | null; monthlyStudentFeeEgp: number | null; minimumPayingAge: number };
 export type AdminTeacher = { organizationId: string; slug: string; name: string; countryCode: string; courseCount: number };
 
 /** Staff side of the marketplace: public page, earnings, activation codes; and the platform admin's picks and fees. */
