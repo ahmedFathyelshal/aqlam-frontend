@@ -94,6 +94,11 @@ const PAGE = 50;
                     <p class="text-sm text-muted"><span dir="ltr">{{ formatTime(r.createdAtUtc) }}</span>@if (r.note) { · {{ r.note }} }</p>
                   </div>
                   @if (r.status === 'Open') {
+                    @if (r.type === 'Export') {
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="downloadData(r)">{{ t('legal.downloadData') }}</button>
+                    } @else {
+                      <button type="button" class="btn btn-ghost btn-sm text-danger-700" (click)="deleteAccount(r)">{{ t('legal.deleteAccount') }}</button>
+                    }
                     <input class="input min-h-10 w-48 text-sm" [attr.aria-label]="t('legal.note')" [placeholder]="t('legal.note')" (input)="requestNote.set($any($event.target).value)" />
                     <button type="button" class="btn btn-primary btn-sm" (click)="handleRequest(r, true)">{{ t('legal.markDone') }}</button>
                     <button type="button" class="btn btn-ghost btn-sm" (click)="handleRequest(r, false)">{{ t('legal.reject') }}</button>
@@ -194,6 +199,18 @@ export default class AdminConsolePage {
 
   protected loadRequests(): void {
     this.legal.allRequests('').subscribe({ next: r => this.requests.set(r), error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')) });
+  }
+
+  protected downloadData(request: DataRequest): void {
+    this.legal.downloadData(request.userId).subscribe({ error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')) });
+  }
+
+  protected deleteAccount(request: DataRequest): void {
+    if (!confirm(this.transloco.translate('legal.confirmDeleteAccount', { name: request.userName ?? '' }))) return;
+    this.legal.deleteAccount(request.userId).subscribe({
+      next: () => this.legal.handle(request.id, true, this.requestNote().trim() || null).subscribe({ next: () => this.loadRequests() }),
+      error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')),
+    });
   }
 
   protected handleRequest(request: DataRequest, completed: boolean): void {

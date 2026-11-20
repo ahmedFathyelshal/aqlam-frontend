@@ -31,7 +31,7 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
             @if (auth.isAuthenticated()) {
               <p class="field-hint mt-1">{{ t('legal.requestsLead') }}</p>
               <div class="mt-3 flex flex-wrap gap-2">
-                <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="request('Export')">{{ t('legal.requestExport') }}</button>
+                <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="download()">{{ t('legal.requestExport') }}</button>
                 <button type="button" class="btn btn-ghost text-danger-700" [disabled]="busy()" (click)="request('Delete')">{{ t('legal.requestDelete') }}</button>
               </div>
               @if (sent()) { <div class="alert alert-success mt-3" role="status">{{ t('legal.requestSent') }}</div> }
@@ -71,6 +71,15 @@ export default class LegalPage {
 
   constructor() {
     if (this.isPrivacy && this.auth.isAuthenticated()) this.load();
+  }
+
+  protected download(): void {
+    this.busy.set(true);
+    this.error.set(null);
+    this.legal.downloadData(null).subscribe({
+      next: () => (this.busy.set(false), this.load()),
+      error: (err: unknown) => (this.busy.set(false), this.error.set(errorMessages(err, 'Error').join(' '))),
+    });
   }
 
   protected request(type: 'Export' | 'Delete'): void {
