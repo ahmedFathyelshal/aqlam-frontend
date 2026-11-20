@@ -57,7 +57,42 @@ export type CodeBatch = {
 export type CreatedBatch = { batch: CodeBatch; codes: string[] };
 export type CodeLookup = { status: 'Unused' | 'Used' | 'Cancelled' | 'Expired'; lastFour: string; batchId: string; batchName: string; redeemedByUserName: string | null; redeemedAtUtc: string | null };
 
-export type Fees = { commissionPercent: number | null; monthlyStudentFeeSar: number | null; monthlyStudentFeeEgp: number | null; minimumPayingAge: number };
+export type Fees = {
+  commissionPercent: number | null;
+  monthlyStudentFeeSar: number | null;
+  monthlyStudentFeeEgp: number | null;
+  minimumPayingAge: number;
+  payoutHoldDays: number;
+  minimumPayoutSar: number | null;
+  minimumPayoutEgp: number | null;
+};
+
+export type PayoutAccount = { accountHolder: string; bankName: string; iban: string };
+export type PayoutStatus = 'Requested' | 'Paid' | 'Rejected' | 'Cancelled';
+export type Payout = {
+  id: string;
+  status: PayoutStatus;
+  amount: number;
+  currency: string;
+  requestedAtUtc: string;
+  processedAtUtc: string | null;
+  transferReference: string | null;
+  rejectionReason: string | null;
+  account: PayoutAccount;
+};
+/** total = pending + available + inTransit: pending is inside the hold period, in transit is reserved by an open request. */
+export type Wallet = {
+  currency: string;
+  total: number;
+  pending: number;
+  available: number;
+  inTransit: number;
+  holdDays: number;
+  minimumPayout: number | null;
+  account: PayoutAccount | null;
+  openRequest: Payout | null;
+  history: Payout[];
+};
 export type AdminTeacher = { organizationId: string; slug: string; name: string; countryCode: string; courseCount: number };
 
 /** Staff side of the marketplace: public page, earnings, activation codes; and the platform admin's picks and fees. */
@@ -85,6 +120,22 @@ export class TeacherBusinessService {
 
   earnings(org: string): Observable<Earnings> {
     return this.http.get<ApiResponse<Earnings>>(orgApi(org, '/earnings')).pipe(map(r => r.data));
+  }
+
+  wallet(org: string): Observable<Wallet> {
+    return this.http.get<ApiResponse<Wallet>>(orgApi(org, '/wallet')).pipe(map(r => r.data));
+  }
+
+  saveAccount(org: string, account: PayoutAccount): Observable<PayoutAccount> {
+    return this.http.put<ApiResponse<PayoutAccount>>(orgApi(org, '/wallet/account'), account).pipe(map(r => r.data));
+  }
+
+  requestPayout(org: string, amount: number): Observable<Payout> {
+    return this.http.post<ApiResponse<Payout>>(orgApi(org, '/wallet/payouts'), { amount }).pipe(map(r => r.data));
+  }
+
+  cancelPayout(org: string, id: string): Observable<Payout> {
+    return this.http.post<ApiResponse<Payout>>(orgApi(org, `/wallet/payouts/${id}/cancel`), null).pipe(map(r => r.data));
   }
 
   batches(org: string, courseId: string): Observable<CodeBatch[]> {

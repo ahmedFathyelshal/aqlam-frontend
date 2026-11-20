@@ -12,7 +12,13 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
 type PlatformUser = { id: string; userName: string; fullName: string; email: string | null; phone: string | null; locked: boolean; mustChangePassword: boolean; organizations: string[] };
 type PlatformOrg = { id: string; name: string; slug: string; type: string; status: 'Active' | 'Suspended' | 'Archived'; countryCode: string };
 type AuditRow = { id: string; atUtc: string; action: string; actor: string | null; target: string | null; organization: string | null; details: string | null };
-type Tab = 'users' | 'orgs' | 'requests' | 'reviews' | 'audit';
+type Tab = 'users' | 'orgs' | 'requests' | 'reviews' | 'payouts' | 'audit';
+type PayoutRow = {
+  payout: { id: string; status: string; amount: number; currency: string; requestedAtUtc: string; processedAtUtc: string | null; transferReference: string | null; rejectionReason: string | null; account: { accountHolder: string; bankName: string; iban: string } };
+  organizationName: string;
+  organizationSlug: string;
+  requestedBy: string;
+};
 type AdminReview = { id: string; courseTitle: string; userName: string; stars: number; comment: string | null; isHidden: boolean; hiddenReason: string | null; createdAtUtc: string };
 
 const PAGE = 50;
@@ -129,6 +135,33 @@ const PAGE = 50;
               }
             </section>
           }
+          @case ('payouts') {
+            <p class="field-hint">{{ t('console.payoutsHint') }}</p>
+            <section class="card">
+              @for (p of payouts(); track p.payout.id) {
+                <div class="flex flex-wrap items-start gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold break-words">{{ p.organizationName }} <span class="font-normal text-muted" dir="ltr">{{ p.organizationSlug }}</span></p>
+                    <p class="text-lg font-bold tabular-nums" dir="ltr">{{ p.payout.amount.toFixed(2) }} {{ p.payout.currency }}</p>
+                    <p class="text-sm text-muted">{{ p.requestedBy }} · <span dir="ltr">{{ formatTime(p.payout.requestedAtUtc) }}</span></p>
+                    <p class="mt-1 text-sm break-all">{{ p.payout.account.accountHolder }} · {{ p.payout.account.bankName }} · <span dir="ltr" class="font-mono">{{ p.payout.account.iban }}</span></p>
+                    @if (p.payout.transferReference) { <p class="text-sm text-muted">{{ t('console.payoutRef') }}: <span dir="ltr">{{ p.payout.transferReference }}</span></p> }
+                    @if (p.payout.rejectionReason) { <p class="text-sm text-muted">{{ p.payout.rejectionReason }}</p> }
+                  </div>
+                  @if (p.payout.status === 'Requested') {
+                    <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+                      <button type="button" class="btn btn-primary btn-sm" (click)="markPaid(p)">{{ t('console.payoutPaid') }}</button>
+                      <button type="button" class="btn btn-ghost btn-sm text-danger-700" (click)="rejectPayout(p)">{{ t('console.payoutReject') }}</button>
+                    </div>
+                  } @else {
+                    <span class="badge" [class]="p.payout.status === 'Paid' ? 'badge-success' : 'badge-neutral'">{{ t('wallet.status.' + p.payout.status) }}</span>
+                  }
+                </div>
+              } @empty {
+                <p class="px-5 py-8 text-center text-muted">{{ t('console.noPayouts') }}</p>
+              }
+            </section>
+          }
           @case ('audit') {
             <form class="flex flex-wrap gap-2" (submit)="$event.preventDefault(); loadAudit(true)">
               <input class="input min-w-40 flex-1" dir="ltr" [attr.aria-label]="t('console.auditFilter')" [placeholder]="t('console.auditFilter')" [value]="auditAction()" (input)="auditAction.set($any($event.target).value)" />
@@ -171,6 +204,7 @@ export default class AdminConsolePage {
     { id: 'orgs', label: 'console.tabOrgs' },
     { id: 'requests', label: 'legal.requestsTab' },
     { id: 'reviews', label: 'console.tabReviews' },
+    { id: 'payouts', label: 'console.tabPayouts' },
     { id: 'audit', label: 'console.tabAudit' },
   ];
   protected tab = signal<Tab>('users');
@@ -183,6 +217,7 @@ export default class AdminConsolePage {
   protected audit = signal<AuditRow[]>([]);
   protected requests = signal<DataRequest[]>([]);
   protected reviews = signal<AdminReview[]>([]);
+  protected payouts = signal<PayoutRow[]>([]);
   protected requestNote = signal('');
   protected auditAction = signal('');
   protected auditUser = signal('');
@@ -199,6 +234,7 @@ export default class AdminConsolePage {
     if (tab === 'audit') this.loadAudit(true);
     if (tab === 'requests') this.loadRequests();
     if (tab === 'reviews') this.loadReviews();
+    if (tab === 'payouts') this.loadPayouts();
   }
 
   protected searchUsers(): void {
@@ -224,6 +260,22 @@ export default class AdminConsolePage {
 
   protected loadReviews(): void {
     this.get<AdminReview[]>('/platform/marketplace/reviews?take=50').subscribe(r => this.reviews.set(r));
+  }
+
+  protected loadPayouts(): void {
+    this.get<PayoutRow[]>('/platform/payouts').subscribe(r => this.payouts.set(r));
+  }
+
+  protected markPaid(p: PayoutRow): void {
+    const reference = prompt(this.transloco.translate('console.payoutAskRef', { amount: p.payout.amount.toFixed(2), currency: p.payout.currency, name: p.organizationName }))?.trim();
+    if (!reference) return;
+    this.postBody(`/platform/payouts/${p.payout.id}/paid`, { transferReference: reference }).subscribe(() => this.loadPayouts());
+  }
+
+  protected rejectPayout(p: PayoutRow): void {
+    const reason = prompt(this.transloco.translate('console.payoutAskReason', { name: p.organizationName }))?.trim();
+    if (!reason) return;
+    this.postBody(`/platform/payouts/${p.payout.id}/reject`, { reason }).subscribe(() => this.loadPayouts());
   }
 
   protected toggleReview(review: AdminReview): void {
@@ -278,6 +330,11 @@ export default class AdminConsolePage {
   private post<T = unknown>(path: string) {
     this.error.set(null);
     return this.http.post<{ data: T }>(`${this.api}${path}`, {}).pipe(map(r => r.data), this.fail<T>());
+  }
+
+  private postBody<T = unknown>(path: string, body: object) {
+    this.error.set(null);
+    return this.http.post<{ data: T }>(`${this.api}${path}`, body).pipe(map(r => r.data), this.fail<T>());
   }
 
   private fail<T>() {

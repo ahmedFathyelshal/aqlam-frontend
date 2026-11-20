@@ -14,10 +14,11 @@ export type Permission =
   | 'children.view'
   | 'grades.edit'
   | 'finance.view'
+  | 'finance.withdraw'
   | 'org.settings';
 
 const ROLE_GRANTS: Record<string, Permission[]> = {
-  Owner: ['courses.view', 'courses.edit', 'courses.publish', 'members.view', 'members.manage', 'classes.manage', 'attendance.take', 'announcements.send', 'grades.edit', 'finance.view', 'org.settings'],
+  Owner: ['courses.view', 'courses.edit', 'courses.publish', 'members.view', 'members.manage', 'classes.manage', 'attendance.take', 'announcements.send', 'grades.edit', 'finance.view', 'finance.withdraw', 'org.settings'],
   Admin: ['courses.view', 'courses.edit', 'courses.publish', 'members.view', 'members.manage', 'classes.manage', 'attendance.take', 'announcements.send', 'grades.edit', 'org.settings'],
   AcademicCoordinator: ['courses.view', 'courses.edit', 'courses.publish', 'members.view', 'classes.manage', 'attendance.take', 'announcements.send', 'grades.edit'],
   Teacher: ['courses.view', 'courses.edit', 'members.view', 'attendance.take', 'announcements.send', 'grades.edit'],

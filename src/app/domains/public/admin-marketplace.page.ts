@@ -76,6 +76,13 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
                 @for (a of payingAges; track a) { <option [value]="a" [selected]="a === fees().minimumPayingAge">{{ a }}</option> }
               </select>
               <span class="field-hint">{{ t('picksAdmin.payingAgeHint') }}</span></label>
+            <label class="field"><span class="field-label">{{ t('picksAdmin.holdDays') }}</span>
+              <input class="input" type="number" min="0" max="90" step="1" dir="ltr" [value]="fees().payoutHoldDays" (input)="setFee('payoutHoldDays', $any($event.target).value)" />
+              <span class="field-hint">{{ t('picksAdmin.holdDaysHint') }}</span></label>
+            <label class="field"><span class="field-label">{{ t('picksAdmin.minPayoutSar') }}</span>
+              <input class="input" type="number" min="0" step="0.01" dir="ltr" [value]="fees().minimumPayoutSar ?? ''" (input)="setFee('minimumPayoutSar', $any($event.target).value)" /></label>
+            <label class="field"><span class="field-label">{{ t('picksAdmin.minPayoutEgp') }}</span>
+              <input class="input" type="number" min="0" step="0.01" dir="ltr" [value]="fees().minimumPayoutEgp ?? ''" (input)="setFee('minimumPayoutEgp', $any($event.target).value)" /></label>
             <div class="flex items-center gap-3 sm:col-span-3">
               <button type="submit" class="btn btn-primary">{{ t('picksAdmin.save') }}</button>
               @if (feesSaved()) { <span class="text-sm font-bold text-primary-700">{{ t('picksAdmin.saved') }}</span> }
@@ -96,7 +103,7 @@ export default class AdminMarketplacePage {
   protected subjectId = signal<number | null>(null);
   protected order = signal(1);
   protected pickError = signal<string | null>(null);
-  protected fees = signal<Fees>({ commissionPercent: null, monthlyStudentFeeSar: null, monthlyStudentFeeEgp: null, minimumPayingAge: 18 });
+  protected fees = signal<Fees>({ commissionPercent: null, monthlyStudentFeeSar: null, monthlyStudentFeeEgp: null, minimumPayingAge: 18, payoutHoldDays: 7, minimumPayoutSar: null, minimumPayoutEgp: null });
   protected readonly payingAges = [13, 14, 15, 16, 17, 18];
   protected feesSaved = signal(false);
 
@@ -126,7 +133,7 @@ export default class AdminMarketplacePage {
 
   protected setFee(key: keyof Fees, value: string): void {
     this.feesSaved.set(false);
-    this.fees.update(f => ({ ...f, [key]: value === '' ? (key === 'minimumPayingAge' ? 18 : null) : Number(value) }));
+    this.fees.update(f => ({ ...f, [key]: value === '' ? (key === 'minimumPayingAge' ? 18 : key === 'payoutHoldDays' ? 7 : null) : Number(value) }));
   }
 
   protected saveFees(): void {

@@ -85,6 +85,7 @@ const routes: Routes = [
           // Marketplace: public page (independent teachers) and earnings
           { path: 'public-page', loadComponent: () => import('./modules/market/public-page.component') },
           { path: 'earnings', loadComponent: () => import('./modules/market/earnings.component') },
+          { path: 'wallet', loadComponent: () => import('./modules/market/wallet.component') },
           // School & center operations
           { path: 'classes', loadComponent: () => import('./modules/school/classes/classes.component') },
           { path: 'classes/:classId', loadComponent: () => import('./modules/school/classes/class-detail.component') },

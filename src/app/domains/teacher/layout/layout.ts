@@ -200,6 +200,7 @@ export class TeacherLayout {
         items: ([
           ...(org.type === 'Personal' ? [{ key: 'staffNav.publicPage', icon: 'user-round', path: 'public-page', permission: 'org.settings' as Permission }] : []),
           { key: 'staffNav.earnings', icon: 'wallet', path: 'earnings', permission: 'finance.view' as Permission },
+          { key: 'staffNav.wallet', icon: 'landmark', path: 'wallet', permission: 'finance.view' as Permission },
         ] satisfies NavItem[] as NavItem[]).filter(allowed),
       });
     }
