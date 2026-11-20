@@ -12,7 +12,8 @@ import { errorMessages } from '@/app/core/utils/api-error.utils';
 type PlatformUser = { id: string; userName: string; fullName: string; email: string | null; phone: string | null; locked: boolean; mustChangePassword: boolean; organizations: string[] };
 type PlatformOrg = { id: string; name: string; slug: string; type: string; status: 'Active' | 'Suspended' | 'Archived'; countryCode: string };
 type AuditRow = { id: string; atUtc: string; action: string; actor: string | null; target: string | null; organization: string | null; details: string | null };
-type Tab = 'users' | 'orgs' | 'requests' | 'audit';
+type Tab = 'users' | 'orgs' | 'requests' | 'reviews' | 'audit';
+type AdminReview = { id: string; courseTitle: string; userName: string; stars: number; comment: string | null; isHidden: boolean; hiddenReason: string | null; createdAtUtc: string };
 
 const PAGE = 50;
 
@@ -111,6 +112,23 @@ const PAGE = 50;
               }
             </section>
           }
+          @case ('reviews') {
+            <section class="card">
+              @for (r of reviews(); track r.id) {
+                <div class="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold break-words"><span class="text-warning-700" aria-hidden="true">{{ '★'.repeat(r.stars) }}</span> <span class="sr-only-text">{{ r.stars }} / 5</span> {{ r.courseTitle }}</p>
+                    <p class="text-sm text-muted"><span dir="ltr">{{ r.userName }}</span> · <span dir="ltr">{{ formatTime(r.createdAtUtc) }}</span></p>
+                    @if (r.comment) { <p class="mt-1 whitespace-pre-line break-words">{{ r.comment }}</p> }
+                  </div>
+                  @if (r.isHidden) { <span class="badge badge-warning">{{ t('console.reviewHidden') }}</span> }
+                  <button type="button" class="btn btn-ghost btn-sm w-full sm:w-auto" (click)="toggleReview(r)">{{ r.isHidden ? t('console.reviewUnhide') : t('console.reviewHide') }}</button>
+                </div>
+              } @empty {
+                <p class="px-5 py-8 text-center text-muted">{{ t('console.noReviews') }}</p>
+              }
+            </section>
+          }
           @case ('audit') {
             <form class="flex flex-wrap gap-2" (submit)="$event.preventDefault(); loadAudit(true)">
               <input class="input min-w-40 flex-1" dir="ltr" [attr.aria-label]="t('console.auditFilter')" [placeholder]="t('console.auditFilter')" [value]="auditAction()" (input)="auditAction.set($any($event.target).value)" />
@@ -152,6 +170,7 @@ export default class AdminConsolePage {
     { id: 'users', label: 'console.tabUsers' },
     { id: 'orgs', label: 'console.tabOrgs' },
     { id: 'requests', label: 'legal.requestsTab' },
+    { id: 'reviews', label: 'console.tabReviews' },
     { id: 'audit', label: 'console.tabAudit' },
   ];
   protected tab = signal<Tab>('users');
@@ -163,6 +182,7 @@ export default class AdminConsolePage {
   protected orgs = signal<PlatformOrg[]>([]);
   protected audit = signal<AuditRow[]>([]);
   protected requests = signal<DataRequest[]>([]);
+  protected reviews = signal<AdminReview[]>([]);
   protected requestNote = signal('');
   protected auditAction = signal('');
   protected auditUser = signal('');
@@ -178,6 +198,7 @@ export default class AdminConsolePage {
     if (tab === 'orgs') this.loadOrgs();
     if (tab === 'audit') this.loadAudit(true);
     if (tab === 'requests') this.loadRequests();
+    if (tab === 'reviews') this.loadReviews();
   }
 
   protected searchUsers(): void {
@@ -199,6 +220,14 @@ export default class AdminConsolePage {
 
   protected loadRequests(): void {
     this.legal.allRequests('').subscribe({ next: r => this.requests.set(r), error: (err: unknown) => this.error.set(errorMessages(err, 'Error').join(' ')) });
+  }
+
+  protected loadReviews(): void {
+    this.get<AdminReview[]>('/platform/marketplace/reviews?take=50').subscribe(r => this.reviews.set(r));
+  }
+
+  protected toggleReview(review: AdminReview): void {
+    this.post(`/platform/marketplace/reviews/${review.id}/${review.isHidden ? 'unhide' : 'hide'}`).subscribe(() => this.loadReviews());
   }
 
   protected downloadData(request: DataRequest): void {

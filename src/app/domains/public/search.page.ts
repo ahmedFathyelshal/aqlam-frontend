@@ -12,6 +12,7 @@ import {
   CourseCard,
   Facets,
   FeaturedTeacher,
+  TopTeacher,
   Gender,
   MarketplaceService,
   SearchFilters,
@@ -23,7 +24,7 @@ import { AqCardSkeleton, AqCourseCard, AqTeacherCard, subjectColor } from '@/app
 import { SeoService } from '@/app/core/services/seo.service';
 
 type Tab = 'courses' | 'teachers';
-type Filters = { q: string; tab: Tab; country: string; subjectId: number | null; gradeId: number | null; gender: Gender | null; free: boolean };
+type Filters = { q: string; tab: Tab; country: string; subjectId: number | null; gradeId: number | null; gender: Gender | null; free: boolean; sort: 'rating' | null };
 
 const PAGE = 12;
 const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
@@ -116,6 +117,9 @@ const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
             <div class="hidden flex-wrap items-center gap-2 lg:flex">
               <ng-container *ngTemplateOutlet="filterFields; context: { compact: true }" />
             </div>
+            <label class="check min-h-11 cursor-pointer lg:ms-2">
+              <input type="checkbox" [checked]="filters().sort === 'rating'" (change)="set({ sort: filters().sort === 'rating' ? null : 'rating' })" />{{ t('market.sortRating') }}
+            </label>
             @if (filters().tab === 'courses') {
               <label class="check min-h-11 cursor-pointer lg:ms-2">
                 <input type="checkbox" [checked]="filters().free" (change)="set({ free: !filters().free })" />{{ t('market.freeOnly') }}
@@ -158,6 +162,22 @@ const num = (v: string | null) => (v && /^\d+$/.test(v) ? Number(v) : null);
                 }
               </div>
             }
+          </section>
+        }
+
+        <!-- Top teachers of the chosen subject: by their students' reviews, never paid or picked -->
+        @if (filters().subjectId && top().length) {
+          <section class="mt-8 rounded-hero border border-line bg-white p-4 lg:p-6" aria-labelledby="top-title">
+            <h2 id="top-title" class="section-title">{{ t('market.top.title', { subject: names.subject(filters().subjectId) }) }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ t('market.top.lead', { min: 5 }) }}</p>
+            <ol class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4">
+              @for (x of top(); track x.teacher.slug) {
+                <li class="flex gap-3">
+                  <span class="mt-4 w-6 shrink-0 text-center text-lg font-bold text-muted tabular-nums" aria-hidden="true">{{ x.rank }}</span>
+                  <aq-teacher-card class="min-w-0 flex-1" [teacher]="withRating(x)" />
+                </li>
+              }
+            </ol>
           </section>
         }
 
@@ -317,6 +337,7 @@ export default class MarketSearchPage {
       gradeId: prep ? TEST_PREP[prep].gradeId : num(p.get('grade')),
       gender: gender === 'Male' || gender === 'Female' ? gender : null,
       free: p.get('free') === '1',
+      sort: p.get('sort') === 'rating' ? 'rating' : null,
     };
   });
 
@@ -335,6 +356,8 @@ export default class MarketSearchPage {
 
   protected facets = signal<Facets | null>(null);
   protected picks = signal<FeaturedTeacher[]>([]);
+  protected top = signal<TopTeacher[]>([]);
+  protected withRating = (x: TopTeacher): TeacherCard => ({ ...x.teacher, ratingAverage: x.average, ratingCount: x.count });
   protected pickedSlugs = computed(() => new Set(this.picks().map(p => p.teacher.slug)));
 
   protected items = computed<unknown[]>(() => (this.filters().tab === 'teachers' ? this.teachers() : this.courses()));
@@ -405,6 +428,14 @@ export default class MarketSearchPage {
         this.picks.set(picks.filter(p => !seen.has(p.teacher.slug) && seen.add(p.teacher.slug)));
       });
 
+    // Top teachers follow the chosen subject (and country).
+    toObservable(computed(() => ({ subject: this.filters().subjectId, country: this.filters().country })))
+      .pipe(
+        switchMap(({ subject, country }) => (subject ? this.api.topTeachers(subject, country).pipe(catchError(() => of([] as TopTeacher[]))) : of([] as TopTeacher[]))),
+        takeUntilDestroyed()
+      )
+      .subscribe(list => this.top.set(list));
+
     // Results: both tabs are counted, so the other tab can be suggested when this one is empty.
     combineLatest([toObservable(this.filters), toObservable(this.reloadTick)])
       .pipe(
@@ -446,6 +477,7 @@ export default class MarketSearchPage {
         grade: this.prep() ? null : f.gradeId,
         gender: f.gender,
         free: f.free ? '1' : null,
+        sort: f.sort,
       },
     });
   }
@@ -491,6 +523,7 @@ export default class MarketSearchPage {
       subjectId: f.subjectId,
       teacherGender: f.gender,
       free: f.free ? true : null,
+      sort: f.sort,
       page,
       pageSize: PAGE,
     };

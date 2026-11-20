@@ -13,6 +13,7 @@ import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
 import { CoursePage, formatPrice, MarketplaceService, OutlineLesson, PreviewLesson, Redeemed, ViewerChild } from '@/app/core/marketplace/marketplace.service';
 import { FamilyService } from '@/app/core/school/family.service';
 import { AqCodeRedeem } from '@/app/shared/marketplace/code-redeem';
+import { AqReviews, AqStars } from '@/app/shared/marketplace/reviews';
 import { AqCourseThumb, AqMonogram, durationText } from '@/app/shared/marketplace/market-ui';
 import { NotFoundBlock } from './not-found-block';
 import { SeoService } from '@/app/core/services/seo.service';
@@ -44,7 +45,7 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
 /** Public course page /courses/{slug} (story 3.5.1): what you get, try a free lesson, then join, buy or use a code. */
 @Component({
   selector: 'app-market-course',
-  imports: [NgTemplateOutlet, RouterLink, MatIconModule, TranslocoDirective, AqCourseThumb, AqMonogram, AqCodeRedeem, NotFoundBlock],
+  imports: [NgTemplateOutlet, RouterLink, MatIconModule, TranslocoDirective, AqCourseThumb, AqMonogram, AqCodeRedeem, AqReviews, AqStars, NotFoundBlock],
   template: `
     <ng-container *transloco="let t">
       @if (missing()) {
@@ -174,6 +175,9 @@ const TYPE_ICON: Record<string, string> = { Video: 'circle-play', Article: 'file
                   <p class="mt-2 whitespace-pre-line">{{ page.syllabusRequirements }}</p>
                 </section>
               }
+
+              <!-- Reviews -->
+              <aq-reviews [slug]="page.course.slug" />
 
               <!-- About the teacher -->
               @if (page.teacher; as teacher) {

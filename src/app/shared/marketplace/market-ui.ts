@@ -7,6 +7,7 @@ import { pluralKey } from '@/app/core/transloco/plural';
 import { CourseCard, formatPrice, TeacherCard } from '@/app/core/marketplace/marketplace.service';
 import { LookupNames } from '@/app/core/marketplace/lookup-names.service';
 import { subjectMark } from '@/app/core/learning/subject-look';
+import { AqStars } from './reviews';
 
 const BLUE = 'var(--color-subject-blue)';
 const GREEN = 'var(--color-subject-green)';
@@ -111,7 +112,7 @@ export class AqCourseThumb {
 /** One course in search results, picks and teacher pages. The whole card is one link. */
 @Component({
   selector: 'aq-course-card',
-  imports: [RouterLink, MatIconModule, TranslocoDirective, AqCourseThumb],
+  imports: [RouterLink, MatIconModule, TranslocoDirective, AqCourseThumb, AqStars],
   template: `
     <ng-container *transloco="let t">
       @let c = course();
@@ -140,6 +141,7 @@ export class AqCourseThumb {
               @if (c.totalMinutes) { <span class="inline-flex items-center gap-1"><mat-icon svgIcon="clock" class="icon-size-4" />{{ duration(c.totalMinutes, t) }}</span> }
             </p>
           }
+          <aq-stars [average]="c.ratingAverage" [count]="c.ratingCount ?? 0" />
           @if (c.freePreviewCount && !c.isFree) {
             <span class="badge badge-info w-fit"><mat-icon svgIcon="play" class="icon-size-3.5" />{{ t(plural('market.card.previews', c.freePreviewCount), { count: c.freePreviewCount }) }}</span>
           }
@@ -176,7 +178,7 @@ export class AqCourseCard {
 /** One teacher in search and picks; links to the teacher's page. Gender feeds the filter and the "معلم/معلمة" word only. */
 @Component({
   selector: 'aq-teacher-card',
-  imports: [RouterLink, MatIconModule, TranslocoDirective, AqMonogram],
+  imports: [RouterLink, MatIconModule, TranslocoDirective, AqMonogram, AqStars],
   template: `
     <ng-container *transloco="let t">
       @let p = teacher();
@@ -189,6 +191,7 @@ export class AqCourseCard {
           </div>
         </div>
         @if (p.headline) { <p class="line-clamp-2 text-sm text-muted">{{ p.headline }}</p> }
+        <aq-stars [average]="p.ratingAverage" [count]="p.ratingCount ?? 0" />
         @if (p.subjectIds.length) {
           <div class="flex flex-wrap gap-1.5">
             @for (id of p.subjectIds.slice(0, 3); track id) {

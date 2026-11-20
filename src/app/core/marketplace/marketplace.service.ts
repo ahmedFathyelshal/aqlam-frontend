@@ -32,6 +32,9 @@ export type CourseCard = {
   curriculumId: number | null;
   gradeId: number | null;
   subjectId: number | null;
+  /** Null until the course has enough reviews. */
+  ratingAverage?: number | null;
+  ratingCount?: number;
 };
 
 export type TeacherCard = {
@@ -45,7 +48,14 @@ export type TeacherCard = {
   subjectIds: number[];
   gradeIds: number[];
   courseCount: number;
+  ratingAverage?: number | null;
+  ratingCount?: number;
 };
+
+export type RatingSummary = { count: number; average: number | null; distribution: number[] };
+export type Review = { id: string; stars: number; comment: string | null; reviewer: string | null; createdAtUtc: string; mine: boolean };
+export type Reviews = { summary: RatingSummary; items: Review[]; total: number; canReview: boolean; cannotReviewReason: string | null; mine: Review | null };
+export type TopTeacher = { rank: number; average: number; count: number; teacher: TeacherCard };
 
 export type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 export type CountItem = { id: number; count: number };
@@ -101,6 +111,8 @@ export type SearchFilters = {
   subjectId?: number | null;
   teacherGender?: Gender | null;
   free?: boolean | null;
+  /** "rating": well-rated results first. */
+  sort?: string | null;
   page?: number;
   pageSize?: number;
 };
@@ -156,6 +168,22 @@ export class MarketplaceService {
 
   featured(country?: string | null, subjectId?: number | null): Observable<FeaturedTeacher[]> {
     return this.http.get<ApiResponse<FeaturedTeacher[]>>(api('/marketplace/featured'), { params: params({ country, subjectId }) }).pipe(map(r => r.data));
+  }
+
+  reviews(slug: string, page = 1): Observable<Reviews> {
+    return this.http.get<ApiResponse<Reviews>>(api(`/marketplace/courses/${encodeURIComponent(slug)}/reviews`), { params: { page } }).pipe(map(r => r.data));
+  }
+
+  saveReview(slug: string, stars: number, comment: string | null): Observable<Reviews> {
+    return this.http.put<ApiResponse<Reviews>>(api(`/marketplace/courses/${encodeURIComponent(slug)}/review`), { stars, comment }).pipe(map(r => r.data));
+  }
+
+  deleteReview(slug: string): Observable<Reviews> {
+    return this.http.delete<ApiResponse<Reviews>>(api(`/marketplace/courses/${encodeURIComponent(slug)}/review`)).pipe(map(r => r.data));
+  }
+
+  topTeachers(subjectId: number, country?: string | null): Observable<TopTeacher[]> {
+    return this.http.get<ApiResponse<TopTeacher[]>>(api('/marketplace/top-teachers'), { params: params({ subjectId, country }) }).pipe(map(r => r.data));
   }
 
   teacher(slug: string): Observable<TeacherPage> {
