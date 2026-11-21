@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 import { AuthService } from '@/app/core/auth/auth.service';
@@ -35,6 +35,9 @@ import { environment } from '@/environments/environment';
             <button type="button" class="inline-flex min-h-11 cursor-pointer items-center px-2 text-[0.9375rem] text-[#E3ECE6]" [attr.lang]="i18n.lang() === 'ar' ? 'en' : 'ar'" (click)="i18n.toggle()">{{ t('landing.otherLanguage') }}</button>
             @if (auth.isAuthenticated()) {
               <a class="inline-flex min-h-11 items-center rounded-ui border border-[#BFE3CE] px-3 font-semibold whitespace-nowrap sm:px-4 text-white no-underline hover:bg-white/10" [routerLink]="auth.homeRoute()">{{ t('market.nav.myHome') }}</a>
+              <button type="button" class="inline-flex min-h-11 cursor-pointer items-center gap-1.5 px-2 text-[0.9375rem] font-medium text-[#E3ECE6] hover:text-white" (click)="signOut()">
+                <mat-icon svgIcon="log-out" class="icon-size-4.5 flip-rtl" /><span class="max-sm:sr-only">{{ t('action.signOut') }}</span>
+              </button>
             } @else {
               <a class="inline-flex min-h-11 items-center rounded-ui border border-[#BFE3CE] px-3 font-semibold whitespace-nowrap sm:px-4 text-white no-underline hover:bg-white/10" routerLink="/auth/sign-in">{{ t('market.nav.signIn') }}</a>
             }
@@ -58,8 +61,13 @@ import { environment } from '@/environments/environment';
 export class PublicShell {
   protected auth = inject(AuthService);
   protected i18n = inject(I18nService);
+  private router = inject(Router);
   protected contactEmail = environment.contactEmail;
   protected reportSubject = encodeURIComponent('Report a page / الإبلاغ عن صفحة');
+
+  protected signOut(): void {
+    this.auth.signOut().subscribe({ complete: () => this.router.navigateByUrl('/auth/sign-in') });
+  }
 
   constructor() {
     inject(LookupNames).load();
